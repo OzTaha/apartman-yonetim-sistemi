@@ -1,0 +1,316 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SiteRole {
+  SITE_MANAGER
+  RESIDENT
+}
+
+enum OccupancyType {
+  OWNER
+  TENANT
+}
+
+enum DistributionMethod {
+  EQUAL
+  AREA
+  LAND_SHARE
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  ONLINE
+}
+
+model User {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  firstName       String
+  lastName        String
+  email           String?  @unique
+  phone           String?  @unique
+  passwordHash    String?
+  isPlatformAdmin Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  memberships   SiteMembership[]
+  occupancies   Occupancy[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Site {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  name      String
+  address   String?
+  city      String?
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships SiteMembership[]
+  blocks      Block[]
+  units       Unit[]
+  occupancies Occupancy[]
+  invitations Invitation[]
+  auditLogs   AuditLog[]
+  chargeTypes ChargeType[]
+  duesPlans   DuesPlan[]
+  charges     Charge[]
+  payments    Payment[]
+  allocations PaymentAllocation[]
+
+  @@map("sites")
+}
+
+model SiteMembership {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  siteId    String   @db.Uuid
+  userId    String   @db.Uuid
+  role      SiteRole
+  createdAt DateTime @default(now())
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, userId])
+  @@index([userId])
+  @@map("site_memberships")
+}
+
+model Block {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  siteId    String   @db.Uuid
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site  Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  units Unit[]
+
+  @@unique([siteId, name])
+  @@unique([id, siteId])
+  @@map("blocks")
+}
+
+model Unit {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  siteId    String   @db.Uuid
+  blockId   String   @db.Uuid
+  number    String
+  floor     Int?
+  areaM2    Float?
+  landShare Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site        Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  block       Block       @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
+  occupancies Occupancy[]
+  charges     Charge[]
+  payments    Payment[]
+
+  @@unique([blockId, number])
+  @@unique([id, siteId])
+  @@index([siteId])
+  @@map("units")
+}
+
+model Occupancy {
+  id                   String        @id @default(uuid(7)) @db.Uuid
+  siteId               String        @db.Uuid
+  unitId               String        @db.Uuid
+  userId               String?       @db.Uuid
+  firstName            String
+  lastName             String
+  phone                String?
+  email                String?
+  type                 OccupancyType
+  startDate            DateTime      @db.Date
+  endDate              DateTime?     @db.Date
+  isResponsibleForDues Boolean       @default(true)
+  contactConsent       Boolean       @default(false)
+  contactConsentAt     DateTime?
+  notes                String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  site        Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  unit        Unit         @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  invitations Invitation[]
+
+  @@unique([id, siteId])
+  @@index([siteId, endDate])
+  @@index([unitId])
+  @@index([userId])
+  @@map("occupancies")
+}
+
+model Invitation {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  siteId      String    @db.Uuid
+  occupancyId String    @db.Uuid
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+
+  site      Site      @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  occupancy Occupancy @relation(fields: [occupancyId, siteId], references: [id, siteId], onDelete: Cascade)
+
+  @@index([occupancyId])
+  @@map("invitations")
+}
+
+model RefreshToken {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  userId       String    @db.Uuid
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?   @db.Uuid
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  siteId     String?  @db.Uuid
+  userId     String?  @db.Uuid
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now())
+
+  site Site? @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model ChargeType {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  siteId    String   @db.Uuid
+  code      String?
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  site    Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  charges Charge[]
+
+  @@unique([siteId, name])
+  @@unique([siteId, code])
+  @@unique([id, siteId])
+  @@map("charge_types")
+}
+
+model DuesPlan {
+  id          String             @id @default(uuid(7)) @db.Uuid
+  siteId      String             @db.Uuid
+  method      DistributionMethod
+  amountKurus Int
+  validFrom   String
+  createdById String?            @db.Uuid
+  createdAt   DateTime           @default(now())
+
+  site    Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  charges Charge[]
+
+  @@index([siteId, validFrom])
+  @@map("dues_plans")
+}
+
+model Charge {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  siteId        String    @db.Uuid
+  unitId        String    @db.Uuid
+  chargeTypeId  String    @db.Uuid
+  duesPlanId    String?   @db.Uuid
+  period        String?
+  description   String?
+  amountKurus   Int
+  issueDate     DateTime  @db.Date
+  dueDate       DateTime  @db.Date
+  accrualKey    String?   @unique
+  createdById   String?   @db.Uuid
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  cancelledAt   DateTime?
+  cancelReason  String?
+  cancelledById String?   @db.Uuid
+
+  site        Site                @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  unit        Unit                @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
+  chargeType  ChargeType          @relation(fields: [chargeTypeId, siteId], references: [id, siteId], onDelete: Restrict)
+  duesPlan    DuesPlan?           @relation(fields: [duesPlanId], references: [id], onDelete: SetNull)
+  allocations PaymentAllocation[]
+
+  @@unique([id, siteId])
+  @@index([siteId, period])
+  @@index([unitId, dueDate])
+  @@map("charges")
+}
+
+model Payment {
+  id            String        @id @default(uuid(7)) @db.Uuid
+  siteId        String        @db.Uuid
+  unitId        String        @db.Uuid
+  amountKurus   Int
+  method        PaymentMethod
+  paidAt        DateTime      @db.Date
+  reference     String?
+  note          String?
+  createdById   String?       @db.Uuid
+  createdAt     DateTime      @default(now())
+  cancelledAt   DateTime?
+  cancelReason  String?
+  cancelledById String?       @db.Uuid
+
+  site        Site                @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  unit        Unit                @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
+  allocations PaymentAllocation[]
+
+  @@unique([id, siteId])
+  @@index([siteId, paidAt])
+  @@index([unitId])
+  @@map("payments")
+}
+
+model PaymentAllocation {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  siteId      String   @db.Uuid
+  paymentId   String   @db.Uuid
+  chargeId    String   @db.Uuid
+  amountKurus Int
+  createdAt   DateTime @default(now())
+
+  site    Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Cascade)
+  charge  Charge  @relation(fields: [chargeId, siteId], references: [id, siteId], onDelete: Restrict)
+
+  @@unique([paymentId, chargeId])
+  @@index([chargeId])
+  @@map("payment_allocations")
+}

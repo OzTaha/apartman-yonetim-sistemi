@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+.turbo
+pnpm-lock.yaml
+apps/api/src/generated
+apps/web/src/routeTree.gen.ts

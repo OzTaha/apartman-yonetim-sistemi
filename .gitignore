@@ -1,0 +1,35 @@
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.turbo/
+*.tsbuildinfo
+
+# Ortam değişkenleri
+.env
+.env.*
+!.env.example
+
+# Anahtarlar ve yedekler
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa*
+id_ed25519*
+*deploy_key*
+*repo_key*
+*.dump
+*.sql.gz
+backups/
+
+# Prisma istemcisi
+apps/api/src/generated/
+
+# Editör / işletim sistemi
+.DS_Store
+Thumbs.db
+.idea/
+*.log

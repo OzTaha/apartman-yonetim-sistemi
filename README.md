@@ -1,0 +1,111 @@
+# Apartman Yönetim Sistemi
+
+Çoklu site destekli, web tabanlı ve mobil uyumlu apartman/site yönetim sistemi.
+
+## Proje yapısı
+
+```
+apps/api         NestJS 11 API (PostgreSQL + Prisma 7, Redis)
+apps/web         React 19 + Vite + Tailwind 4 + shadcn/ui + TanStack Router/Query
+packages/shared  Web ve API'nin ortak kullandığı Zod şemaları, tipler ve yardımcılar
+docker/          Geliştirme ortamı için PostgreSQL ve Redis
+```
+
+## Gereksinimler
+
+- Node.js 22.12 veya üstü
+- pnpm 10
+- Docker Desktop
+
+pnpm kurulu değilse iki yol vardır:
+
+```sh
+# 1) Global kurulum (önerilir)
+npm install -g pnpm@10
+
+# 2) Kurulum yapmadan her komutu npx ile çalıştırmak
+npx pnpm@10 install
+```
+
+## İlk kurulum
+
+```sh
+pnpm install
+cp apps/api/.env.example apps/api/.env   # JWT_ACCESS_SECRET değerini değiştirin
+pnpm db:up                                # PostgreSQL (5433) ve Redis (6380)
+pnpm --filter @apartman/api prisma:deploy # tabloları oluşturur
+pnpm --filter @apartman/api db:seed       # örnek veriyi yükler
+pnpm dev                                  # API ve web uygulamasını birlikte başlatır
+```
+
+| Adres                            | Açıklama                   |
+| -------------------------------- | -------------------------- |
+| http://localhost:5173            | Web uygulaması             |
+| http://localhost:3000/api/health | API sağlık kontrolü        |
+| http://localhost:3000/api/docs   | Swagger API dokümantasyonu |
+
+PostgreSQL 5433, Redis 6380 portunu kullanır.
+Farklı port gerekirse `POSTGRES_PORT` / `REDIS_PORT` ortam değişkenleri ve `apps/api/.env` birlikte değiştirilmelidir.
+
+### Örnek hesaplar (seed)
+
+Tüm hesapların şifresi `Deneme123!`.
+
+| Rol               | Giriş bilgisi        |
+| ----------------- | -------------------- |
+| Sistem yöneticisi | `admin@ornek.com`    |
+| Site yöneticisi   | `yonetici@ornek.com` |
+| Sakin (A Blok 1)  | `0532 100 00 00`     |
+
+Seed; "Örnek Sitesi", A ve B blok, 40 daire, 30 sakin, bir taşınma geçmişi kaydı ve 13 aylık aidat/ödeme geçmişi oluşturur.
+Tekrar çalıştırılabilir: mevcut veriye dokunmaz, yalnızca eksik olan aidat verisini ekler.
+A Blok 5 numaralı daire gereksinim belgesindeki örneği gösterir (Eylül ve Kasım borçlu, Ekim ödenmiş).
+
+## Komutlar
+
+| Komut                                        | Açıklama                                                 |
+| -------------------------------------------- | -------------------------------------------------------- |
+| `pnpm dev`                                   | Tüm uygulamaları geliştirme modunda başlatır             |
+| `pnpm build`                                 | Tüm paketleri derler                                     |
+| `pnpm test`                                  | Birim testleri (veritabanı gerekmez)                     |
+| `pnpm --filter @apartman/api test:e2e`       | API uçtan uca testleri (ayrı `apartman_test` veritabanı) |
+| `pnpm --filter @apartman/web test:e2e`       | Tarayıcı testleri, masaüstü ve 375px mobil (Playwright)  |
+| `pnpm typecheck`                             | TypeScript tip kontrolü                                  |
+| `pnpm lint`                                  | ESLint                                                   |
+| `pnpm format`                                | Prettier ile biçimlendirme                               |
+| `pnpm db:up` / `pnpm db:down`                | Geliştirme veritabanını başlatır / durdurur              |
+| `pnpm --filter @apartman/api prisma:migrate` | Şema değişikliğinden migration oluşturur ve uygular      |
+| `pnpm --filter @apartman/api prisma:studio`  | Prisma Studio ile veritabanını görüntüler                |
+
+Tarayıcı testleri ilk kez çalıştırılmadan önce Chromium indirilmelidir:
+`pnpm --filter @apartman/web exec playwright install chromium`.
+Bu testler geliştirme veritabanına her çalıştırmada yeni bir deneme bloğu ekler.
+
+## Yetki ve site izolasyonu
+
+- **Roller:** sistem yöneticisi (tüm siteler), site yöneticisi, sakin.
+- Siteye bağlı her istek `X-Site-Id` başlığı taşır. API kullanıcının o sitedeki üyeliğini doğrular.
+- Siteye bağlı tablolara yapılan her sorguya aktif site filtresi otomatik eklenir (`apps/api/src/tenancy`).
+  Ayrıca blok, daire ve sakin kayıtları veritabanında birleşik yabancı anahtarla aynı siteye bağlanır.
+- Sakin yalnızca halen oturduğu daireyi ve kendi kaydını görebilir.
+- Oturum: 15 dakikalık erişim token'ı (yalnızca bellekte) ve 30 günlük refresh token (httpOnly cookie).
+  Refresh token her kullanımda yenilenir. Eski bir token tekrar kullanılırsa kullanıcının tüm oturumları kapatılır.
+- Önemli değişiklikler `audit_logs` tablosuna kim/ne zaman/önce/sonra bilgisiyle yazılır.
+
+## Aidat ve borç kuralları
+
+- Aylık aidat her ayın 1'inde 00:05'te (İstanbul) tüm dairelere otomatik yazılır. Sunucu o gün kapalıysa açılışta o ayın aidatı yazılır.
+  Aynı daireye aynı ay iki kez yazılmaz; "Aidat ayarları > Aidatı şimdi oluştur" ile elle de çalıştırılabilir.
+- Aidat eşit (daire başı), m²'ye veya arsa payına göre dağıtılabilir. Dağıtım kuruşu kuruşuna yapılır ve toplam her zaman girilen tutara eşittir.
+- Son ödeme günü site ayarıdır (varsayılan 10). Bu tarihten sonra ödenmeyen borç "gecikmiş" görünür.
+- Borçtan fazla ödeme kabul edilmez. Ödeme varsayılan olarak en eski borçtan başlanarak dağıtılır; istenirse ödenen aylar elle seçilir.
+- Ödemesi olan borç iptal edilemez; önce ödeme iptal edilir. Kayıtlar silinmez, iptal nedeniyle birlikte saklanır.
+- Borç durumu (ödendi / eksik / gecikmiş) ödemelerden hesaplanır, ayrıca saklanmaz.
+
+## Kurallar
+
+- **Para:** Tüm tutarlar veritabanında kuruş cinsinden tam sayı tutulur. Dönüşüm ve gösterim için `@apartman/shared` içindeki `parseTlToKurus` ve `formatKurus` kullanılır.
+- **Doğrulama:** Formlar ve API aynı Zod şemalarını kullanır (`packages/shared/src/schemas.ts`).
+- **Telefon:** Numaralar `+905321234567` biçiminde saklanır (`normalizeTrPhone`).
+- **Ortam değişkenleri:** API açılışta tüm değişkenleri doğrular. Eksik veya hatalı değer varsa hangi değişkenin sorunlu olduğunu yazarak durur.
+- `apps/web/src/routeTree.gen.ts` TanStack Router tarafından otomatik üretilir ve git'e eklenir. Elle düzenlenmez.
