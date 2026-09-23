@@ -13,6 +13,7 @@ import { formatDate } from '@/lib/format';
 import { useApiMutation } from '@/lib/queries';
 import { ChargeEditDialog } from './charge-dialogs';
 import { CancelDialog } from './small-dialogs';
+import { labelUnit } from '@/lib/unit-label';
 
 export function ChargeActions({ charge }: { charge: ChargeDto }) {
   const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
@@ -54,7 +55,7 @@ export function ChargeActions({ charge }: { charge: ChargeDto }) {
         open={dialog === 'cancel'}
         onOpenChange={(o) => setDialog(o ? 'cancel' : null)}
         title="Borç iptal edilsin mi?"
-        description={`${charge.blockName} Blok · Daire ${charge.unitNumber} · ${charge.label} (${formatKurus(
+        description={`${labelUnit(charge.blockName, charge.unitNumber)} · ${charge.label} (${formatKurus(
           charge.amountKurus,
         )}). Kayıt silinmez, iptal edildi olarak işaretlenir.`}
         pending={cancel.isPending}

@@ -21,6 +21,7 @@ import { useSession } from './session';
 export interface UnitFilters {
   blockId?: string;
   search?: string;
+  archived?: 'include' | 'only';
 }
 
 export interface ChargeFilters {

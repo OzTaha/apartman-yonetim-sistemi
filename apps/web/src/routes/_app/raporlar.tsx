@@ -20,6 +20,7 @@ import {
 import { downloadFile, errorMessage } from '@/lib/api';
 import { formatDate, todayIso } from '@/lib/format';
 import { useDebtReport } from '@/lib/queries';
+import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/raporlar')({
   component: () => (
@@ -122,7 +123,7 @@ function ReportsPage() {
                       {debtors.slice(0, 10).map((r) => (
                         <TableRow key={r.unitId}>
                           <TableCell className="font-medium">
-                            {r.blockName}-{r.unitNumber}
+                            {labelUnit(r.blockName, r.unitNumber, 'short')}
                           </TableCell>
                           <TableCell>{r.responsible || '—'}</TableCell>
                           <TableCell className="text-right tabular-nums">

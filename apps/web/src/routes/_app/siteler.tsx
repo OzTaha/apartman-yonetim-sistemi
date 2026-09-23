@@ -1,4 +1,4 @@
-import type { SiteDto } from '@apartman/shared';
+import { siteKindLabels, type SiteDto } from '@apartman/shared';
 import { Navigate, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { ArrowRight, MoreHorizontal, Pencil, Plus, UserCog, X } from 'lucide-react';
 import { useState } from 'react';
@@ -109,7 +109,10 @@ function SiteCard({ site }: { site: SiteDto }) {
       </CardHeader>
       <CardContent className="grid gap-3">
         <p className="text-sm text-muted-foreground">
-          {site.blockCount} blok · {site.unitCount} daire
+          {siteKindLabels[site.kind]} ·{' '}
+          {site.kind === 'APARTMENT'
+            ? `${site.unitCount} daire`
+            : `${site.blockCount} blok · ${site.unitCount} daire`}
         </p>
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-sm text-muted-foreground">Yöneticiler:</span>
@@ -152,12 +155,12 @@ function SitesPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        title="Siteler"
-        description="Bu kurulumdaki tüm siteler ve yöneticileri"
+        title="Apartman ve siteler"
+        description="Bu kurulumdaki tüm apartman, site ve yöneticileri"
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus />
-            Site ekle
+            Ekle
           </Button>
         }
       />

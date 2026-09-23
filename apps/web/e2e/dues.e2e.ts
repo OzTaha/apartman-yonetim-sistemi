@@ -44,6 +44,7 @@ test('aidat oluşturulur, ödeme alınır, tabloda ödendi görünür ve ekstre 
   await unitDialog.getByRole('combobox').click();
   await page.getByRole('option', { name: `${blockName} Blok` }).click();
   await unitDialog.locator('#unit-number').fill('1');
+  await unitDialog.locator('#unit-area').fill('100');
   await unitDialog.getByRole('button', { name: 'Kaydet' }).click();
   await expect(page.getByText('Daire eklendi')).toBeVisible();
 

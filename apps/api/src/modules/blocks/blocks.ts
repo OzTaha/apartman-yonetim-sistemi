@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -27,13 +28,25 @@ export class BlocksService {
 
   async list(): Promise<BlockResponse[]> {
     const blocks = await this.tenant.db.block.findMany({
-      include: { _count: { select: { units: true } } },
+      include: {
+        units: { select: { _count: { select: { payments: true, occupancies: true } } } },
+      },
       orderBy: { name: 'asc' },
     });
-    return blocks.map((b) => ({ id: b.id, name: b.name, unitCount: b._count.units }));
+    return blocks.map((b) => ({
+      id: b.id,
+      name: b.name,
+      unitCount: b.units.length,
+      deletable: b.units.every((u) => u._count.payments === 0 && u._count.occupancies === 0),
+    }));
   }
 
   async create(input: BlockDto): Promise<BlockResponse> {
+    if ((await this.tenant.siteKind()) === 'APARTMENT') {
+      throw new BadRequestException(
+        'Apartmana blok eklenemez. Birden fazla bina varsa türü "Site" olarak değiştirin.',
+      );
+    }
     const block = await this.tenant.db.block.create({
       data: { name: input.name, siteId: this.tenant.siteId },
     });
@@ -43,7 +56,7 @@ export class BlocksService {
       entityId: block.id,
       after: input,
     });
-    return { id: block.id, name: block.name, unitCount: 0 };
+    return { id: block.id, name: block.name, unitCount: 0, deletable: true };
   }
 
   async update(id: string, input: BlockDto): Promise<BlockResponse> {
@@ -51,7 +64,9 @@ export class BlocksService {
     const block = await this.tenant.db.block.update({
       where: { id },
       data: { name: input.name },
-      include: { _count: { select: { units: true } } },
+      include: {
+        units: { select: { _count: { select: { payments: true, occupancies: true } } } },
+      },
     });
     await this.audit.record({
       action: 'UPDATE',
@@ -60,23 +75,45 @@ export class BlocksService {
       before: { name: before.name },
       after: input,
     });
-    return { id: block.id, name: block.name, unitCount: block._count.units };
+    return {
+      id: block.id,
+      name: block.name,
+      unitCount: block.units.length,
+      deletable: block.units.every((u) => u._count.payments === 0 && u._count.occupancies === 0),
+    };
   }
 
   async remove(id: string): Promise<void> {
+    if ((await this.tenant.siteKind()) === 'APARTMENT') {
+      throw new BadRequestException('Apartmanın binası silinemez.');
+    }
     const block = await this.tenant.db.block.findUniqueOrThrow({
       where: { id },
-      include: { _count: { select: { units: true } } },
+      include: {
+        units: { select: { id: true, _count: { select: { payments: true, occupancies: true } } } },
+      },
     });
-    if (block._count.units > 0) {
-      throw new ConflictException('İçinde daire bulunan blok silinemez');
+    const withHistory = block.units.filter(
+      (u) => u._count.payments > 0 || u._count.occupancies > 0,
+    ).length;
+    if (withHistory > 0) {
+      throw new ConflictException(
+        `Bu blokta ödeme veya sakin geçmişi olan ${withHistory} daire var. Bu daireler silinemez; tek tek arşivleyebilirsiniz.`,
+      );
     }
-    await this.tenant.db.block.delete({ where: { id } });
+    const unitIds = block.units.map((u) => u.id);
+    await this.tenant.db.$transaction(async (tx) => {
+      await tx.charge.deleteMany({
+        where: { siteId: this.tenant.siteId, unitId: { in: unitIds } },
+      });
+      await tx.unit.deleteMany({ where: { siteId: this.tenant.siteId, blockId: id } });
+      await tx.block.delete({ where: { id } });
+    });
     await this.audit.record({
       action: 'DELETE',
       entityType: 'Block',
       entityId: id,
-      before: { name: block.name },
+      before: { name: block.name, deletedUnits: unitIds.length },
     });
   }
 }

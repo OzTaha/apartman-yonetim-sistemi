@@ -86,7 +86,7 @@ test('yönetici blok ve daire ekler, sakin davetle hesap açıp dairesini görü
   });
   const residentPage = await residentContext.newPage();
   await residentPage.goto(new URL(inviteUrl).pathname);
-  await expect(residentPage.getByText(`${blockName} Blok, Daire 1`)).toBeVisible();
+  await expect(residentPage.getByText(`${blockName} Blok · Daire 1`)).toBeVisible();
   await residentPage.locator('#password').fill('SakinSifre123');
   await residentPage.locator('#confirm').fill('SakinSifre123');
   await residentPage.getByRole('button', { name: 'Hesabımı oluştur' }).click();

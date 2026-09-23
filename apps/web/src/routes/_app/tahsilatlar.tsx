@@ -26,6 +26,7 @@ import { PaymentActions } from '@/features/dues/row-actions';
 import { formatDate, todayIso } from '@/lib/format';
 import { usePayments } from '@/lib/queries';
 import { cn } from '@/lib/utils';
+import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/tahsilatlar')({
   validateSearch: (
@@ -56,7 +57,9 @@ const columns: ColumnDef<PaymentDto>[] = [
     header: 'Daire',
     accessorFn: (p) => `${p.blockName}-${p.unitNumber}`,
     cell: ({ row }) => (
-      <span className="font-medium">{`${row.original.blockName}-${row.original.unitNumber}`}</span>
+      <span className="font-medium">
+        {labelUnit(row.original.blockName, row.original.unitNumber, 'short')}
+      </span>
     ),
   },
   {
@@ -112,7 +115,8 @@ function PaymentCard({ payment }: { payment: PaymentDto }) {
     >
       <div className="grid gap-0.5">
         <span className="font-medium">
-          {payment.blockName}-{payment.unitNumber} · {formatKurus(payment.amountKurus)}
+          {labelUnit(payment.blockName, payment.unitNumber, 'short')} ·{' '}
+          {formatKurus(payment.amountKurus)}
         </span>
         <span className="text-xs text-muted-foreground">
           {formatDate(payment.paidAt)} · {paymentMethodLabels[payment.method]}

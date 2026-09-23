@@ -35,6 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api';
 import { formatDate, formatPhone, fullName, todayIso } from '@/lib/format';
 import { useApiMutation, useUnits } from '@/lib/queries';
+import { labelUnit } from '@/lib/unit-label';
 
 interface DialogProps {
   open: boolean;
@@ -128,7 +129,7 @@ export function OccupancyFormDialog({
                     <SelectContent>
                       {(units.data ?? []).map((u) => (
                         <SelectItem key={u.id} value={u.id}>
-                          {u.blockName} Blok · Daire {u.number}
+                          {labelUnit(u.blockName, u.number)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -269,7 +270,7 @@ export function MoveOutDialog({
         <DialogHeader>
           <DialogTitle>Taşınma kaydı</DialogTitle>
           <DialogDescription>
-            {fullName(occupancy)} ({occupancy.blockName} Blok, Daire {occupancy.unitNumber}) için
+            {fullName(occupancy)} ({labelUnit(occupancy.blockName, occupancy.unitNumber)}) için
             taşınma tarihini girin. Kayıt silinmez, daire geçmişinde görünmeye devam eder.
           </DialogDescription>
         </DialogHeader>

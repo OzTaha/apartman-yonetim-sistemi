@@ -35,6 +35,7 @@ import {
 import { apiFetch } from '@/lib/api';
 import { toNumberOrNull, toNumberOrUndefined } from '@/lib/format';
 import { useApiMutation, useBlocks } from '@/lib/queries';
+import { useIsApartment } from '@/lib/unit-label';
 
 interface DialogProps {
   open: boolean;
@@ -81,10 +82,13 @@ export function UnitFormDialog({
   defaultBlockId?: string;
 }) {
   const blocks = useBlocks();
+  const isApartment = useIsApartment();
   const form = useForm<UnitForm, unknown, UnitOutput>({
     resolver: zodResolver(unitCreateSchema),
     values: {
-      blockId: unit?.blockId ?? defaultBlockId ?? blocks.data?.[0]?.id ?? '',
+      blockId: isApartment
+        ? undefined
+        : (unit?.blockId ?? defaultBlockId ?? blocks.data?.[0]?.id ?? ''),
       number: unit?.number ?? '',
       floor: unit?.floor ?? null,
       areaM2: unit?.areaM2 ?? null,
@@ -121,20 +125,22 @@ export function UnitFormDialog({
           noValidate
           onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
         >
-          <Field label="Blok" htmlFor="unit-block" error={errors.blockId?.message} required>
-            <Controller
-              control={form.control}
-              name="blockId"
-              render={({ field }) => (
-                <BlockSelect
-                  id="unit-block"
-                  value={field.value}
-                  onChange={field.onChange}
-                  blocks={blocks.data ?? []}
-                />
-              )}
-            />
-          </Field>
+          {!isApartment && (
+            <Field label="Blok" htmlFor="unit-block" error={errors.blockId?.message} required>
+              <Controller
+                control={form.control}
+                name="blockId"
+                render={({ field }) => (
+                  <BlockSelect
+                    id="unit-block"
+                    value={field.value}
+                    onChange={field.onChange}
+                    blocks={blocks.data ?? []}
+                  />
+                )}
+              />
+            </Field>
+          )}
           <Field label="Daire no" htmlFor="unit-number" error={errors.number?.message} required>
             <Input id="unit-number" {...form.register('number')} />
           </Field>
@@ -188,9 +194,10 @@ type BulkOutput = z.output<typeof bulkUnitsSchema>;
 function bulkPreview(
   values: Partial<BulkUnitsInput>,
   blockName: string | undefined,
+  isApartment: boolean,
 ): string | null {
   try {
-    if (!values.startNumber || !values.endNumber || !blockName) return null;
+    if (!values.startNumber || !values.endNumber || (!isApartment && !blockName)) return null;
     const units = planBulkUnits({
       startNumber: values.startNumber,
       endNumber: values.endNumber,
@@ -198,7 +205,8 @@ function bulkPreview(
       startFloor: values.startFloor ?? 1,
     });
     const floors = units.at(-1)?.floor;
-    return `${blockName} Blok için ${units[0]?.number}–${units.at(-1)?.number} arası ${units.length} daire oluşturulacak${
+    const prefix = isApartment ? '' : `${blockName} Blok için `;
+    return `${prefix}${units[0]?.number}–${units.at(-1)?.number} arası ${units.length} daire oluşturulacak${
       floors !== null && floors !== undefined ? `, son kat ${floors}` : ''
     }.`;
   } catch (e) {
@@ -212,10 +220,11 @@ export function BulkUnitsDialog({
   defaultBlockId,
 }: DialogProps & { defaultBlockId?: string }) {
   const blocks = useBlocks();
+  const isApartment = useIsApartment();
   const form = useForm<BulkUnitsInput, unknown, BulkOutput>({
     resolver: zodResolver(bulkUnitsSchema),
     values: {
-      blockId: defaultBlockId ?? blocks.data?.[0]?.id ?? '',
+      blockId: isApartment ? undefined : (defaultBlockId ?? blocks.data?.[0]?.id ?? ''),
       startNumber: 1,
       endNumber: 20,
       unitsPerFloor: 4,
@@ -245,7 +254,9 @@ export function BulkUnitsDialog({
         <DialogHeader>
           <DialogTitle>Toplu daire oluştur</DialogTitle>
           <DialogDescription>
-            Bir blok için numara aralığı vererek daireleri tek seferde ekleyin.
+            {isApartment
+              ? 'Numara aralığı vererek daireleri tek seferde ekleyin.'
+              : 'Bir blok için numara aralığı vererek daireleri tek seferde ekleyin.'}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -254,26 +265,28 @@ export function BulkUnitsDialog({
           noValidate
           onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
         >
-          <Field
-            label="Blok"
-            htmlFor="bulk-block"
-            error={errors.blockId?.message}
-            required
-            className="sm:col-span-2"
-          >
-            <Controller
-              control={form.control}
-              name="blockId"
-              render={({ field }) => (
-                <BlockSelect
-                  id="bulk-block"
-                  value={field.value}
-                  onChange={field.onChange}
-                  blocks={blocks.data ?? []}
-                />
-              )}
-            />
-          </Field>
+          {!isApartment && (
+            <Field
+              label="Blok"
+              htmlFor="bulk-block"
+              error={errors.blockId?.message}
+              required
+              className="sm:col-span-2"
+            >
+              <Controller
+                control={form.control}
+                name="blockId"
+                render={({ field }) => (
+                  <BlockSelect
+                    id="bulk-block"
+                    value={field.value}
+                    onChange={field.onChange}
+                    blocks={blocks.data ?? []}
+                  />
+                )}
+              />
+            </Field>
+          )}
           <Field
             label="İlk daire no"
             htmlFor="bulk-start"
@@ -318,8 +331,10 @@ export function BulkUnitsDialog({
             />
           </Field>
         </form>
-        {bulkPreview(watched, blockName) && (
-          <p className="rounded-md bg-muted p-3 text-sm">{bulkPreview(watched, blockName)}</p>
+        {bulkPreview(watched, blockName, isApartment) && (
+          <p className="rounded-md bg-muted p-3 text-sm">
+            {bulkPreview(watched, blockName, isApartment)}
+          </p>
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -336,6 +351,7 @@ export function BulkUnitsDialog({
 
 function BlockRow({ block }: { block: BlockDto }) {
   const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [name, setName] = useState(block.name);
   const rename = useApiMutation(
     (value: string) =>
@@ -344,7 +360,33 @@ function BlockRow({ block }: { block: BlockDto }) {
   );
   const remove = useApiMutation(() => apiFetch<void>(`/blocks/${block.id}`, { method: 'DELETE' }), {
     success: 'Blok silindi',
+    onSuccess: () => setConfirming(false),
   });
+
+  if (confirming) {
+    return (
+      <li className="grid gap-2 rounded-md border border-destructive/40 p-2 text-sm">
+        <span>
+          {block.unitCount > 0
+            ? `${block.name} Blok ve içindeki ${block.unitCount} daire, ödenmemiş aidatlarıyla birlikte silinecek.`
+            : `${block.name} Blok silinecek.`}
+        </span>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={() => setConfirming(false)}>
+            Vazgeç
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={remove.isPending}
+            onClick={() => remove.mutate(undefined)}
+          >
+            Sil
+          </Button>
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li className="flex items-center gap-2 rounded-md border p-2">
@@ -394,9 +436,13 @@ function BlockRow({ block }: { block: BlockDto }) {
             size="icon"
             variant="ghost"
             aria-label={`${block.name} bloğunu sil`}
-            title={block.unitCount > 0 ? 'İçinde daire bulunan blok silinemez' : undefined}
-            disabled={block.unitCount > 0 || remove.isPending}
-            onClick={() => remove.mutate(undefined)}
+            title={
+              block.deletable
+                ? undefined
+                : 'Bu blokta ödeme veya sakin geçmişi olan daireler var; blok silinemez.'
+            }
+            disabled={!block.deletable}
+            onClick={() => setConfirming(true)}
           >
             <Trash2 />
           </Button>
@@ -423,7 +469,8 @@ export function BlocksDialog({ open, onOpenChange }: DialogProps) {
         <DialogHeader>
           <DialogTitle>Bloklar</DialogTitle>
           <DialogDescription>
-            Blok ekleyin, yeniden adlandırın veya boş blokları silin.
+            Blok ekleyin veya yeniden adlandırın. Ödeme ya da sakin geçmişi olmayan bloklar
+            daireleriyle birlikte silinebilir.
           </DialogDescription>
         </DialogHeader>
         <ul className="grid max-h-72 gap-2 overflow-y-auto">

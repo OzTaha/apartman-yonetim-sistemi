@@ -1,5 +1,6 @@
 import {
   passwordSchema,
+  unitLabel,
   type AcceptInviteResultDto,
   type InvitationInfoDto,
 } from '@apartman/shared';
@@ -92,7 +93,7 @@ function InvitationPage() {
   }
 
   const invitation = info.data;
-  const unitLabel = `${invitation.siteName} · ${invitation.blockName} Blok, Daire ${invitation.unitNumber}`;
+  const unitText = `${invitation.siteName} · ${unitLabel(invitation.siteKind, invitation.blockName, invitation.unitNumber)}`;
 
   if (linked) {
     return (
@@ -101,7 +102,7 @@ function InvitationPage() {
           <CircleCheck />
           <AlertTitle>Daire hesabınıza eklendi</AlertTitle>
           <AlertDescription>
-            {unitLabel} artık mevcut hesabınızda görünüyor. Her zamanki şifrenizle giriş
+            {unitText} artık mevcut hesabınızda görünüyor. Her zamanki şifrenizle giriş
             yapabilirsiniz.
           </AlertDescription>
         </Alert>
@@ -117,7 +118,7 @@ function InvitationPage() {
       <Card>
         <CardHeader>
           <CardTitle>Hoş geldiniz, {invitation.firstName}</CardTitle>
-          <CardDescription>{unitLabel}</CardDescription>
+          <CardDescription>{unitText}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           {submitError && (

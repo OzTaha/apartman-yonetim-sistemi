@@ -241,6 +241,7 @@ export class DuesService implements OnApplicationBootstrap {
 
   private async distributableUnits() {
     const units = await this.tenant.db.unit.findMany({
+      where: { archivedAt: null },
       include: { block: { select: { name: true } } },
     });
     return units

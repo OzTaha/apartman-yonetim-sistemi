@@ -3,8 +3,11 @@ import {
   bulkUnitsSchema,
   occupancyCreateSchema,
   occupancyUpdateSchema,
+  siteCreateSchema,
   siteManagerAssignSchema,
+  siteUpdateSchema,
 } from './schemas';
+import { unitLabel } from './dto';
 
 const UNIT_ID = '0199a3c2-7b1e-7cc0-9d2a-3f6b1c2d4e5f';
 
@@ -67,5 +70,19 @@ describe('bulkUnitsSchema', () => {
   it('başlangıç katı varsayılan olarak 1 olur', () => {
     const result = bulkUnitsSchema.parse({ blockId: UNIT_ID, startNumber: 1, endNumber: 5 });
     expect(result.startFloor).toBe(1);
+  });
+});
+
+describe('site türü', () => {
+  it('oluştururken tür verilmezse site olur, düzenlemede gönderilmeyen tür değişmez', () => {
+    expect(siteCreateSchema.parse({ name: 'Güneş Apartmanı' }).kind).toBe('SITE');
+    expect(siteUpdateSchema.parse({ name: 'Yeni ad' })).toEqual({ name: 'Yeni ad' });
+  });
+
+  it('daire etiketini türe göre üretir', () => {
+    expect(unitLabel('APARTMENT', 'Bina', '5')).toBe('Daire 5');
+    expect(unitLabel('APARTMENT', 'Bina', '5', 'short')).toBe('5');
+    expect(unitLabel('SITE', 'A', '5')).toBe('A Blok · Daire 5');
+    expect(unitLabel('SITE', 'A', '5', 'short')).toBe('A-5');
   });
 });

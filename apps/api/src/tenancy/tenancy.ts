@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ApiHeader } from '@nestjs/swagger';
-import type { SiteRole } from '@apartman/shared';
+import type { SiteKind, SiteRole } from '@apartman/shared';
 import { ClsService, type ClsStore } from 'nestjs-cls';
 import { z } from 'zod';
 import type { AuthenticatedRequest } from '../common/auth-user';
@@ -94,10 +94,18 @@ export class TenantContext {
   readonly db: TenantClient;
 
   constructor(
-    prisma: PrismaService,
+    private readonly prisma: PrismaService,
     private readonly cls: ClsService<AppClsStore>,
   ) {
     this.db = createTenantClient(prisma, () => this.cls.get('siteId'));
+  }
+
+  async siteKind(): Promise<SiteKind> {
+    const site = await this.prisma.site.findUniqueOrThrow({
+      where: { id: this.siteId },
+      select: { kind: true },
+    });
+    return site.kind;
   }
 
   get siteId(): string {

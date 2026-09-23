@@ -42,6 +42,7 @@ import {
   useDuesSettings,
   useUnits,
 } from '@/lib/queries';
+import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/aidat-ayarlari')({
   component: () => (
@@ -81,7 +82,7 @@ function PlanCard() {
     if (!amount.success || !units.data?.length) return null;
     const list = units.data.map((u) => ({
       id: u.id,
-      label: `${u.blockName}-${u.number}`,
+      label: labelUnit(u.blockName, u.number, 'short'),
       areaM2: u.areaM2,
       landShare: u.landShare,
     }));

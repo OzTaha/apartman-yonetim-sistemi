@@ -1,10 +1,11 @@
-import type { AuthResponse, MeDto, SiteRole } from '@apartman/shared';
+import type { AuthResponse, MeDto, SiteKind, SiteRole } from '@apartman/shared';
 import { useSyncExternalStore } from 'react';
 
 export interface SessionState {
   accessToken: string | null;
   user: MeDto | null;
   siteId: string | null;
+  siteKinds: Record<string, SiteKind>;
 }
 
 const SITE_KEY = 'apartman.activeSiteId';
@@ -26,7 +27,12 @@ function storeSite(siteId: string | null) {
   }
 }
 
-let state: SessionState = { accessToken: null, user: null, siteId: readStoredSite() };
+let state: SessionState = {
+  accessToken: null,
+  user: null,
+  siteId: readStoredSite(),
+  siteKinds: {},
+};
 const listeners = new Set<() => void>();
 
 function setState(next: Partial<SessionState>) {
@@ -51,7 +57,23 @@ export const session = {
       accessToken: auth.accessToken,
       user: auth.user,
       siteId: storedIsValid ? stored : (memberships[0]?.siteId ?? null),
+      siteKinds: {
+        ...state.siteKinds,
+        ...Object.fromEntries(memberships.map((m) => [m.siteId, m.siteKind])),
+        ...Object.fromEntries(auth.user.occupancies.map((o) => [o.siteId, o.siteKind])),
+      },
     });
+  },
+  registerSiteKinds(sites: { id: string; kind: SiteKind }[]) {
+    const next = { ...state.siteKinds };
+    let changed = false;
+    for (const site of sites) {
+      if (next[site.id] !== site.kind) {
+        next[site.id] = site.kind;
+        changed = true;
+      }
+    }
+    if (changed) setState({ siteKinds: next });
   },
   setUser(user: MeDto) {
     setState({ user });

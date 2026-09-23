@@ -30,6 +30,10 @@ function AppLayout() {
     if (!siteOptions.some((o) => o.id === s.siteId)) session.setSite(siteOptions[0]!.id);
   }, [s.user?.isPlatformAdmin, s.siteId, siteOptions]);
 
+  useEffect(() => {
+    session.registerSiteKinds(siteOptions);
+  }, [siteOptions]);
+
   const siteName = siteOptions.find((o) => o.id === s.siteId)?.name;
 
   return (

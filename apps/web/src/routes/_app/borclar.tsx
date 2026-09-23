@@ -20,6 +20,7 @@ import { ChargeActions } from '@/features/dues/row-actions';
 import { ChargeStatusBadge } from '@/features/dues/status';
 import { formatDate } from '@/lib/format';
 import { type ChargeFilters, useBlocks, useChargeTypes, useCharges } from '@/lib/queries';
+import { labelUnit, useIsApartment } from '@/lib/unit-label';
 
 type Status = ChargeFilters['status'];
 const statusLabels: Record<Status, string> = {
@@ -57,7 +58,9 @@ const columns: ColumnDef<ChargeDto>[] = [
       a.original.blockName.localeCompare(b.original.blockName, 'tr', { numeric: true }) ||
       a.original.unitNumber.localeCompare(b.original.unitNumber, 'tr', { numeric: true }),
     cell: ({ row }) => (
-      <span className="font-medium whitespace-nowrap">{`${row.original.blockName}-${row.original.unitNumber}`}</span>
+      <span className="font-medium whitespace-nowrap">
+        {labelUnit(row.original.blockName, row.original.unitNumber, 'short')}
+      </span>
     ),
   },
   { accessorKey: 'label', header: 'Borç', cell: ({ row }) => row.original.label },
@@ -103,7 +106,7 @@ function ChargeCard({ charge }: { charge: ChargeDto }) {
     <div className="flex items-start justify-between gap-2">
       <div className="grid gap-1">
         <span className="font-medium">
-          {charge.blockName}-{charge.unitNumber} · {charge.label}
+          {labelUnit(charge.blockName, charge.unitNumber, 'short')} · {charge.label}
         </span>
         <span className="text-xs text-muted-foreground">
           Vade {formatDate(charge.dueDate)} · kalan {formatKurus(charge.remainingKurus)}
@@ -118,6 +121,7 @@ function ChargeCard({ charge }: { charge: ChargeDto }) {
 function ChargesPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const isApartment = useIsApartment();
   const status: Status = search.durum ?? 'open';
   const [adding, setAdding] = useState(false);
   const blocks = useBlocks();
@@ -181,22 +185,24 @@ function ChargesPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={search.blok ?? 'all'}
-          onValueChange={(v) => setFilter({ blok: v === 'all' ? undefined : v })}
-        >
-          <SelectTrigger className="w-full" aria-label="Blok filtresi">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm bloklar</SelectItem>
-            {(blocks.data ?? []).map((b) => (
-              <SelectItem key={b.id} value={b.id}>
-                {b.name} Blok
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!isApartment && (
+          <Select
+            value={search.blok ?? 'all'}
+            onValueChange={(v) => setFilter({ blok: v === 'all' ? undefined : v })}
+          >
+            <SelectTrigger className="w-full" aria-label="Blok filtresi">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm bloklar</SelectItem>
+              {(blocks.data ?? []).map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name} Blok
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Input
           type="month"
           aria-label="Dönem filtresi"

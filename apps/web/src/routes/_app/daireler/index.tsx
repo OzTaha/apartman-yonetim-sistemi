@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { ManagerOnly } from '@/components/manager-only';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,16 +21,19 @@ import { BlocksDialog, BulkUnitsDialog, UnitFormDialog } from '@/features/units/
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { fullName } from '@/lib/format';
 import { useBlocks, useUnits } from '@/lib/queries';
+import { labelUnit, useIsApartment } from '@/lib/unit-label';
 
 interface UnitSearch {
   blok?: string;
   ara?: string;
+  arsiv?: boolean;
 }
 
 export const Route = createFileRoute('/_app/daireler/')({
   validateSearch: (search: Record<string, unknown>): UnitSearch => ({
     blok: typeof search['blok'] === 'string' ? search['blok'] : undefined,
     ara: typeof search['ara'] === 'string' ? search['ara'] : undefined,
+    arsiv: search['arsiv'] === true ? true : undefined,
   }),
   component: () => (
     <ManagerOnly>
@@ -40,6 +44,20 @@ export const Route = createFileRoute('/_app/daireler/')({
 
 const naturalCompare = (a: string, b: string) => a.localeCompare(b, 'tr', { numeric: true });
 
+function Occupants({ unit }: { unit: UnitDto }) {
+  if (unit.archivedAt) return <Badge variant="outline">Arşivde</Badge>;
+  if (unit.occupants.length === 0) return <span className="text-muted-foreground">Boş</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      {unit.occupants.map((o) => (
+        <span key={o.id} className="flex items-center gap-2">
+          {fullName(o)} <OccupancyTypeBadge type={o.type} />
+        </span>
+      ))}
+    </div>
+  );
+}
+
 const columns: ColumnDef<UnitDto>[] = [
   {
     id: 'unit',
@@ -49,9 +67,7 @@ const columns: ColumnDef<UnitDto>[] = [
       naturalCompare(a.original.blockName, b.original.blockName) ||
       naturalCompare(a.original.number, b.original.number),
     cell: ({ row }) => (
-      <span className="font-medium">
-        {row.original.blockName} Blok · {row.original.number}
-      </span>
+      <span className="font-medium">{labelUnit(row.original.blockName, row.original.number)}</span>
     ),
   },
   { accessorKey: 'floor', header: 'Kat', cell: ({ getValue }) => getValue<number | null>() ?? '—' },
@@ -69,18 +85,7 @@ const columns: ColumnDef<UnitDto>[] = [
     id: 'occupants',
     header: 'Sakinler',
     enableSorting: false,
-    cell: ({ row }) =>
-      row.original.occupants.length === 0 ? (
-        <span className="text-muted-foreground">Boş</span>
-      ) : (
-        <div className="flex flex-col gap-1">
-          {row.original.occupants.map((o) => (
-            <span key={o.id} className="flex items-center gap-2">
-              {fullName(o)} <OccupancyTypeBadge type={o.type} />
-            </span>
-          ))}
-        </div>
-      ),
+    cell: ({ row }) => <Occupants unit={row.original} />,
   },
 ];
 
@@ -88,23 +93,15 @@ function UnitCard({ unit }: { unit: UnitDto }) {
   return (
     <div className="grid gap-1">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-medium">
-          {unit.blockName} Blok · Daire {unit.number}
-        </span>
+        <span className="font-medium">{labelUnit(unit.blockName, unit.number)}</span>
         <span className="text-xs text-muted-foreground">
           {unit.floor !== null ? `${unit.floor}. kat` : ''}
           {unit.areaM2 !== null ? ` · ${unit.areaM2.toLocaleString('tr-TR')} m²` : ''}
         </span>
       </div>
-      {unit.occupants.length === 0 ? (
-        <span className="text-sm text-muted-foreground">Boş</span>
-      ) : (
-        unit.occupants.map((o) => (
-          <span key={o.id} className="flex items-center gap-2 text-sm">
-            {fullName(o)} <OccupancyTypeBadge type={o.type} />
-          </span>
-        ))
-      )}
+      <div className="text-sm">
+        <Occupants unit={unit} />
+      </div>
     </div>
   );
 }
@@ -112,27 +109,41 @@ function UnitCard({ unit }: { unit: UnitDto }) {
 function UnitsPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const isApartment = useIsApartment();
   const [searchText, setSearchText] = useState(search.ara ?? '');
   const debouncedSearch = useDebouncedValue(searchText.trim());
   const [dialog, setDialog] = useState<'unit' | 'bulk' | 'blocks' | null>(null);
 
   const blocks = useBlocks();
-  const units = useUnits({ blockId: search.blok, search: debouncedSearch || undefined });
+  const units = useUnits({
+    blockId: isApartment ? undefined : search.blok,
+    search: debouncedSearch || undefined,
+    archived: search.arsiv ? 'only' : undefined,
+  });
 
   const hasBlocks = (blocks.data?.length ?? 0) > 0;
   const totalUnits = blocks.data?.reduce((sum, b) => sum + b.unitCount, 0) ?? 0;
+  const filtered = Boolean(debouncedSearch || search.blok || search.arsiv);
 
   return (
     <div className="grid gap-6">
       <PageHeader
         title="Daireler"
-        description={blocks.data ? `${blocks.data.length} blok, ${totalUnits} daire` : undefined}
+        description={
+          blocks.data
+            ? isApartment
+              ? `${totalUnits} daire`
+              : `${blocks.data.length} blok, ${totalUnits} daire`
+            : undefined
+        }
         actions={
           <>
-            <Button variant="outline" onClick={() => setDialog('blocks')}>
-              <Blocks />
-              Bloklar
-            </Button>
+            {!isApartment && (
+              <Button variant="outline" onClick={() => setDialog('blocks')}>
+                <Blocks />
+                Bloklar
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setDialog('bulk')} disabled={!hasBlocks}>
               <Layers />
               Toplu ekle
@@ -145,10 +156,10 @@ function UnitsPage() {
         }
       />
 
-      {blocks.isSuccess && !hasBlocks ? (
+      {blocks.isSuccess && !hasBlocks && !isApartment ? (
         <EmptyState
           title="Henüz blok yok"
-          description="Daire eklemeden önce en az bir blok oluşturun. Tek binalı apartmanlar için örneğin “A” bloğu ekleyebilirsiniz."
+          description="Daire eklemeden önce en az bir blok oluşturun."
           action={
             <Button onClick={() => setDialog('blocks')}>
               <Plus />
@@ -175,25 +186,44 @@ function UnitsPage() {
                 }}
               />
             </div>
+            {!isApartment && (
+              <Select
+                value={search.blok ?? 'all'}
+                onValueChange={(value) =>
+                  void navigate({
+                    search: (prev) => ({ ...prev, blok: value === 'all' ? undefined : value }),
+                    replace: true,
+                  })
+                }
+              >
+                <SelectTrigger className="w-full sm:w-48" aria-label="Blok filtresi">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm bloklar</SelectItem>
+                  {(blocks.data ?? []).map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name} Blok ({b.unitCount})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Select
-              value={search.blok ?? 'all'}
+              value={search.arsiv ? 'archived' : 'active'}
               onValueChange={(value) =>
                 void navigate({
-                  search: (prev) => ({ ...prev, blok: value === 'all' ? undefined : value }),
+                  search: (prev) => ({ ...prev, arsiv: value === 'archived' ? true : undefined }),
                   replace: true,
                 })
               }
             >
-              <SelectTrigger className="w-full sm:w-48" aria-label="Blok filtresi">
+              <SelectTrigger className="w-full sm:w-44" aria-label="Arşiv filtresi">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tüm bloklar</SelectItem>
-                {(blocks.data ?? []).map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.name} Blok ({b.unitCount})
-                  </SelectItem>
-                ))}
+                <SelectItem value="active">Aktif daireler</SelectItem>
+                <SelectItem value="archived">Arşivdekiler</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -214,14 +244,18 @@ function UnitsPage() {
               empty={
                 <EmptyState
                   title={
-                    debouncedSearch || search.blok
-                      ? 'Aramaya uygun daire bulunamadı'
-                      : 'Henüz daire yok'
+                    search.arsiv
+                      ? 'Arşivde daire yok'
+                      : filtered
+                        ? 'Aramaya uygun daire bulunamadı'
+                        : 'Henüz daire yok'
                   }
                   description={
-                    debouncedSearch || search.blok
-                      ? 'Arama metnini veya blok filtresini değiştirmeyi deneyin.'
-                      : '“Toplu ekle” ile bir bloğun tüm dairelerini tek seferde oluşturabilirsiniz.'
+                    search.arsiv
+                      ? undefined
+                      : filtered
+                        ? 'Arama metnini veya filtreleri değiştirmeyi deneyin.'
+                        : '“Toplu ekle” ile daireleri tek seferde oluşturabilirsiniz.'
                   }
                 />
               }
@@ -240,10 +274,12 @@ function UnitsPage() {
         onOpenChange={(o) => setDialog(o ? 'bulk' : null)}
         defaultBlockId={search.blok}
       />
-      <BlocksDialog
-        open={dialog === 'blocks'}
-        onOpenChange={(o) => setDialog(o ? 'blocks' : null)}
-      />
+      {!isApartment && (
+        <BlocksDialog
+          open={dialog === 'blocks'}
+          onOpenChange={(o) => setDialog(o ? 'blocks' : null)}
+        />
+      )}
     </div>
   );
 }

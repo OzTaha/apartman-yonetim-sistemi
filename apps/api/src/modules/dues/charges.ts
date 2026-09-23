@@ -80,7 +80,10 @@ export class ChargesService {
 
     const units = (
       await this.tenant.db.unit.findMany({
-        where: input.scope === 'SELECTED' ? { id: { in: input.unitIds } } : {},
+        where: {
+          archivedAt: null,
+          ...(input.scope === 'SELECTED' ? { id: { in: input.unitIds } } : {}),
+        },
         include: { block: { select: { name: true } } },
       })
     )

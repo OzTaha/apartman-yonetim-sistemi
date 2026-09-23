@@ -57,9 +57,9 @@ Tüm hesapların şifresi `Deneme123!`.
 | Site yöneticisi   | `yonetici@ornek.com` |
 | Sakin (A Blok 1)  | `0532 100 00 00`     |
 
-Seed; "Örnek Sitesi", A ve B blok, 40 daire, 30 sakin, bir taşınma geçmişi kaydı ve 13 aylık aidat/ödeme geçmişi oluşturur.
-Tekrar çalıştırılabilir: mevcut veriye dokunmaz, yalnızca eksik olan aidat verisini ekler.
-A Blok 5 numaralı daire gereksinim belgesindeki örneği gösterir (Eylül ve Kasım borçlu, Ekim ödenmiş).
+Seed iki örnek yer oluşturur: 5 daireli "Örnek Apartmanı" ve 2 bloklu, 4 daireli "Örnek Sitesi".
+Yönetici hesabı ikisini de yönetir. Son 3 ayın aidatı ve ödemeleri yüklenir. Apartmanın 3 numaralı
+dairesi iki ay borçlu, arada bir ay ödenmiş örneğini gösterir. Seed yalnızca boş veritabanında çalışır.
 
 ## Komutlar
 
@@ -79,7 +79,8 @@ A Blok 5 numaralı daire gereksinim belgesindeki örneği gösterir (Eylül ve K
 
 Tarayıcı testleri ilk kez çalıştırılmadan önce Chromium indirilmelidir:
 `pnpm --filter @apartman/web exec playwright install chromium`.
-Bu testler geliştirme veritabanına her çalıştırmada yeni bir deneme bloğu ekler.
+Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartman_e2e` veritabanını ve
+3100 (API), 5174 (web) portlarını kullanır.
 
 ## Yetki ve site izolasyonu
 
@@ -91,6 +92,15 @@ Bu testler geliştirme veritabanına her çalıştırmada yeni bir deneme bloğu
 - Oturum: 15 dakikalık erişim token'ı (yalnızca bellekte) ve 30 günlük refresh token (httpOnly cookie).
   Refresh token her kullanımda yenilenir. Eski bir token tekrar kullanılırsa kullanıcının tüm oturumları kapatılır.
 - Önemli değişiklikler `audit_logs` tablosuna kim/ne zaman/önce/sonra bilgisiyle yazılır.
+
+## Apartman ve site
+
+- Her yer "Apartman" (tek bina) veya "Site" (birden çok blok) olarak tanımlanır.
+- Apartmanda blok kavramı arayüzde görünmez; daireler "Daire 5" olarak listelenir. Arka planda tek bir bina bloğu bulunur.
+- Apartman siteye çevrilebilir. Site, en fazla bir bloğu varsa apartmana çevrilebilir.
+- Ödeme ve sakin geçmişi olmayan daire, ödenmemiş aidatlarıyla birlikte silinir. Geçmişi olan daire silinmez, arşivlenir:
+  listelerden, aylık aidattan ve toplu borçtan çıkar, geçmişi raporlarda kalır.
+- Blok, içindeki tüm daireler silinebiliyorsa daireleriyle birlikte silinir.
 
 ## Aidat ve borç kuralları
 

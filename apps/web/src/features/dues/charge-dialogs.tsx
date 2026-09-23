@@ -38,6 +38,7 @@ import {
 import { apiFetch } from '@/lib/api';
 import { todayIso } from '@/lib/format';
 import { useApiMutation, useChargeTypes, useUnits } from '@/lib/queries';
+import { labelUnit } from '@/lib/unit-label';
 
 interface DialogProps {
   open: boolean;
@@ -103,7 +104,7 @@ export function ChargeCreateDialog({
       return null;
     const list = units.data.map((u) => ({
       id: u.id,
-      label: `${u.blockName}-${u.number}`,
+      label: labelUnit(u.blockName, u.number, 'short'),
       areaM2: u.areaM2,
       landShare: u.landShare,
     }));
@@ -229,7 +230,7 @@ export function ChargeCreateDialog({
                     <SelectContent>
                       {(units.data ?? []).map((u) => (
                         <SelectItem key={u.id} value={u.id}>
-                          {u.blockName} Blok · Daire {u.number}
+                          {labelUnit(u.blockName, u.number)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -395,7 +396,7 @@ export function ChargeEditDialog({
         <DialogHeader>
           <DialogTitle>Borcu düzelt</DialogTitle>
           <DialogDescription>
-            {charge.blockName} Blok · Daire {charge.unitNumber} · {charge.label}
+            {labelUnit(charge.blockName, charge.unitNumber)} · {charge.label}
             {charge.paidKurus > 0
               ? `. Bu borca ${formatKurus(charge.paidKurus)} ödeme yapılmış; tutar bundan az olamaz.`
               : ''}

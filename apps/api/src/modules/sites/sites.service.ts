@@ -21,12 +21,15 @@ const siteInclude = {
   },
 } satisfies Prisma.SiteInclude;
 
+export const APARTMENT_BLOCK_NAME = 'Bina';
+
 type SiteWithRelations = Prisma.SiteGetPayload<{ include: typeof siteInclude }>;
 
 function toDto(site: SiteWithRelations): SiteDto {
   return {
     id: site.id,
     name: site.name,
+    kind: site.kind,
     address: site.address,
     city: site.city,
     createdAt: site.createdAt.toISOString(),
@@ -60,7 +63,13 @@ export class SitesService {
   }
 
   async create(input: SiteCreateDto): Promise<SiteDto> {
-    const site = await this.prisma.site.create({ data: input, include: siteInclude });
+    const site = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.site.create({ data: input });
+      if (created.kind === 'APARTMENT') {
+        await tx.block.create({ data: { siteId: created.id, name: APARTMENT_BLOCK_NAME } });
+      }
+      return tx.site.findUniqueOrThrow({ where: { id: created.id }, include: siteInclude });
+    });
     await this.audit.record({
       action: 'CREATE',
       entityType: 'Site',
@@ -73,7 +82,20 @@ export class SitesService {
 
   async update(user: AuthUser, siteId: string, input: SiteUpdateDto): Promise<SiteDto> {
     await this.assertAccess(user, siteId, true);
-    const before = await this.prisma.site.findUniqueOrThrow({ where: { id: siteId } });
+    const before = await this.prisma.site.findUniqueOrThrow({
+      where: { id: siteId },
+      include: { _count: { select: { blocks: true } } },
+    });
+    if (input.kind === 'APARTMENT' && before.kind !== 'APARTMENT') {
+      if (before._count.blocks > 1) {
+        throw new BadRequestException(
+          'Birden fazla bloğu olan site apartmana çevrilemez. Önce blokları birleştirin veya silin.',
+        );
+      }
+      if (before._count.blocks === 0) {
+        await this.prisma.block.create({ data: { siteId, name: APARTMENT_BLOCK_NAME } });
+      }
+    }
     const site = await this.prisma.site.update({
       where: { id: siteId },
       data: input,
@@ -84,7 +106,7 @@ export class SitesService {
       entityType: 'Site',
       entityId: siteId,
       siteId,
-      before: { name: before.name, address: before.address, city: before.city },
+      before: { name: before.name, kind: before.kind, address: before.address, city: before.city },
       after: input,
     });
     return toDto(site);

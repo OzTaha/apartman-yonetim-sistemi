@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   type CanActivate,
   ConflictException,
@@ -23,6 +24,7 @@ import {
   type BulkUnitsResultDto,
   type UnitDetailDto,
   type UnitDto,
+  type UnitRemovalDto,
 } from '@apartman/shared';
 import type { Request } from 'express';
 import { activeOn } from '../../common/dates';
@@ -69,6 +71,7 @@ function toUnitDto(u: UnitWithOccupants): UnitDto {
     floor: u.floor,
     areaM2: u.areaM2,
     landShare: u.landShare,
+    archivedAt: u.archivedAt?.toISOString() ?? null,
     occupants: u.occupancies,
   };
 }
@@ -83,6 +86,11 @@ export class UnitsService {
   async list(query: UnitListQueryDto): Promise<UnitDto[]> {
     const search = query.search?.trim();
     const where: Prisma.UnitWhereInput = {
+      ...(query.archived === 'include'
+        ? {}
+        : query.archived === 'only'
+          ? { archivedAt: { not: null } }
+          : { archivedAt: null }),
       ...(query.blockId ? { blockId: query.blockId } : {}),
       ...(search
         ? {
@@ -132,16 +140,17 @@ export class UnitsService {
       floor: unit.floor,
       areaM2: unit.areaM2,
       landShare: unit.landShare,
+      archivedAt: unit.archivedAt?.toISOString() ?? null,
       occupancies: unit.occupancies.map(toOccupancyDto),
     };
   }
 
   async create(input: UnitCreateDto): Promise<UnitDto> {
-    await this.assertBlock(input.blockId);
+    const blockId = await this.resolveBlockId(input.blockId);
     const unit = await this.tenant.db.unit.create({
       data: {
         siteId: this.tenant.siteId,
-        blockId: input.blockId,
+        blockId,
         number: input.number,
         floor: input.floor ?? null,
         areaM2: input.areaM2 ?? null,
@@ -159,7 +168,7 @@ export class UnitsService {
   }
 
   async bulkCreate(input: BulkUnitsDto): Promise<BulkUnitsResultDto> {
-    await this.assertBlock(input.blockId);
+    const blockId = await this.resolveBlockId(input.blockId);
     const planned = planBulkUnits({
       startNumber: input.startNumber,
       endNumber: input.endNumber,
@@ -168,7 +177,7 @@ export class UnitsService {
     });
 
     const existing = await this.tenant.db.unit.findMany({
-      where: { blockId: input.blockId, number: { in: planned.map((p) => p.number) } },
+      where: { blockId, number: { in: planned.map((p) => p.number) } },
       select: { number: true },
     });
     const existingNumbers = new Set(existing.map((u) => u.number));
@@ -177,7 +186,7 @@ export class UnitsService {
     const { count } = await this.tenant.db.unit.createMany({
       data: toCreate.map((p) => ({
         siteId: this.tenant.siteId,
-        blockId: input.blockId,
+        blockId,
         number: p.number,
         floor: p.floor,
       })),
@@ -186,7 +195,7 @@ export class UnitsService {
     await this.audit.record({
       action: 'BULK_CREATE',
       entityType: 'Unit',
-      entityId: input.blockId,
+      entityId: blockId,
       after: { ...input, created: count },
     });
     return { created: count, skipped: [...existingNumbers] };
@@ -218,17 +227,89 @@ export class UnitsService {
     return toUnitDto(unit);
   }
 
-  async remove(id: string): Promise<void> {
+  async removalInfo(id: string): Promise<UnitRemovalDto> {
     const unit = await this.tenant.db.unit.findUnique({
       where: { id },
-      include: { _count: { select: { occupancies: true } } },
+      include: {
+        _count: { select: { occupancies: true, payments: true } },
+        charges: { where: { cancelledAt: null }, select: { amountKurus: true } },
+      },
     });
     if (!unit) throw new NotFoundException('Daire bulunamadı');
-    if (unit._count.occupancies > 0) {
-      throw new ConflictException('Sakin kaydı bulunan daire silinemez');
+    const activeResidentCount = await this.tenant.db.occupancy.count({
+      where: { unitId: id, ...activeOn() },
+    });
+    const canDelete = unit._count.payments === 0 && unit._count.occupancies === 0;
+    return {
+      canDelete,
+      canArchive: !canDelete && !unit.archivedAt && activeResidentCount === 0,
+      chargeCount: unit.charges.length,
+      openKurus: unit.charges.reduce((sum, c) => sum + c.amountKurus, 0),
+      paymentCount: unit._count.payments,
+      occupancyCount: unit._count.occupancies,
+      activeResidentCount,
+    };
+  }
+
+  async remove(id: string): Promise<void> {
+    const info = await this.removalInfo(id);
+    if (!info.canDelete) {
+      throw new ConflictException(
+        'Bu dairenin ödeme veya sakin geçmişi olduğu için silinemez. Bunun yerine arşivleyebilirsiniz.',
+      );
     }
-    await this.tenant.db.unit.delete({ where: { id } });
-    await this.audit.record({ action: 'DELETE', entityType: 'Unit', entityId: id, before: unit });
+    const unit = await this.tenant.db.unit.findUniqueOrThrow({ where: { id } });
+    await this.tenant.db.$transaction(async (tx) => {
+      await tx.charge.deleteMany({ where: { siteId: this.tenant.siteId, unitId: id } });
+      await tx.unit.delete({ where: { id } });
+    });
+    await this.audit.record({
+      action: 'DELETE',
+      entityType: 'Unit',
+      entityId: id,
+      before: { ...unit, deletedCharges: info.chargeCount, deletedOpenKurus: info.openKurus },
+    });
+  }
+
+  async archive(id: string): Promise<UnitDto> {
+    const info = await this.removalInfo(id);
+    if (info.activeResidentCount > 0) {
+      throw new BadRequestException(
+        'Dairede oturan sakinler var. Önce sakinleri taşındı olarak işaretleyin.',
+      );
+    }
+    const unit = await this.tenant.db.unit.update({
+      where: { id },
+      data: { archivedAt: new Date() },
+      include: unitListInclude(),
+    });
+    await this.audit.record({ action: 'ARCHIVE', entityType: 'Unit', entityId: id });
+    return toUnitDto(unit);
+  }
+
+  async unarchive(id: string): Promise<UnitDto> {
+    const unit = await this.tenant.db.unit.update({
+      where: { id },
+      data: { archivedAt: null },
+      include: unitListInclude(),
+    });
+    await this.audit.record({ action: 'UNARCHIVE', entityType: 'Unit', entityId: id });
+    return toUnitDto(unit);
+  }
+
+  private async resolveBlockId(blockId: string | undefined): Promise<string> {
+    if (blockId) {
+      await this.assertBlock(blockId);
+      return blockId;
+    }
+    if ((await this.tenant.siteKind()) === 'APARTMENT') {
+      const block = await this.tenant.db.block.findFirst({
+        select: { id: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (block) return block.id;
+    }
+    throw new BadRequestException('Blok seçin');
   }
 
   private async assertBlock(blockId: string) {
@@ -274,10 +355,27 @@ export class UnitsController {
     return this.units.update(id, body);
   }
 
+  @Get(':id/removal')
+  removalInfo(@Param('id', ParseUUIDPipe) id: string): Promise<UnitRemovalDto> {
+    return this.units.removalInfo(id);
+  }
+
   @Delete(':id')
   @HttpCode(204)
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.units.remove(id);
+  }
+
+  @Post(':id/archive')
+  @HttpCode(200)
+  archive(@Param('id', ParseUUIDPipe) id: string): Promise<UnitDto> {
+    return this.units.archive(id);
+  }
+
+  @Post(':id/unarchive')
+  @HttpCode(200)
+  unarchive(@Param('id', ParseUUIDPipe) id: string): Promise<UnitDto> {
+    return this.units.unarchive(id);
   }
 }
 

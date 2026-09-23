@@ -66,6 +66,7 @@ function SiteSwitcher() {
   const s = useSession();
   const options = useSiteOptions();
   const navigate = useNavigate();
+  const { setOpenMobile } = useSidebar();
   const role = activeRole(s);
   const active = options.find((o) => o.id === s.siteId);
 
@@ -75,7 +76,11 @@ function SiteSwitcher() {
       <div className="grid min-w-0 flex-1 text-left leading-tight">
         <span className="truncate text-sm font-semibold">{active?.name ?? 'Site seçin'}</span>
         <span className="truncate text-xs text-muted-foreground">
-          {role ? roleLabels[role] : ''}
+          {role === 'SITE_MANAGER' && active?.kind === 'APARTMENT'
+            ? 'Apartman yöneticisi'
+            : role
+              ? roleLabels[role]
+              : ''}
         </span>
       </div>
     </>
@@ -100,6 +105,7 @@ function SiteSwitcher() {
             key={option.id}
             onSelect={() => {
               session.setSite(option.id);
+              setOpenMobile(false);
               void navigate({ to: '/' });
             }}
           >
@@ -170,7 +176,8 @@ export function AppSidebar() {
   }
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
-  if (s.user?.isPlatformAdmin) items.push({ to: '/siteler', label: 'Siteler', icon: Building });
+  if (s.user?.isPlatformAdmin)
+    items.push({ to: '/siteler', label: 'Apartman ve siteler', icon: Building });
 
   const duesItems: NavItem[] = manager
     ? [

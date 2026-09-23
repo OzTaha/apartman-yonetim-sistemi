@@ -73,14 +73,21 @@ export const acceptInviteSchema = z.object({
 });
 export type AcceptInviteInput = z.input<typeof acceptInviteSchema>;
 
-export const siteCreateSchema = z.object({
+export const siteKindSchema = z.enum(['APARTMENT', 'SITE']);
+
+const siteFields = z.object({
   name: z.string().trim().min(2, 'En az 2 karakter olmalıdır').max(120),
+  kind: siteKindSchema,
   address: optionalText(300),
   city: optionalText(60),
 });
+
+export const siteCreateSchema = siteFields.extend({
+  kind: siteKindSchema.default('SITE'),
+});
 export type SiteCreateInput = z.input<typeof siteCreateSchema>;
 
-export const siteUpdateSchema = siteCreateSchema.partial();
+export const siteUpdateSchema = siteFields.partial();
 export type SiteUpdateInput = z.input<typeof siteUpdateSchema>;
 
 export const siteManagerAssignSchema = z
@@ -108,7 +115,7 @@ export type BlockInput = z.input<typeof blockSchema>;
 const floorSchema = number().int('Kat tam sayı olmalıdır').min(-5).max(200);
 
 export const unitCreateSchema = z.object({
-  blockId: idSchema,
+  blockId: idSchema.optional(),
   number: z.string().trim().min(1, 'Daire numarası girin').max(10),
   floor: floorSchema.nullish(),
   areaM2: number().positive('Alan pozitif olmalıdır').max(100_000).nullish(),
@@ -121,7 +128,7 @@ export type UnitUpdateInput = z.input<typeof unitUpdateSchema>;
 
 export const bulkUnitsSchema = z
   .object({
-    blockId: idSchema,
+    blockId: idSchema.optional(),
     startNumber: number().int().min(1, 'En az 1 olmalıdır'),
     endNumber: number().int().min(1, 'En az 1 olmalıdır'),
     unitsPerFloor: number().int().min(1).max(50).nullish(),
@@ -140,6 +147,7 @@ export type BulkUnitsInput = z.input<typeof bulkUnitsSchema>;
 export const unitListQuerySchema = z.object({
   blockId: idSchema.optional(),
   search: z.string().trim().max(50).optional(),
+  archived: z.enum(['include', 'only']).optional(),
 });
 
 export const OccupancyType = { OWNER: 'OWNER', TENANT: 'TENANT' } as const;

@@ -18,6 +18,7 @@ import {
   formatKurusTl,
   paymentMethodLabels,
   periodRange,
+  unitLabel,
   type DebtReportRowDto,
   type MatrixCellDto,
   type MatrixDto,
@@ -74,7 +75,7 @@ export class AccountService {
       where: { id: unitId },
       include: {
         block: { select: { name: true } },
-        site: { select: { name: true } },
+        site: { select: { name: true, kind: true } },
         occupancies: {
           where: { ...activeOn(), isResponsibleForDues: true },
           select: { firstName: true, lastName: true },
@@ -213,7 +214,7 @@ export class AccountService {
         style: 'subtitle',
         text: [
           { text: `${s.siteName}\n`, bold: true },
-          `${s.blockName} Blok · Daire ${s.unitNumber}\n`,
+          `${unitLabel(unit.site.kind, s.blockName, s.unitNumber)}\n`,
           `Aidattan sorumlu: ${responsible}\n`,
           `Dönem: ${formatDateTr(s.from)} – ${formatDateTr(s.to)}`,
         ],
@@ -224,7 +225,8 @@ export class AccountService {
       },
       { text: closing, bold: true, fontSize: 11, alignment: 'right', margin: [0, 12, 0, 0] },
     ]);
-    return { file, name: `ekstre-${s.blockName}-${s.unitNumber}-${s.from}-${s.to}.pdf` };
+    const short = unitLabel(unit.site.kind, s.blockName, s.unitNumber, 'short');
+    return { file, name: `ekstre-${short}-${s.from}-${s.to}.pdf` };
   }
 
   async matrix(year: number, blockId?: string): Promise<MatrixDto> {
@@ -288,9 +290,11 @@ export class AccountService {
         }),
         debtKurus: debt.get(u.id)?.debt ?? 0,
         overdueKurus: debt.get(u.id)?.overdue ?? 0,
+        archived: Boolean(u.archivedAt),
       }))
+      .filter((row) => !row.archived || row.debtKurus > 0 || row.cells.some(Boolean))
       .sort(compareUnits)
-      .map(({ number: _number, ...row }) => row);
+      .map(({ number: _number, archived: _archived, ...row }) => row);
 
     return { year, periods, rows };
   }
@@ -358,6 +362,7 @@ export class AccountService {
     const site = await this.tenant.db.unit.findFirst({
       select: { site: { select: { name: true } } },
     });
+    const kind = await this.tenant.siteKind();
     const total = rows.reduce((sum, r) => sum + r.debtKurus, 0);
     const overdue = rows.reduce((sum, r) => sum + r.overdueKurus, 0);
     const report = {
@@ -365,7 +370,10 @@ export class AccountService {
       subtitle: `${site?.site.name ?? ''} · ${formatDateTr(todayInIstanbul())} itibarıyla · ${rows.length} borçlu daire`,
       rows,
       columns: [
-        { header: 'Daire', value: (r: DebtReportRowDto) => `${r.blockName}-${r.unitNumber}` },
+        {
+          header: 'Daire',
+          value: (r: DebtReportRowDto) => unitLabel(kind, r.blockName, r.unitNumber, 'short'),
+        },
         {
           header: 'Aidattan sorumlu',
           value: (r: DebtReportRowDto) => r.responsible || null,
@@ -398,6 +406,7 @@ export class AccountService {
     const site = await this.tenant.db.unit.findFirst({
       select: { site: { select: { name: true } } },
     });
+    const kind = await this.tenant.siteKind();
     type Row = (typeof payments)[number];
     const byMethod = new Map<string, number>();
     for (const p of payments) byMethod.set(p.method, (byMethod.get(p.method) ?? 0) + p.amountKurus);
@@ -409,7 +418,10 @@ export class AccountService {
       rows: payments,
       columns: [
         { header: 'Tarih', value: (p: Row) => formatDateTr(p.paidAt) },
-        { header: 'Daire', value: (p: Row) => `${p.blockName}-${p.unitNumber}` },
+        {
+          header: 'Daire',
+          value: (p: Row) => unitLabel(kind, p.blockName, p.unitNumber, 'short'),
+        },
         { header: 'Yöntem', value: (p: Row) => paymentMethodLabels[p.method] },
         {
           header: 'Açıklama',

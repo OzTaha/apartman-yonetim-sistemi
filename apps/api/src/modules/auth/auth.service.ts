@@ -86,13 +86,13 @@ export class AuthService {
       where: { id: userId },
       include: {
         memberships: {
-          include: { site: { select: { name: true } } },
+          include: { site: { select: { name: true, kind: true } } },
           orderBy: { createdAt: 'asc' },
         },
         occupancies: {
           where: activeOn(),
           include: {
-            site: { select: { name: true } },
+            site: { select: { name: true, kind: true } },
             unit: { select: { number: true, block: { select: { name: true } } } },
           },
           orderBy: { startDate: 'asc' },
@@ -111,12 +111,14 @@ export class AuthService {
       memberships: user.memberships.map((m) => ({
         siteId: m.siteId,
         siteName: m.site.name,
+        siteKind: m.site.kind,
         role: m.role,
       })),
       occupancies: user.occupancies.map((o) => ({
         occupancyId: o.id,
         siteId: o.siteId,
         siteName: o.site.name,
+        siteKind: o.site.kind,
         unitId: o.unitId,
         blockName: o.unit.block.name,
         unitNumber: o.unit.number,
@@ -133,6 +135,7 @@ export class AuthService {
       firstName: occupancy.firstName,
       lastName: occupancy.lastName,
       siteName: occupancy.site.name,
+      siteKind: occupancy.site.kind,
       blockName: occupancy.unit.block.name,
       unitNumber: occupancy.unit.number,
       hasExistingAccount: Boolean(existing?.passwordHash),
@@ -233,7 +236,7 @@ export class AuthService {
       include: {
         occupancy: {
           include: {
-            site: { select: { name: true } },
+            site: { select: { name: true, kind: true } },
             unit: { select: { number: true, block: { select: { name: true } } } },
           },
         },

@@ -26,6 +26,7 @@ import { toneClasses, toneLabels, toneOf } from '@/features/dues/tones';
 import { todayIso } from '@/lib/format';
 import { useBlocks, useMatrix } from '@/lib/queries';
 import { cn } from '@/lib/utils';
+import { labelUnit, useIsApartment } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/aidat')({
   validateSearch: (search: Record<string, unknown>): { yil?: number; blok?: string } => ({
@@ -103,6 +104,7 @@ function Summary({ matrix }: { matrix: MatrixDto }) {
 function DuesMatrixPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const isApartment = useIsApartment();
   const thisYear = Number(todayIso().slice(0, 4));
   const year = search.yil ?? thisYear;
   const blocks = useBlocks();
@@ -141,27 +143,29 @@ function DuesMatrixPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={search.blok ?? 'all'}
-          onValueChange={(v) =>
-            void navigate({
-              search: (prev) => ({ ...prev, blok: v === 'all' ? undefined : v }),
-              replace: true,
-            })
-          }
-        >
-          <SelectTrigger className="w-full sm:w-44" aria-label="Blok filtresi">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm bloklar</SelectItem>
-            {(blocks.data ?? []).map((b) => (
-              <SelectItem key={b.id} value={b.id}>
-                {b.name} Blok
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!isApartment && (
+          <Select
+            value={search.blok ?? 'all'}
+            onValueChange={(v) =>
+              void navigate({
+                search: (prev) => ({ ...prev, blok: v === 'all' ? undefined : v }),
+                replace: true,
+              })
+            }
+          >
+            <SelectTrigger className="w-full sm:w-44" aria-label="Blok filtresi">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm bloklar</SelectItem>
+              {(blocks.data ?? []).map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name} Blok
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <div className="sm:ml-auto">
           <StatusLegend />
         </div>
@@ -214,7 +218,7 @@ function DuesMatrixPage() {
                       scope="row"
                       className="sticky left-0 z-10 bg-background px-3 py-1.5 text-left font-medium whitespace-nowrap"
                     >
-                      {row.blockName}-{row.unitNumber}
+                      {labelUnit(row.blockName, row.unitNumber, 'short')}
                     </th>
                     {row.cells.map((cell, i) => (
                       <td key={matrix.data.periods[i]} className="px-1 py-1.5">

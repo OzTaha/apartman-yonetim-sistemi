@@ -1,4 +1,4 @@
-import type { MyOccupancyDto } from '@apartman/shared';
+import { unitLabel, type MyOccupancyDto } from '@apartman/shared';
 import { createFileRoute } from '@tanstack/react-router';
 import { Info } from 'lucide-react';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
@@ -23,7 +23,7 @@ function MyUnitCard({ occupancy }: { occupancy: MyOccupancyDto }) {
       <CardHeader>
         <div className="flex flex-wrap items-center gap-2">
           <CardTitle>
-            {occupancy.blockName} Blok · Daire {occupancy.unitNumber}
+            {unitLabel(occupancy.siteKind, occupancy.blockName, occupancy.unitNumber)}
           </CardTitle>
           <OccupancyTypeBadge type={occupancy.type} />
         </div>

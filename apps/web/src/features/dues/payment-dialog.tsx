@@ -41,6 +41,7 @@ import { apiFetch } from '@/lib/api';
 import { formatDate, todayIso } from '@/lib/format';
 import { useApiMutation, useUnitAccount, useUnits } from '@/lib/queries';
 import { cn } from '@/lib/utils';
+import { labelUnit } from '@/lib/unit-label';
 
 const formSchema = z.object({
   amount: z.string(),
@@ -195,7 +196,7 @@ export function PaymentDialog({ open, onOpenChange, unitId: fixedUnitId }: Props
                 <SelectContent>
                   {(units.data ?? []).map((u) => (
                     <SelectItem key={u.id} value={u.id}>
-                      {u.blockName} Blok · Daire {u.number}
+                      {labelUnit(u.blockName, u.number)}
                       {u.occupants[0]
                         ? ` · ${u.occupants[0].firstName} ${u.occupants[0].lastName}`
                         : ''}

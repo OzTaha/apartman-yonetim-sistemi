@@ -6,7 +6,7 @@ import {
   type SiteManagerAssignInput,
 } from '@apartman/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { Field } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { apiFetch } from '@/lib/api';
 import { useApiMutation } from '@/lib/queries';
 
@@ -32,7 +39,12 @@ type SiteOutput = z.output<typeof siteCreateSchema>;
 export function SiteFormDialog({ open, onOpenChange, site }: DialogProps & { site?: SiteDto }) {
   const form = useForm<SiteCreateInput, unknown, SiteOutput>({
     resolver: zodResolver(siteCreateSchema),
-    values: { name: site?.name ?? '', address: site?.address ?? '', city: site?.city ?? '' },
+    values: {
+      name: site?.name ?? '',
+      kind: site?.kind ?? 'APARTMENT',
+      address: site?.address ?? '',
+      city: site?.city ?? '',
+    },
   });
   const mutation = useApiMutation(
     (values: SiteOutput) =>
@@ -53,7 +65,7 @@ export function SiteFormDialog({ open, onOpenChange, site }: DialogProps & { sit
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{site ? 'Siteyi düzenle' : 'Yeni site'}</DialogTitle>
+          <DialogTitle>{site ? `${site.name} düzenle` : 'Apartman veya site ekle'}</DialogTitle>
           <DialogDescription>Site veya apartmanın temel bilgileri.</DialogDescription>
         </DialogHeader>
         <form
@@ -62,12 +74,24 @@ export function SiteFormDialog({ open, onOpenChange, site }: DialogProps & { sit
           noValidate
           onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
         >
-          <Field
-            label="Site / apartman adı"
-            htmlFor="site-name"
-            error={errors.name?.message}
-            required
-          >
+          <Field label="Tür" htmlFor="site-kind" error={errors.kind?.message} required>
+            <Controller
+              control={form.control}
+              name="kind"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="site-kind" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="APARTMENT">Apartman (tek bina)</SelectItem>
+                    <SelectItem value="SITE">Site (birden çok blok)</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </Field>
+          <Field label="Ad" htmlFor="site-name" error={errors.name?.message} required>
             <Input id="site-name" {...form.register('name')} />
           </Field>
           <Field label="Adres" htmlFor="site-address" error={errors.address?.message}>

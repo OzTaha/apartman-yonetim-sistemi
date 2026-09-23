@@ -20,6 +20,7 @@ import { OccupancyFormDialog } from '@/features/residents/resident-dialogs';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { formatDate, formatPhone, fullName } from '@/lib/format';
 import { type ResidentFilters, useBlocks, useResidents } from '@/lib/queries';
+import { labelUnit, useIsApartment } from '@/lib/unit-label';
 
 type Status = ResidentFilters['status'];
 
@@ -66,7 +67,7 @@ const columns: ColumnDef<OccupancyDto>[] = [
     sortingFn: (a, b) =>
       a.original.blockName.localeCompare(b.original.blockName, 'tr', { numeric: true }) ||
       a.original.unitNumber.localeCompare(b.original.unitNumber, 'tr', { numeric: true }),
-    cell: ({ row }) => `${row.original.blockName} · ${row.original.unitNumber}`,
+    cell: ({ row }) => labelUnit(row.original.blockName, row.original.unitNumber, 'short'),
   },
   {
     accessorKey: 'type',
@@ -111,7 +112,7 @@ function ResidentCard({ occupancy }: { occupancy: OccupancyDto }) {
           <OccupancyTypeBadge type={occupancy.type} />
         </div>
         <span className="text-sm text-muted-foreground">
-          {occupancy.blockName} Blok · Daire {occupancy.unitNumber}
+          {labelUnit(occupancy.blockName, occupancy.unitNumber)}
           {occupancy.phone ? ` · ${formatPhone(occupancy.phone)}` : ''}
         </span>
         {occupancy.endDate && (
@@ -134,6 +135,7 @@ const statusLabels: Record<Status, string> = {
 function ResidentsPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const isApartment = useIsApartment();
   const status: Status = search.durum ?? 'active';
   const [searchText, setSearchText] = useState('');
   const debouncedSearch = useDebouncedValue(searchText.trim());
@@ -193,27 +195,29 @@ function ResidentsPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={search.blok ?? 'all'}
-          onValueChange={(value) =>
-            void navigate({
-              search: (prev) => ({ ...prev, blok: value === 'all' ? undefined : value }),
-              replace: true,
-            })
-          }
-        >
-          <SelectTrigger className="w-full sm:w-44" aria-label="Blok filtresi">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tüm bloklar</SelectItem>
-            {(blocks.data ?? []).map((b) => (
-              <SelectItem key={b.id} value={b.id}>
-                {b.name} Blok
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!isApartment && (
+          <Select
+            value={search.blok ?? 'all'}
+            onValueChange={(value) =>
+              void navigate({
+                search: (prev) => ({ ...prev, blok: value === 'all' ? undefined : value }),
+                replace: true,
+              })
+            }
+          >
+            <SelectTrigger className="w-full sm:w-44" aria-label="Blok filtresi">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm bloklar</SelectItem>
+              {(blocks.data ?? []).map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name} Blok
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {residents.isPending ? (

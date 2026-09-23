@@ -2,9 +2,27 @@ import type { OccupancyType } from './schemas';
 
 export type SiteRole = 'SITE_MANAGER' | 'RESIDENT';
 
+export type SiteKind = 'APARTMENT' | 'SITE';
+
+export const siteKindLabels: Record<SiteKind, string> = {
+  APARTMENT: 'Apartman',
+  SITE: 'Site',
+};
+
+export function unitLabel(
+  kind: SiteKind | undefined,
+  blockName: string,
+  number: string,
+  style: 'long' | 'short' = 'long',
+): string {
+  if (kind === 'APARTMENT') return style === 'long' ? `Daire ${number}` : number;
+  return style === 'long' ? `${blockName} Blok · Daire ${number}` : `${blockName}-${number}`;
+}
+
 export interface MembershipDto {
   siteId: string;
   siteName: string;
+  siteKind: SiteKind;
   role: SiteRole;
 }
 
@@ -12,6 +30,7 @@ export interface MyOccupancyDto {
   occupancyId: string;
   siteId: string;
   siteName: string;
+  siteKind: SiteKind;
   unitId: string;
   blockName: string;
   unitNumber: string;
@@ -37,6 +56,7 @@ export interface AuthResponse {
 export interface SiteDto {
   id: string;
   name: string;
+  kind: SiteKind;
   address: string | null;
   city: string | null;
   createdAt: string;
@@ -49,6 +69,7 @@ export interface BlockDto {
   id: string;
   name: string;
   unitCount: number;
+  deletable: boolean;
 }
 
 export interface OccupantSummaryDto {
@@ -67,6 +88,7 @@ export interface UnitDto {
   floor: number | null;
   areaM2: number | null;
   landShare: number | null;
+  archivedAt: string | null;
   occupants: OccupantSummaryDto[];
 }
 
@@ -94,6 +116,16 @@ export interface UnitDetailDto extends Omit<UnitDto, 'occupants'> {
   occupancies: OccupancyDto[];
 }
 
+export interface UnitRemovalDto {
+  canDelete: boolean;
+  canArchive: boolean;
+  chargeCount: number;
+  openKurus: number;
+  paymentCount: number;
+  occupancyCount: number;
+  activeResidentCount: number;
+}
+
 export interface BulkUnitsResultDto {
   created: number;
   skipped: string[];
@@ -108,6 +140,7 @@ export interface InvitationInfoDto {
   firstName: string;
   lastName: string;
   siteName: string;
+  siteKind: SiteKind;
   blockName: string;
   unitNumber: string;
   hasExistingAccount: boolean;

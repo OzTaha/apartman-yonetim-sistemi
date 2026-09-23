@@ -85,9 +85,10 @@ export class ResidentsService {
   async create(input: OccupancyCreateDto): Promise<OccupancyDto> {
     const unit = await this.tenant.db.unit.findUnique({
       where: { id: input.unitId },
-      select: { id: true },
+      select: { id: true, archivedAt: true },
     });
     if (!unit) throw new NotFoundException('Daire bulunamadı');
+    if (unit.archivedAt) throw new BadRequestException('Arşivlenmiş daireye sakin eklenemez');
 
     const occupancy = await this.tenant.db.occupancy.create({
       data: {
