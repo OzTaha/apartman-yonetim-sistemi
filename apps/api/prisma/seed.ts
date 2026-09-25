@@ -1,11 +1,16 @@
 import 'dotenv/config';
 import {
+  addDays,
   addMonths,
   computeUnitAmounts,
   dueDateFor,
+  periodLabel,
   periodOfDate,
   periodRange,
+  weekStartOf,
   type DistributionMethod,
+  type EmployeeRole,
+  type TaskStatus,
 } from '@apartman/shared';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
@@ -235,6 +240,131 @@ async function createPlace(
   return site;
 }
 
+interface StaffSeed {
+  employees: {
+    firstName: string;
+    lastName: string;
+    role: EmployeeRole;
+    phone: string;
+    salaryKurus?: number;
+    shift: { startTime: string; endTime: string; weekdays: number[] };
+  }[];
+  tasks: {
+    title: string;
+    employee: number | null;
+    dueInDays: number;
+    status: TaskStatus;
+    priority?: 'LOW' | 'NORMAL' | 'HIGH';
+  }[];
+  recurring: { title: string; employee: number; weekdays: number[] }[];
+}
+
+async function seedStaff(
+  tx: Tx,
+  siteId: string,
+  options: { today: string; periods: string[]; staff: StaffSeed },
+) {
+  const { today, staff } = options;
+  const bank = await tx.cashAccount.findFirstOrThrow({ where: { siteId, code: 'BANK' } });
+  const salaries = await tx.financeCategory.findFirstOrThrow({ where: { siteId, code: 'STAFF' } });
+  const thisWeek = weekStartOf(today);
+  const ids: string[] = [];
+
+  for (const e of staff.employees) {
+    const employee = await tx.employee.create({
+      data: {
+        siteId,
+        firstName: e.firstName,
+        lastName: e.lastName,
+        role: e.role,
+        phone: e.phone,
+        startDate: dateOnly(`${addMonths(periodOfDate(today), -14)}-01`),
+      },
+    });
+    ids.push(employee.id);
+    for (const week of [addDays(thisWeek, -7), thisWeek]) {
+      await tx.shift.createMany({
+        data: e.shift.weekdays.map((day) => ({
+          siteId,
+          employeeId: employee.id,
+          date: dateOnly(addDays(week, day - 1)),
+          startTime: e.shift.startTime,
+          endTime: e.shift.endTime,
+        })),
+      });
+    }
+    if (!e.salaryKurus) continue;
+    for (const period of options.periods) {
+      const date = `${period}-05`;
+      if (date > today) continue;
+      await tx.transaction.create({
+        data: {
+          siteId,
+          type: 'EXPENSE',
+          amountKurus: e.salaryKurus,
+          date: dateOnly(date),
+          accountId: bank.id,
+          categoryId: salaries.id,
+          employeeId: employee.id,
+          description: `${periodLabel(period)} maaşı`,
+          visibleToResidents: false,
+        },
+      });
+    }
+  }
+
+  for (const t of staff.tasks) {
+    const employeeId = t.employee === null ? null : ids[t.employee]!;
+    const dueDate = addDays(today, t.dueInDays);
+    const createdAt = new Date(`${addDays(today, -4)}T09:00:00+03:00`);
+    const changedAt =
+      t.status === 'DONE'
+        ? new Date(`${dueDate}T16:00:00+03:00`)
+        : new Date(`${addDays(today, -1)}T11:00:00+03:00`);
+    const task = await tx.task.create({
+      data: {
+        siteId,
+        title: t.title,
+        employeeId,
+        dueDate: dateOnly(dueDate),
+        priority: t.priority ?? 'NORMAL',
+        status: t.status,
+        completedAt: t.status === 'DONE' ? changedAt : null,
+        createdAt,
+      },
+    });
+    await tx.taskEvent.createMany({
+      data: [
+        { siteId, taskId: task.id, kind: 'CREATED', status: 'TODO', createdAt },
+        ...(t.status === 'TODO'
+          ? []
+          : [
+              {
+                siteId,
+                taskId: task.id,
+                kind: 'STATUS' as const,
+                status: t.status,
+                createdAt: changedAt,
+              },
+            ]),
+      ],
+    });
+  }
+
+  for (const r of staff.recurring) {
+    await tx.recurringTask.create({
+      data: {
+        siteId,
+        title: r.title,
+        employeeId: ids[r.employee]!,
+        frequency: 'WEEKLY',
+        weekdays: r.weekdays,
+        startDate: dateOnly(thisWeek),
+      },
+    });
+  }
+}
+
 const person = (
   firstName: string,
   lastName: string,
@@ -403,6 +533,88 @@ async function main() {
         });
         await tx.siteMembership.create({
           data: { siteId: apartment.id, userId: manager.id, role: 'SITE_MANAGER' },
+        });
+
+        await seedStaff(tx, apartment.id, {
+          today,
+          periods,
+          staff: {
+            employees: [
+              {
+                firstName: 'Gül',
+                lastName: 'Aksoy',
+                role: 'CLEANING',
+                phone: '+905331000001',
+                salaryKurus: 400_000,
+                shift: { startTime: '09:00', endTime: '13:00', weekdays: [2, 5] },
+              },
+              {
+                firstName: 'Hasan',
+                lastName: 'Aydın',
+                role: 'DOORMAN',
+                phone: '+905331000002',
+                shift: { startTime: '07:00', endTime: '15:00', weekdays: [1, 2, 3, 4, 5, 6] },
+              },
+            ],
+            tasks: [
+              { title: 'Çatı oluğunu temizle', employee: 1, dueInDays: -3, status: 'TODO' },
+              {
+                title: 'Giriş kapısı menteşesini yağla',
+                employee: 1,
+                dueInDays: 2,
+                status: 'IN_PROGRESS',
+              },
+              { title: 'Bodrum katını düzenle', employee: 0, dueInDays: -1, status: 'DONE' },
+              {
+                title: 'Otopark lambasını değiştir',
+                employee: null,
+                dueInDays: 3,
+                status: 'TODO',
+                priority: 'HIGH',
+              },
+            ],
+            recurring: [{ title: 'Merdiven temizliği', employee: 0, weekdays: [2, 5] }],
+          },
+        });
+        await seedStaff(tx, site.id, {
+          today,
+          periods,
+          staff: {
+            employees: [
+              {
+                firstName: 'Recep',
+                lastName: 'Güneş',
+                role: 'GARDENER',
+                phone: '+905331000011',
+                salaryKurus: 500_000,
+                shift: { startTime: '09:00', endTime: '17:00', weekdays: [3] },
+              },
+              {
+                firstName: 'Kemal',
+                lastName: 'Yurt',
+                role: 'SECURITY',
+                phone: '+905331000012',
+                shift: { startTime: '20:00', endTime: '08:00', weekdays: [1, 2, 3, 4, 5] },
+              },
+            ],
+            tasks: [
+              {
+                title: 'Bahçe sulama sistemini kontrol et',
+                employee: 0,
+                dueInDays: 1,
+                status: 'TODO',
+              },
+              { title: 'Kamera kayıtlarını yedekle', employee: 1, dueInDays: -2, status: 'DONE' },
+              {
+                title: 'B blok giriş kartlarını yenile',
+                employee: 1,
+                dueInDays: -2,
+                status: 'TODO',
+                priority: 'HIGH',
+              },
+            ],
+            recurring: [{ title: 'Güvenlik tur kontrolü', employee: 1, weekdays: [1, 2, 3, 4, 5] }],
+          },
         });
 
         const resident = await tx.user.create({

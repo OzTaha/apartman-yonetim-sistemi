@@ -73,7 +73,7 @@ function Amount({ t, accountId }: { t: TransactionDto; accountId?: string }) {
 
 function detailOf(t: TransactionDto): string {
   if (t.type === 'TRANSFER') return transactionTypeLabels.TRANSFER;
-  return [t.categoryName, t.vendorName, t.workTitle].filter(Boolean).join(' · ');
+  return [t.categoryName, t.vendorName ?? t.employeeName, t.workTitle].filter(Boolean).join(' · ');
 }
 
 function Marks({ t }: { t: TransactionDto }) {

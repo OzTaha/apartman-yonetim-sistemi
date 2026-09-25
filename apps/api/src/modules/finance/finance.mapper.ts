@@ -33,6 +33,7 @@ export const transactionInclude = {
   category: { select: { name: true } },
   vendor: { select: { name: true } },
   work: { select: { title: true } },
+  employee: { select: { firstName: true, lastName: true } },
   payment: {
     select: {
       receiptNo: true,
@@ -66,6 +67,8 @@ export function toTransactionDto(
     vendorName: t.vendor?.name ?? null,
     workId: t.workId,
     workTitle: t.work?.title ?? null,
+    employeeId: t.employeeId,
+    employeeName: t.employee ? `${t.employee.firstName} ${t.employee.lastName}` : null,
     paymentId: t.paymentId,
     receiptNo: t.payment?.receiptNo ?? null,
     unitBlockName: t.payment?.unit.block.name ?? null,

@@ -1,5 +1,13 @@
 import type {
   BlockDto,
+  EmployeeDetailDto,
+  EmployeeDto,
+  RecurringTaskDto,
+  ShiftDto,
+  StaffReportDto,
+  TaskDetailDto,
+  TaskDto,
+  TaskView,
   CashAccountDto,
   ClosingsDto,
   DashboardDto,
@@ -194,6 +202,25 @@ export const useClosings = () => useSiteQuery<ClosingsDto>('closings', '/finance
 export const useTransparency = (year: number) =>
   useSiteQuery<TransparencyDto>('transparency', `/transparency?year=${year}`, year);
 
+export const useEmployees = () => useSiteQuery<EmployeeDto[]>('employees', '/employees');
+export const useEmployee = (id: string) =>
+  useSiteQuery<EmployeeDetailDto>('employee', `/employees/${id}`, id);
+export const useShifts = (from: string, to: string) =>
+  useSiteQuery<ShiftDto[]>('shifts', `/shifts${toQuery({ from, to })}`, { from, to });
+export const useTasks = (view: TaskView, employeeId?: string) =>
+  useSiteQuery<TaskDto[]>('tasks', `/tasks${toQuery({ view, employeeId })}`, {
+    view,
+    employeeId,
+  });
+export const useTask = (id: string) => useSiteQuery<TaskDetailDto>('task', `/tasks/${id}`, id);
+export const useRecurringTasks = () =>
+  useSiteQuery<RecurringTaskDto[]>('recurring-tasks', '/recurring-tasks');
+export const useStaffReport = (from: string, to: string) =>
+  useSiteQuery<StaffReportDto>('staff-report', `/staff/report${toQuery({ from, to })}`, {
+    from,
+    to,
+  });
+
 const SITE_SCOPED = new Set([
   'blocks',
   'units',
@@ -217,6 +244,13 @@ const SITE_SCOPED = new Set([
   'closings',
   'transparency',
   'dashboard',
+  'employees',
+  'employee',
+  'shifts',
+  'tasks',
+  'task',
+  'recurring-tasks',
+  'staff-report',
 ]);
 
 const isSiteData = (q: { queryKey: readonly unknown[] }) =>

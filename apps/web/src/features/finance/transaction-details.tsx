@@ -28,9 +28,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CancelDialog } from '@/features/dues/small-dialogs';
+import { employeeName } from '@/features/staff/staff';
 import { apiFetch } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import { useApiMutation, useFinanceCategories, useVendors, useWorks } from '@/lib/queries';
+import {
+  useApiMutation,
+  useEmployees,
+  useFinanceCategories,
+  useVendors,
+  useWorks,
+} from '@/lib/queries';
 import { AttachmentList, AttachmentUploadButton } from './attachments';
 import { transactionTitle } from './files';
 
@@ -40,9 +47,11 @@ function EditForm({ t, onDone }: { t: TransactionDto; onDone: () => void }) {
   const categories = useFinanceCategories();
   const vendors = useVendors();
   const works = useWorks();
+  const employees = useEmployees();
   const [categoryId, setCategoryId] = useState(t.categoryId ?? '');
   const [vendorId, setVendorId] = useState(t.vendorId ?? '');
   const [workId, setWorkId] = useState(t.workId ?? '');
+  const [employeeId, setEmployeeId] = useState(t.employeeId ?? '');
   const [description, setDescription] = useState(t.description ?? '');
   const [documentNo, setDocumentNo] = useState(t.documentNo ?? '');
   const [visible, setVisible] = useState(t.visibleToResidents);
@@ -59,7 +68,11 @@ function EditForm({ t, onDone }: { t: TransactionDto; onDone: () => void }) {
                 vendorId: vendorId || null,
                 documentNo: documentNo.trim() || null,
                 ...(t.type === 'EXPENSE'
-                  ? { workId: workId || null, visibleToResidents: visible }
+                  ? {
+                      workId: workId || null,
+                      employeeId: employeeId || null,
+                      visibleToResidents: visible,
+                    }
                   : {}),
               }),
           description: description.trim() || null,
@@ -98,7 +111,10 @@ function EditForm({ t, onDone }: { t: TransactionDto; onDone: () => void }) {
           <Field label="Firma" htmlFor="edit-vendor">
             <Select
               value={vendorId || NONE}
-              onValueChange={(v) => setVendorId(v === NONE ? '' : v)}
+              onValueChange={(v) => {
+                setVendorId(v === NONE ? '' : v);
+                if (v !== NONE) setEmployeeId('');
+              }}
             >
               <SelectTrigger id="edit-vendor" className="w-full">
                 <SelectValue />
@@ -113,6 +129,31 @@ function EditForm({ t, onDone }: { t: TransactionDto; onDone: () => void }) {
               </SelectContent>
             </Select>
           </Field>
+          {t.type === 'EXPENSE' && (
+            <Field label="Çalışan" htmlFor="edit-employee">
+              <Select
+                value={employeeId || NONE}
+                onValueChange={(v) => {
+                  setEmployeeId(v === NONE ? '' : v);
+                  if (v !== NONE) setVendorId('');
+                }}
+              >
+                <SelectTrigger id="edit-employee" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>Çalışana ödeme değil</SelectItem>
+                  {(employees.data ?? [])
+                    .filter((e) => e.isActive || e.id === t.employeeId)
+                    .map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {employeeName(e)}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
           {t.type === 'EXPENSE' && (
             <Field label="Yapılan iş" htmlFor="edit-work">
               <Select value={workId || NONE} onValueChange={(v) => setWorkId(v === NONE ? '' : v)}>
@@ -199,6 +240,7 @@ export function TransactionDetailsDialog({
     ...(t.type === 'TRANSFER' ? [['Giren hesap', t.toAccountName] as [string, string | null]] : []),
     ['Kategori', t.categoryName],
     ['Firma', t.vendorName],
+    ['Çalışan', t.employeeName],
     ['Yapılan iş', t.workTitle],
     ['Makbuz no', t.receiptNo ? String(t.receiptNo) : null],
     ['Belge no', t.documentNo],

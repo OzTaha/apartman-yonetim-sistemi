@@ -53,6 +53,7 @@ export class TransactionsService {
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
       ...(query.vendorId ? { vendorId: query.vendorId } : {}),
       ...(query.workId ? { workId: query.workId } : {}),
+      ...(query.employeeId ? { employeeId: query.employeeId } : {}),
       ...(query.from || query.to
         ? {
             date: {
@@ -93,13 +94,15 @@ export class TransactionsService {
     if (input.type === 'TRANSFER') await this.assertAccount(input.toAccountId!);
 
     let vendorId = input.vendorId ?? null;
+    const employeeId = input.type === 'EXPENSE' ? (input.employeeId ?? null) : null;
     if (input.type !== 'TRANSFER') {
       await this.assertCategory(input.categoryId!, input.type);
       if (vendorId) await this.assertVendor(vendorId);
+      if (employeeId) await this.assertEmployee(employeeId);
       if (input.workId) {
         const work = await this.tenant.db.work.findUnique({ where: { id: input.workId } });
         if (!work) throw new NotFoundException('İş bulunamadı');
-        vendorId ??= work.vendorId;
+        if (!employeeId) vendorId ??= work.vendorId;
       }
     }
 
@@ -115,9 +118,10 @@ export class TransactionsService {
         categoryId: isTransfer ? null : input.categoryId!,
         vendorId: isTransfer ? null : vendorId,
         workId: input.type === 'EXPENSE' ? (input.workId ?? null) : null,
+        employeeId,
         description: input.description ?? null,
         documentNo: isTransfer ? null : (input.documentNo ?? null),
-        visibleToResidents: input.visibleToResidents,
+        visibleToResidents: input.visibleToResidents ?? !employeeId,
         createdById: this.tenant.userId ?? null,
       },
     });
@@ -133,12 +137,25 @@ export class TransactionsService {
   async update(id: string, input: TransactionUpdateDto): Promise<TransactionDto> {
     const before = await this.editable(id);
     if (before.type === 'TRANSFER') {
-      if (input.categoryId || input.vendorId || input.workId) {
-        throw new BadRequestException('Transfer kaydına kategori, firma veya iş bağlanamaz');
+      if (input.categoryId || input.vendorId || input.workId || input.employeeId) {
+        throw new BadRequestException(
+          'Transfer kaydına kategori, firma, iş veya çalışan bağlanamaz',
+        );
       }
     } else {
       if (input.categoryId) await this.assertCategory(input.categoryId, before.type);
       if (input.vendorId) await this.assertVendor(input.vendorId);
+      if (input.employeeId) {
+        if (before.type !== 'EXPENSE') {
+          throw new BadRequestException('Yalnızca gider bir çalışana bağlanabilir');
+        }
+        await this.assertEmployee(input.employeeId);
+      }
+      const vendorId = input.vendorId === undefined ? before.vendorId : input.vendorId;
+      const employeeId = input.employeeId === undefined ? before.employeeId : input.employeeId;
+      if (vendorId && employeeId) {
+        throw new BadRequestException('Ödeme ya bir firmaya ya bir çalışana yapılır');
+      }
       if (input.workId) {
         if (before.type !== 'EXPENSE') {
           throw new BadRequestException('Yalnızca gider bir işe bağlanabilir');
@@ -154,6 +171,7 @@ export class TransactionsService {
         categoryId: input.categoryId,
         vendorId: input.vendorId,
         workId: input.workId,
+        employeeId: input.employeeId,
         description: input.description === undefined ? undefined : input.description || null,
         documentNo: input.documentNo === undefined ? undefined : input.documentNo || null,
         visibleToResidents: input.visibleToResidents,
@@ -229,6 +247,11 @@ export class TransactionsService {
   private async assertVendor(id: string) {
     const vendor = await this.tenant.db.vendor.findUnique({ where: { id } });
     if (!vendor) throw new NotFoundException('Firma bulunamadı');
+  }
+
+  private async assertEmployee(id: string) {
+    const employee = await this.tenant.db.employee.findUnique({ where: { id } });
+    if (!employee) throw new NotFoundException('Çalışan bulunamadı');
   }
 }
 

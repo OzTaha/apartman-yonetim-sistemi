@@ -57,6 +57,41 @@ enum WorkStatus {
   DONE
 }
 
+enum EmployeeRole {
+  DOORMAN
+  SECURITY
+  CLEANING
+  GARDENER
+  OTHER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum TaskEventKind {
+  CREATED
+  EDITED
+  ASSIGNED
+  STATUS
+  NOTE
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 model User {
   id              String   @id @default(uuid(7)) @db.Uuid
   firstName       String
@@ -86,25 +121,30 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships  SiteMembership[]
-  blocks       Block[]
-  units        Unit[]
-  occupancies  Occupancy[]
-  invitations  Invitation[]
-  auditLogs    AuditLog[]
-  chargeTypes  ChargeType[]
-  duesPlans    DuesPlan[]
-  charges      Charge[]
-  payments     Payment[]
-  allocations  PaymentAllocation[]
-  accounts     CashAccount[]
-  categories   FinanceCategory[]
-  vendors      Vendor[]
-  works        Work[]
-  transactions Transaction[]
-  attachments  Attachment[]
-  closings     MonthClosing[]
-  counters     SiteCounter[]
+  memberships    SiteMembership[]
+  blocks         Block[]
+  units          Unit[]
+  occupancies    Occupancy[]
+  invitations    Invitation[]
+  auditLogs      AuditLog[]
+  chargeTypes    ChargeType[]
+  duesPlans      DuesPlan[]
+  charges        Charge[]
+  payments       Payment[]
+  allocations    PaymentAllocation[]
+  accounts       CashAccount[]
+  categories     FinanceCategory[]
+  vendors        Vendor[]
+  works          Work[]
+  transactions   Transaction[]
+  attachments    Attachment[]
+  closings       MonthClosing[]
+  counters       SiteCounter[]
+  employees      Employee[]
+  shifts         Shift[]
+  tasks          Task[]
+  taskEvents     TaskEvent[]
+  recurringTasks RecurringTask[]
 
   @@map("sites")
 }
@@ -461,6 +501,7 @@ model Transaction {
   categoryId         String?         @db.Uuid
   vendorId           String?         @db.Uuid
   workId             String?         @db.Uuid
+  employeeId         String?         @db.Uuid
   paymentId          String?         @db.Uuid
   description        String?
   documentNo         String?
@@ -477,6 +518,7 @@ model Transaction {
   category    FinanceCategory? @relation(fields: [categoryId, siteId], references: [id, siteId], onDelete: Restrict)
   vendor      Vendor?          @relation(fields: [vendorId, siteId], references: [id, siteId], onDelete: Restrict)
   work        Work?            @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
+  employee    Employee?        @relation(fields: [employeeId, siteId], references: [id, siteId], onDelete: Restrict)
   payment     Payment?         @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
   attachments Attachment[]
 
@@ -486,6 +528,7 @@ model Transaction {
   @@index([accountId])
   @@index([workId])
   @@index([vendorId])
+  @@index([employeeId])
   @@map("transactions")
 }
 
@@ -526,4 +569,119 @@ model MonthClosing {
 
   @@unique([siteId, period])
   @@map("month_closings")
+}
+
+model Employee {
+  id        String       @id @default(uuid(7)) @db.Uuid
+  siteId    String       @db.Uuid
+  firstName String
+  lastName  String
+  role      EmployeeRole
+  phone     String?
+  startDate DateTime?    @db.Date
+  notes     String?
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  site           Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  shifts         Shift[]
+  tasks          Task[]
+  recurringTasks RecurringTask[]
+  transactions   Transaction[]
+
+  @@unique([id, siteId])
+  @@index([siteId])
+  @@map("employees")
+}
+
+model Shift {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  siteId      String   @db.Uuid
+  employeeId  String   @db.Uuid
+  date        DateTime @db.Date
+  startTime   String
+  endTime     String
+  note        String?
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  site     Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId, siteId], references: [id, siteId], onDelete: Restrict)
+
+  @@index([siteId, date])
+  @@index([employeeId, date])
+  @@map("shifts")
+}
+
+model RecurringTask {
+  id          String              @id @default(uuid(7)) @db.Uuid
+  siteId      String              @db.Uuid
+  title       String
+  description String?
+  employeeId  String?             @db.Uuid
+  priority    TaskPriority        @default(NORMAL)
+  frequency   RecurrenceFrequency
+  weekdays    Int[]
+  dayOfMonth  Int?
+  startDate   DateTime            @db.Date
+  endDate     DateTime?           @db.Date
+  isActive    Boolean             @default(true)
+  createdById String?             @db.Uuid
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  site     Site      @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId, siteId], references: [id, siteId], onDelete: Restrict)
+  tasks    Task[]
+
+  @@unique([id, siteId])
+  @@map("recurring_tasks")
+}
+
+model Task {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  siteId          String       @db.Uuid
+  title           String
+  description     String?
+  employeeId      String?      @db.Uuid
+  dueDate         DateTime?    @db.Date
+  priority        TaskPriority @default(NORMAL)
+  status          TaskStatus   @default(TODO)
+  completedAt     DateTime?
+  recurringTaskId String?      @db.Uuid
+  occurrenceDate  DateTime?    @db.Date
+  createdById     String?      @db.Uuid
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  site          Site           @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  employee      Employee?      @relation(fields: [employeeId, siteId], references: [id, siteId], onDelete: Restrict)
+  recurringTask RecurringTask? @relation(fields: [recurringTaskId, siteId], references: [id, siteId], onDelete: Restrict)
+  events        TaskEvent[]
+
+  @@unique([id, siteId])
+  @@unique([recurringTaskId, occurrenceDate])
+  @@index([siteId, status])
+  @@index([employeeId])
+  @@map("tasks")
+}
+
+model TaskEvent {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  siteId       String        @db.Uuid
+  taskId       String        @db.Uuid
+  kind         TaskEventKind
+  status       TaskStatus?
+  assigneeName String?
+  note         String?
+  userId       String?       @db.Uuid
+  createdAt    DateTime      @default(now())
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId, siteId], references: [id, siteId], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@map("task_events")
 }

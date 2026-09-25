@@ -19,6 +19,11 @@ export const TENANT_MODELS: ReadonlySet<string> = new Set([
   'Transaction',
   'Attachment',
   'MonthClosing',
+  'Employee',
+  'Shift',
+  'Task',
+  'TaskEvent',
+  'RecurringTask',
 ]);
 
 const WHERE_OPERATIONS = new Set([

@@ -59,7 +59,8 @@ Tüm hesapların şifresi `Deneme123!`.
 
 Seed iki örnek yer oluşturur: 5 daireli "Örnek Apartmanı" ve 2 bloklu, 4 daireli "Örnek Sitesi".
 Yönetici hesabı ikisini de yönetir. Son 3 ayın aidatı ve ödemeleri yüklenir. Apartmanın 3 numaralı
-dairesi iki ay borçlu, arada bir ay ödenmiş örneğini gösterir. Seed yalnızca boş veritabanında çalışır.
+dairesi iki ay borçlu, arada bir ay ödenmiş örneğini gösterir. Her yerde iki örnek çalışan, geçen ve bu haftanın vardiyaları,
+açık, gecikmiş ve tamamlanmış görevler ile bir tekrarlayan görev bulunur. Seed yalnızca boş veritabanında çalışır.
 
 ## Komutlar
 
@@ -135,6 +136,22 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   Yönetici tek tek kayıtları sakinlerden gizleyebilir; gizlenen tutarlar toplamlara dahil kalır.
 - Ay kapanışı, kapanan ay ve öncesindeki gelir, gider, tahsilat ve belgeleri kilitler. Yalnızca son kapanış geri alınabilir.
 - Yüklenen dosyalar `UPLOAD_DIR` klasöründe (varsayılan `apps/api/uploads`) tutulur; veritabanı ile birlikte yedeklenmelidir.
+
+## Çalışan ve görev takibi
+
+- Çalışanlar (kapıcı, güvenlik, temizlik, bahçıvan, diğer) yalnızca kayıt olarak tutulur, sisteme giriş hesapları yoktur.
+  Vardiya ve görevleri yönetici girer; sakinler bu bölümü görmez.
+- Vardiya planı haftalık tablodur, mobilde gün gün listelenir. Bitiş saati başlangıçtan küçükse vardiya ertesi güne taşar
+  (ör. 20:00–08:00). Aynı çalışanın vardiyaları çakışamaz. "Önceki haftayı kopyala" çakışanları ve pasif çalışanları atlar.
+- Görev durumları: yapılacak, devam ediyor, tamamlandı, iptal (neden zorunlu). Son tarihi geçen açık görev "gecikmiş" görünür.
+  Oluşturma, atama, düzenleme, durum değişikliği ve notlar görev geçmişine kim/ne zaman bilgisiyle yazılır.
+- Tekrarlayan görevler her gün, haftanın seçili günleri veya ayın belli bir günü (1–28) için tanımlanır. O günün görevi her sabah
+  00:10'da (İstanbul) oluşur; sunucu kapalıysa açılışta oluşturulur. Aynı gün için iki kez oluşmaz.
+- Kasaya gider girerken çalışan seçilebilir (maaş vb.). Çalışana bağlı gider varsayılan olarak sakinlerden gizlenir ve çalışanın
+  sayfasında ödemeler arasında görünür. Bir gider aynı anda hem firmaya hem çalışana bağlanamaz.
+- Geçmişi (vardiya, görev, ödeme) olan çalışan silinmez, pasif yapılır; pasif çalışana yeni vardiya veya görev verilemez.
+- Çalışan raporu seçilen tarih aralığında vardiya sayısı ve süresini, tamamlanan ve geç tamamlanan görevleri, çalışana yapılan
+  ödemeleri; ayrıca bugün itibarıyla açık ve geciken görevleri gösterir.
 
 ## Kurallar
 

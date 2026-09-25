@@ -33,10 +33,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { employeeName } from '@/features/staff/staff';
 import { apiFetch, errorMessage } from '@/lib/api';
 import { todayIso } from '@/lib/format';
 import {
   useCashAccounts,
+  useEmployees,
   useFinanceCategories,
   useRefreshSiteData,
   useVendors,
@@ -68,6 +70,7 @@ function schemaFor(type: TransactionType) {
       categoryId: z.string(),
       vendorId: z.string(),
       workId: z.string(),
+      employeeId: z.string(),
       amount: tlAmountSchema,
       date: dateSchema,
       description: optionalText(200),
@@ -100,14 +103,16 @@ function OptionSelect({
   placeholder,
   noneLabel,
   disabled,
+  onSelect,
 }: {
   control: Control<FormInput, unknown, FormOutput>;
-  name: 'accountId' | 'toAccountId' | 'categoryId' | 'vendorId' | 'workId';
+  name: 'accountId' | 'toAccountId' | 'categoryId' | 'vendorId' | 'workId' | 'employeeId';
   id: string;
   options: { value: string; label: string }[];
   placeholder: string;
   noneLabel?: string;
   disabled?: boolean;
+  onSelect?: (value: string) => void;
 }) {
   return (
     <Controller
@@ -116,7 +121,11 @@ function OptionSelect({
       render={({ field }) => (
         <Select
           value={field.value || (noneLabel ? NONE : '')}
-          onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+          onValueChange={(v) => {
+            const value = v === NONE ? '' : v;
+            field.onChange(value);
+            onSelect?.(value);
+          }}
           disabled={disabled}
         >
           <SelectTrigger id={id} className="w-full">
@@ -141,32 +150,39 @@ export function TransactionDialog({
   onOpenChange,
   type,
   workId,
+  employeeId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   type: TransactionType;
   workId?: string;
+  employeeId?: string;
 }) {
   const accounts = useCashAccounts();
   const categories = useFinanceCategories();
   const vendors = useVendors();
   const works = useWorks();
+  const employees = useEmployees();
   const refresh = useRefreshSiteData();
   const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
 
   const activeAccounts = (accounts.data ?? []).filter((a) => a.isActive);
+  const activeEmployees = (employees.data ?? []).filter((e) => e.isActive || e.id === employeeId);
   const defaults: FormInput = {
     accountId: activeAccounts.find((a) => a.kind === 'BANK')?.id ?? activeAccounts[0]?.id ?? '',
     toAccountId: '',
-    categoryId: '',
+    categoryId: employeeId
+      ? ((categories.data ?? []).find((c) => c.code === 'STAFF')?.id ?? '')
+      : '',
     vendorId: '',
     workId: workId ?? '',
+    employeeId: employeeId ?? '',
     amount: '',
     date: todayIso(),
     description: '',
     documentNo: '',
-    visibleToResidents: true,
+    visibleToResidents: !employeeId,
   };
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(schemaFor(type)),
@@ -193,6 +209,7 @@ export function TransactionDialog({
           categoryId: type === 'TRANSFER' ? undefined : v.categoryId,
           vendorId: type === 'TRANSFER' ? undefined : v.vendorId || undefined,
           workId: type === 'EXPENSE' ? v.workId || undefined : undefined,
+          employeeId: type === 'EXPENSE' ? v.employeeId || undefined : undefined,
           amountKurus: v.amount,
           date: v.date,
           description: v.description,
@@ -299,6 +316,29 @@ export function TransactionDialog({
                   .map((v) => ({ value: v.id, label: v.name }))}
                 placeholder="Firma seçin"
                 noneLabel="Firma yok"
+                onSelect={(value) => value && form.setValue('employeeId', '')}
+              />
+            </Field>
+          )}
+          {type === 'EXPENSE' && activeEmployees.length > 0 && (
+            <Field
+              label="Çalışan"
+              htmlFor="tx-employee"
+              hint="Maaş gibi çalışana yapılan ödemeler."
+            >
+              <OptionSelect
+                control={form.control}
+                name="employeeId"
+                id="tx-employee"
+                options={activeEmployees.map((e) => ({ value: e.id, label: employeeName(e) }))}
+                placeholder="Çalışan seçin"
+                noneLabel="Çalışana ödeme değil"
+                disabled={Boolean(employeeId)}
+                onSelect={(value) => {
+                  if (!value) return;
+                  form.setValue('vendorId', '');
+                  form.setValue('visibleToResidents', false);
+                }}
               />
             </Field>
           )}

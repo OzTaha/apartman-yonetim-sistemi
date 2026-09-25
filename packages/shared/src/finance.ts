@@ -102,11 +102,12 @@ export const transactionCreateSchema = z
     categoryId: idSchema.optional(),
     vendorId: idSchema.optional(),
     workId: idSchema.optional(),
+    employeeId: idSchema.optional(),
     amountKurus: amountKurusSchema,
     date: dateSchema,
     description: optionalText(200),
     documentNo: optionalText(50),
-    visibleToResidents: z.boolean().default(true),
+    visibleToResidents: z.boolean().optional(),
   })
   .refine((v) => v.type !== 'TRANSFER' || Boolean(v.toAccountId), {
     message: 'Hedef hesabı seçin',
@@ -123,6 +124,14 @@ export const transactionCreateSchema = z
   .refine((v) => v.type === 'EXPENSE' || !v.workId, {
     message: 'Yalnızca gider bir işe bağlanabilir',
     path: ['workId'],
+  })
+  .refine((v) => v.type === 'EXPENSE' || !v.employeeId, {
+    message: 'Yalnızca gider bir çalışana bağlanabilir',
+    path: ['employeeId'],
+  })
+  .refine((v) => !v.employeeId || !v.vendorId, {
+    message: 'Ödeme ya bir firmaya ya bir çalışana yapılır',
+    path: ['employeeId'],
   });
 export type TransactionCreateInput = z.input<typeof transactionCreateSchema>;
 
@@ -130,6 +139,7 @@ export const transactionUpdateSchema = z.object({
   categoryId: idSchema.optional(),
   vendorId: idSchema.nullable().optional(),
   workId: idSchema.nullable().optional(),
+  employeeId: idSchema.nullable().optional(),
   description: z.string().trim().max(200).nullable().optional(),
   documentNo: z.string().trim().max(50).nullable().optional(),
   visibleToResidents: z.boolean().optional(),
@@ -142,6 +152,7 @@ export const transactionListQuerySchema = z.object({
   categoryId: idSchema.optional(),
   vendorId: idSchema.optional(),
   workId: idSchema.optional(),
+  employeeId: idSchema.optional(),
   from: dateSchema.optional(),
   to: dateSchema.optional(),
   cancelled: z.enum(['include', 'only']).optional(),
@@ -247,6 +258,8 @@ export interface TransactionDto {
   vendorName: string | null;
   workId: string | null;
   workTitle: string | null;
+  employeeId: string | null;
+  employeeName: string | null;
   paymentId: string | null;
   receiptNo: number | null;
   unitBlockName: string | null;

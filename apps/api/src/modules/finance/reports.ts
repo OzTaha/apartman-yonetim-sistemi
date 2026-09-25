@@ -143,7 +143,7 @@ export class FinanceReportsService {
     const detail = (t: TransactionDto) =>
       t.type === 'TRANSFER'
         ? `${t.accountName} → ${t.toAccountName}`
-        : [t.categoryName, t.vendorName, t.workTitle].filter(Boolean).join(' · ');
+        : [t.categoryName, t.vendorName ?? t.employeeName, t.workTitle].filter(Boolean).join(' · ');
     const describe = (t: TransactionDto) =>
       t.paymentId
         ? `Makbuz ${t.receiptNo ?? ''} · ${t.unitBlockName}-${t.unitNumber}`

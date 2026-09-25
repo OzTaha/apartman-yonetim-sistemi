@@ -15,6 +15,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAidatRouteImport } from './routes/_app/aidat'
 import { Route as AppAidatAyarlariRouteImport } from './routes/_app/aidat-ayarlari'
 import { Route as AppBorclarRouteImport } from './routes/_app/borclar'
+import { Route as AppCalisanRaporuRouteImport } from './routes/_app/calisan-raporu'
 import { Route as AppDairemRouteImport } from './routes/_app/dairem'
 import { Route as AppFirmalarRouteImport } from './routes/_app/firmalar'
 import { Route as AppGelirGiderRouteImport } from './routes/_app/gelir-gider'
@@ -27,9 +28,15 @@ import { Route as AppSakinlerRouteImport } from './routes/_app/sakinler'
 import { Route as AppSifreRouteImport } from './routes/_app/sifre'
 import { Route as AppSitelerRouteImport } from './routes/_app/siteler'
 import { Route as AppTahsilatlarRouteImport } from './routes/_app/tahsilatlar'
+import { Route as AppTekrarlayanGorevlerRouteImport } from './routes/_app/tekrarlayan-gorevler'
+import { Route as AppVardiyalarRouteImport } from './routes/_app/vardiyalar'
 import { Route as DavetTokenRouteImport } from './routes/davet.$token'
+import { Route as AppCalisanlarIndexRouteImport } from './routes/_app/calisanlar/index'
+import { Route as AppCalisanlarEmployeeIdRouteImport } from './routes/_app/calisanlar/$employeeId'
 import { Route as AppDairelerIndexRouteImport } from './routes/_app/daireler/index'
 import { Route as AppDairelerUnitIdRouteImport } from './routes/_app/daireler/$unitId'
+import { Route as AppGorevlerIndexRouteImport } from './routes/_app/gorevler/index'
+import { Route as AppGorevlerTaskIdRouteImport } from './routes/_app/gorevler/$taskId'
 import { Route as AppIslerIndexRouteImport } from './routes/_app/isler/index'
 import { Route as AppIslerWorkIdRouteImport } from './routes/_app/isler/$workId'
 
@@ -60,6 +67,11 @@ const AppAidatAyarlariRoute = AppAidatAyarlariRouteImport.update({
 const AppBorclarRoute = AppBorclarRouteImport.update({
   id: '/borclar',
   path: '/borclar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCalisanRaporuRoute = AppCalisanRaporuRouteImport.update({
+  id: '/calisan-raporu',
+  path: '/calisan-raporu',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDairemRoute = AppDairemRouteImport.update({
@@ -122,10 +134,30 @@ const AppTahsilatlarRoute = AppTahsilatlarRouteImport.update({
   path: '/tahsilatlar',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTekrarlayanGorevlerRoute = AppTekrarlayanGorevlerRouteImport.update({
+  id: '/tekrarlayan-gorevler',
+  path: '/tekrarlayan-gorevler',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVardiyalarRoute = AppVardiyalarRouteImport.update({
+  id: '/vardiyalar',
+  path: '/vardiyalar',
+  getParentRoute: () => AppRoute,
+} as any)
 const DavetTokenRoute = DavetTokenRouteImport.update({
   id: '/davet/$token',
   path: '/davet/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppCalisanlarIndexRoute = AppCalisanlarIndexRouteImport.update({
+  id: '/calisanlar/',
+  path: '/calisanlar/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCalisanlarEmployeeIdRoute = AppCalisanlarEmployeeIdRouteImport.update({
+  id: '/calisanlar/$employeeId',
+  path: '/calisanlar/$employeeId',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppDairelerIndexRoute = AppDairelerIndexRouteImport.update({
   id: '/daireler/',
@@ -135,6 +167,16 @@ const AppDairelerIndexRoute = AppDairelerIndexRouteImport.update({
 const AppDairelerUnitIdRoute = AppDairelerUnitIdRouteImport.update({
   id: '/daireler/$unitId',
   path: '/daireler/$unitId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGorevlerIndexRoute = AppGorevlerIndexRouteImport.update({
+  id: '/gorevler/',
+  path: '/gorevler/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGorevlerTaskIdRoute = AppGorevlerTaskIdRouteImport.update({
+  id: '/gorevler/$taskId',
+  path: '/gorevler/$taskId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppIslerIndexRoute = AppIslerIndexRouteImport.update({
@@ -154,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/aidat': typeof AppAidatRoute
   '/aidat-ayarlari': typeof AppAidatAyarlariRoute
   '/borclar': typeof AppBorclarRoute
+  '/calisan-raporu': typeof AppCalisanRaporuRoute
   '/dairem': typeof AppDairemRoute
   '/firmalar': typeof AppFirmalarRoute
   '/gelir-gider': typeof AppGelirGiderRoute
@@ -166,10 +209,16 @@ export interface FileRoutesByFullPath {
   '/sifre': typeof AppSifreRoute
   '/siteler': typeof AppSitelerRoute
   '/tahsilatlar': typeof AppTahsilatlarRoute
+  '/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
+  '/vardiyalar': typeof AppVardiyalarRoute
   '/davet/$token': typeof DavetTokenRoute
+  '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/isler/$workId': typeof AppIslerWorkIdRoute
+  '/calisanlar/': typeof AppCalisanlarIndexRoute
   '/daireler/': typeof AppDairelerIndexRoute
+  '/gorevler/': typeof AppGorevlerIndexRoute
   '/isler/': typeof AppIslerIndexRoute
 }
 export interface FileRoutesByTo {
@@ -177,6 +226,7 @@ export interface FileRoutesByTo {
   '/aidat': typeof AppAidatRoute
   '/aidat-ayarlari': typeof AppAidatAyarlariRoute
   '/borclar': typeof AppBorclarRoute
+  '/calisan-raporu': typeof AppCalisanRaporuRoute
   '/dairem': typeof AppDairemRoute
   '/firmalar': typeof AppFirmalarRoute
   '/gelir-gider': typeof AppGelirGiderRoute
@@ -189,11 +239,17 @@ export interface FileRoutesByTo {
   '/sifre': typeof AppSifreRoute
   '/siteler': typeof AppSitelerRoute
   '/tahsilatlar': typeof AppTahsilatlarRoute
+  '/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
+  '/vardiyalar': typeof AppVardiyalarRoute
   '/davet/$token': typeof DavetTokenRoute
   '/': typeof AppIndexRoute
+  '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/isler/$workId': typeof AppIslerWorkIdRoute
+  '/calisanlar': typeof AppCalisanlarIndexRoute
   '/daireler': typeof AppDairelerIndexRoute
+  '/gorevler': typeof AppGorevlerIndexRoute
   '/isler': typeof AppIslerIndexRoute
 }
 export interface FileRoutesById {
@@ -203,6 +259,7 @@ export interface FileRoutesById {
   '/_app/aidat': typeof AppAidatRoute
   '/_app/aidat-ayarlari': typeof AppAidatAyarlariRoute
   '/_app/borclar': typeof AppBorclarRoute
+  '/_app/calisan-raporu': typeof AppCalisanRaporuRoute
   '/_app/dairem': typeof AppDairemRoute
   '/_app/firmalar': typeof AppFirmalarRoute
   '/_app/gelir-gider': typeof AppGelirGiderRoute
@@ -215,11 +272,17 @@ export interface FileRoutesById {
   '/_app/sifre': typeof AppSifreRoute
   '/_app/siteler': typeof AppSitelerRoute
   '/_app/tahsilatlar': typeof AppTahsilatlarRoute
+  '/_app/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
+  '/_app/vardiyalar': typeof AppVardiyalarRoute
   '/davet/$token': typeof DavetTokenRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/_app/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/_app/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/_app/isler/$workId': typeof AppIslerWorkIdRoute
+  '/_app/calisanlar/': typeof AppCalisanlarIndexRoute
   '/_app/daireler/': typeof AppDairelerIndexRoute
+  '/_app/gorevler/': typeof AppGorevlerIndexRoute
   '/_app/isler/': typeof AppIslerIndexRoute
 }
 export interface FileRouteTypes {
@@ -230,6 +293,7 @@ export interface FileRouteTypes {
     | '/aidat'
     | '/aidat-ayarlari'
     | '/borclar'
+    | '/calisan-raporu'
     | '/dairem'
     | '/firmalar'
     | '/gelir-gider'
@@ -242,10 +306,16 @@ export interface FileRouteTypes {
     | '/sifre'
     | '/siteler'
     | '/tahsilatlar'
+    | '/tekrarlayan-gorevler'
+    | '/vardiyalar'
     | '/davet/$token'
+    | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
+    | '/gorevler/$taskId'
     | '/isler/$workId'
+    | '/calisanlar/'
     | '/daireler/'
+    | '/gorevler/'
     | '/isler/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -253,6 +323,7 @@ export interface FileRouteTypes {
     | '/aidat'
     | '/aidat-ayarlari'
     | '/borclar'
+    | '/calisan-raporu'
     | '/dairem'
     | '/firmalar'
     | '/gelir-gider'
@@ -265,11 +336,17 @@ export interface FileRouteTypes {
     | '/sifre'
     | '/siteler'
     | '/tahsilatlar'
+    | '/tekrarlayan-gorevler'
+    | '/vardiyalar'
     | '/davet/$token'
     | '/'
+    | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
+    | '/gorevler/$taskId'
     | '/isler/$workId'
+    | '/calisanlar'
     | '/daireler'
+    | '/gorevler'
     | '/isler'
   id:
     | '__root__'
@@ -278,6 +355,7 @@ export interface FileRouteTypes {
     | '/_app/aidat'
     | '/_app/aidat-ayarlari'
     | '/_app/borclar'
+    | '/_app/calisan-raporu'
     | '/_app/dairem'
     | '/_app/firmalar'
     | '/_app/gelir-gider'
@@ -290,11 +368,17 @@ export interface FileRouteTypes {
     | '/_app/sifre'
     | '/_app/siteler'
     | '/_app/tahsilatlar'
+    | '/_app/tekrarlayan-gorevler'
+    | '/_app/vardiyalar'
     | '/davet/$token'
     | '/_app/'
+    | '/_app/calisanlar/$employeeId'
     | '/_app/daireler/$unitId'
+    | '/_app/gorevler/$taskId'
     | '/_app/isler/$workId'
+    | '/_app/calisanlar/'
     | '/_app/daireler/'
+    | '/_app/gorevler/'
     | '/_app/isler/'
   fileRoutesById: FileRoutesById
 }
@@ -346,6 +430,13 @@ declare module '@tanstack/react-router' {
       path: '/borclar'
       fullPath: '/borclar'
       preLoaderRoute: typeof AppBorclarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/calisan-raporu': {
+      id: '/_app/calisan-raporu'
+      path: '/calisan-raporu'
+      fullPath: '/calisan-raporu'
+      preLoaderRoute: typeof AppCalisanRaporuRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dairem': {
@@ -432,12 +523,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTahsilatlarRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tekrarlayan-gorevler': {
+      id: '/_app/tekrarlayan-gorevler'
+      path: '/tekrarlayan-gorevler'
+      fullPath: '/tekrarlayan-gorevler'
+      preLoaderRoute: typeof AppTekrarlayanGorevlerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vardiyalar': {
+      id: '/_app/vardiyalar'
+      path: '/vardiyalar'
+      fullPath: '/vardiyalar'
+      preLoaderRoute: typeof AppVardiyalarRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/davet/$token': {
       id: '/davet/$token'
       path: '/davet/$token'
       fullPath: '/davet/$token'
       preLoaderRoute: typeof DavetTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/calisanlar/': {
+      id: '/_app/calisanlar/'
+      path: '/calisanlar'
+      fullPath: '/calisanlar/'
+      preLoaderRoute: typeof AppCalisanlarIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/calisanlar/$employeeId': {
+      id: '/_app/calisanlar/$employeeId'
+      path: '/calisanlar/$employeeId'
+      fullPath: '/calisanlar/$employeeId'
+      preLoaderRoute: typeof AppCalisanlarEmployeeIdRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/daireler/': {
       id: '/_app/daireler/'
@@ -451,6 +570,20 @@ declare module '@tanstack/react-router' {
       path: '/daireler/$unitId'
       fullPath: '/daireler/$unitId'
       preLoaderRoute: typeof AppDairelerUnitIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/gorevler/': {
+      id: '/_app/gorevler/'
+      path: '/gorevler'
+      fullPath: '/gorevler/'
+      preLoaderRoute: typeof AppGorevlerIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/gorevler/$taskId': {
+      id: '/_app/gorevler/$taskId'
+      path: '/gorevler/$taskId'
+      fullPath: '/gorevler/$taskId'
+      preLoaderRoute: typeof AppGorevlerTaskIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/isler/': {
@@ -474,6 +607,7 @@ interface AppRouteChildren {
   AppAidatRoute: typeof AppAidatRoute
   AppAidatAyarlariRoute: typeof AppAidatAyarlariRoute
   AppBorclarRoute: typeof AppBorclarRoute
+  AppCalisanRaporuRoute: typeof AppCalisanRaporuRoute
   AppDairemRoute: typeof AppDairemRoute
   AppFirmalarRoute: typeof AppFirmalarRoute
   AppGelirGiderRoute: typeof AppGelirGiderRoute
@@ -486,10 +620,16 @@ interface AppRouteChildren {
   AppSifreRoute: typeof AppSifreRoute
   AppSitelerRoute: typeof AppSitelerRoute
   AppTahsilatlarRoute: typeof AppTahsilatlarRoute
+  AppTekrarlayanGorevlerRoute: typeof AppTekrarlayanGorevlerRoute
+  AppVardiyalarRoute: typeof AppVardiyalarRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppCalisanlarEmployeeIdRoute: typeof AppCalisanlarEmployeeIdRoute
   AppDairelerUnitIdRoute: typeof AppDairelerUnitIdRoute
+  AppGorevlerTaskIdRoute: typeof AppGorevlerTaskIdRoute
   AppIslerWorkIdRoute: typeof AppIslerWorkIdRoute
+  AppCalisanlarIndexRoute: typeof AppCalisanlarIndexRoute
   AppDairelerIndexRoute: typeof AppDairelerIndexRoute
+  AppGorevlerIndexRoute: typeof AppGorevlerIndexRoute
   AppIslerIndexRoute: typeof AppIslerIndexRoute
 }
 
@@ -497,6 +637,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAidatRoute: AppAidatRoute,
   AppAidatAyarlariRoute: AppAidatAyarlariRoute,
   AppBorclarRoute: AppBorclarRoute,
+  AppCalisanRaporuRoute: AppCalisanRaporuRoute,
   AppDairemRoute: AppDairemRoute,
   AppFirmalarRoute: AppFirmalarRoute,
   AppGelirGiderRoute: AppGelirGiderRoute,
@@ -509,10 +650,16 @@ const AppRouteChildren: AppRouteChildren = {
   AppSifreRoute: AppSifreRoute,
   AppSitelerRoute: AppSitelerRoute,
   AppTahsilatlarRoute: AppTahsilatlarRoute,
+  AppTekrarlayanGorevlerRoute: AppTekrarlayanGorevlerRoute,
+  AppVardiyalarRoute: AppVardiyalarRoute,
   AppIndexRoute: AppIndexRoute,
+  AppCalisanlarEmployeeIdRoute: AppCalisanlarEmployeeIdRoute,
   AppDairelerUnitIdRoute: AppDairelerUnitIdRoute,
+  AppGorevlerTaskIdRoute: AppGorevlerTaskIdRoute,
   AppIslerWorkIdRoute: AppIslerWorkIdRoute,
+  AppCalisanlarIndexRoute: AppCalisanlarIndexRoute,
   AppDairelerIndexRoute: AppDairelerIndexRoute,
+  AppGorevlerIndexRoute: AppGorevlerIndexRoute,
   AppIslerIndexRoute: AppIslerIndexRoute,
 }
 

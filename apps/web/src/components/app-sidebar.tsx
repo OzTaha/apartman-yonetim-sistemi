@@ -1,7 +1,12 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   Building,
+  CalendarClock,
   Check,
+  ClipboardList,
+  ListChecks,
+  Repeat,
+  UserCog,
   ChartColumn,
   Hammer,
   Store,
@@ -65,7 +70,12 @@ interface NavItem {
     | '/firmalar'
     | '/gelir-gider'
     | '/kasa-ayarlari'
-    | '/giderler';
+    | '/giderler'
+    | '/calisanlar'
+    | '/vardiyalar'
+    | '/gorevler'
+    | '/tekrarlayan-gorevler'
+    | '/calisan-raporu';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -214,6 +224,15 @@ export function AppSidebar() {
         { to: '/kasa-ayarlari', label: 'Kasa ayarları', icon: WalletCards },
       ]
     : [];
+  const staffItems: NavItem[] = manager
+    ? [
+        { to: '/calisanlar', label: 'Çalışanlar', icon: UserCog },
+        { to: '/vardiyalar', label: 'Vardiya planı', icon: CalendarClock },
+        { to: '/gorevler', label: 'Görevler', icon: ListChecks },
+        { to: '/tekrarlayan-gorevler', label: 'Tekrarlayan görevler', icon: Repeat },
+        { to: '/calisan-raporu', label: 'Çalışan raporu', icon: ClipboardList },
+      ]
+    : [];
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
   const renderItems = (list: NavItem[]) =>
     list.map((item) => (
@@ -256,6 +275,14 @@ export function AppSidebar() {
             <SidebarGroupLabel>Gelir-gider</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>{renderItems(financeItems)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {staffItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Çalışan ve görev</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{renderItems(staffItems)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
