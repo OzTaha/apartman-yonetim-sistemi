@@ -13,6 +13,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    strictPort: true,
     proxy: {
       '/api': process.env['API_URL'] ?? 'http://localhost:3000',
     },
