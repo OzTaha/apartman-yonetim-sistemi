@@ -6,18 +6,19 @@ import {
   type PaymentDto,
 } from '@apartman/shared';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { FileDown, Megaphone, Pin, Receipt, Scale } from 'lucide-react';
+import { CreditCard, FileDown, Megaphone, Pin, Receipt, Scale } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { OnlinePaymentDialog } from '@/features/dues/online-payment-dialog';
 import { StatementDialog } from '@/features/dues/small-dialogs';
 import { ChargeStatusBadge } from '@/features/dues/status';
 import { OccupancyTypeBadge } from '@/features/residents/occupancy-actions';
 import { downloadFile, errorMessage } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import { useMyAnnouncements, useUnitAccount } from '@/lib/queries';
+import { useMyAnnouncements, useOnlineStatus, useUnitAccount } from '@/lib/queries';
 import { session, useSession } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +59,8 @@ function MyUnit({ occupancy }: { occupancy: MyOccupancyDto }) {
   const navigate = useNavigate();
   const account = useUnitAccount(occupancy.unitId, occupancy.siteId);
   const [statement, setStatement] = useState(false);
+  const online = useOnlineStatus(occupancy.siteId);
+  const [paying, setPaying] = useState(false);
   const [showPast, setShowPast] = useState(false);
   const label = unitLabel(occupancy.siteKind, occupancy.blockName, occupancy.unitNumber);
   const short = unitLabel(occupancy.siteKind, occupancy.blockName, occupancy.unitNumber, 'short');
@@ -131,8 +134,14 @@ function MyUnit({ occupancy }: { occupancy: MyOccupancyDto }) {
       {account.data && (
         <>
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-base">Ödenecek borçlar</CardTitle>
+              {online.data?.enabled && open.length > 0 && (
+                <Button size="sm" onClick={() => setPaying(true)}>
+                  <CreditCard />
+                  Online öde
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {open.length === 0 ? (
@@ -222,6 +231,16 @@ function MyUnit({ occupancy }: { occupancy: MyOccupancyDto }) {
         </>
       )}
 
+      {online.data?.enabled && (
+        <OnlinePaymentDialog
+          open={paying}
+          onOpenChange={setPaying}
+          unitId={occupancy.unitId}
+          siteId={occupancy.siteId}
+          charges={open}
+          testMode={online.data.testMode}
+        />
+      )}
       <StatementDialog
         open={statement}
         onOpenChange={setStatement}

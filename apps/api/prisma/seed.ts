@@ -683,6 +683,13 @@ async function main() {
           },
         ]);
 
+        await tx.site.update({
+          where: { id: apartment.id },
+          data: {
+            settings: { duesDueDay: DUE_DAY, onlinePayment: { enabled: true, accountId: null } },
+          },
+        });
+
         const resident = await tx.user.create({
           data: { firstName: 'Ayşe', lastName: 'Yılmaz', phone: '+905321000000', passwordHash },
         });

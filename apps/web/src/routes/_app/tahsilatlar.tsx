@@ -233,7 +233,7 @@ function PaymentsPage() {
           selection={{
             selected: selection.selected,
             onChange: selection.setSelected,
-            canSelect: (p) => !p.cancelledAt,
+            canSelect: (p) => !p.cancelledAt && !p.online,
             label: (p) => `${labelUnit(p.blockName, p.unitNumber, 'short')} ödemesi`,
           }}
           empty={

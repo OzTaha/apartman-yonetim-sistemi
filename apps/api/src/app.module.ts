@@ -14,6 +14,7 @@ import { CommunicationModule } from './modules/communication/communication.modul
 import { BlocksModule } from './modules/blocks/blocks';
 import { DuesModule } from './modules/dues/dues.module';
 import { FinanceModule } from './modules/finance/finance.module';
+import { OnlinePaymentsModule } from './modules/online-payments/online-payments.module';
 import { ResidentsModule } from './modules/residents/residents';
 import { SitesModule } from './modules/sites/sites.module';
 import { StaffModule } from './modules/staff/staff.module';
@@ -48,6 +49,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     FinanceModule,
     StaffModule,
     CommunicationModule,
+    OnlinePaymentsModule,
   ],
   controllers: [HealthController],
   providers: [

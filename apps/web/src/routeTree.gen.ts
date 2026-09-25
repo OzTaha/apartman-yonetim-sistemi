@@ -45,6 +45,7 @@ import { Route as AppIslerWorkIdRouteImport } from './routes/_app/isler/$workId'
 import { Route as AppMesajlarIndexRouteImport } from './routes/_app/mesajlar/index'
 import { Route as AppMesajlarCampaignIdRouteImport } from './routes/_app/mesajlar/$campaignId'
 import { Route as AppMesajlarYeniRouteImport } from './routes/_app/mesajlar/yeni'
+import { Route as AppOdemeSonucRouteImport } from './routes/_app/odeme/sonuc'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -226,6 +227,11 @@ const AppMesajlarYeniRoute = AppMesajlarYeniRouteImport.update({
   path: '/mesajlar/yeni',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOdemeSonucRoute = AppOdemeSonucRouteImport.update({
+  id: '/odeme/sonuc',
+  path: '/odeme/sonuc',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/isler/$workId': typeof AppIslerWorkIdRoute
   '/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
   '/mesajlar/yeni': typeof AppMesajlarYeniRoute
+  '/odeme/sonuc': typeof AppOdemeSonucRoute
   '/calisanlar/': typeof AppCalisanlarIndexRoute
   '/daireler/': typeof AppDairelerIndexRoute
   '/duyurular/': typeof AppDuyurularIndexRoute
@@ -294,6 +301,7 @@ export interface FileRoutesByTo {
   '/isler/$workId': typeof AppIslerWorkIdRoute
   '/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
   '/mesajlar/yeni': typeof AppMesajlarYeniRoute
+  '/odeme/sonuc': typeof AppOdemeSonucRoute
   '/calisanlar': typeof AppCalisanlarIndexRoute
   '/daireler': typeof AppDairelerIndexRoute
   '/duyurular': typeof AppDuyurularIndexRoute
@@ -333,6 +341,7 @@ export interface FileRoutesById {
   '/_app/isler/$workId': typeof AppIslerWorkIdRoute
   '/_app/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
   '/_app/mesajlar/yeni': typeof AppMesajlarYeniRoute
+  '/_app/odeme/sonuc': typeof AppOdemeSonucRoute
   '/_app/calisanlar/': typeof AppCalisanlarIndexRoute
   '/_app/daireler/': typeof AppDairelerIndexRoute
   '/_app/duyurular/': typeof AppDuyurularIndexRoute
@@ -372,6 +381,7 @@ export interface FileRouteTypes {
     | '/isler/$workId'
     | '/mesajlar/$campaignId'
     | '/mesajlar/yeni'
+    | '/odeme/sonuc'
     | '/calisanlar/'
     | '/daireler/'
     | '/duyurular/'
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
     | '/isler/$workId'
     | '/mesajlar/$campaignId'
     | '/mesajlar/yeni'
+    | '/odeme/sonuc'
     | '/calisanlar'
     | '/daireler'
     | '/duyurular'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/_app/isler/$workId'
     | '/_app/mesajlar/$campaignId'
     | '/_app/mesajlar/yeni'
+    | '/_app/odeme/sonuc'
     | '/_app/calisanlar/'
     | '/_app/daireler/'
     | '/_app/duyurular/'
@@ -715,6 +727,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMesajlarYeniRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/odeme/sonuc': {
+      id: '/_app/odeme/sonuc'
+      path: '/odeme/sonuc'
+      fullPath: '/odeme/sonuc'
+      preLoaderRoute: typeof AppOdemeSonucRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -746,6 +765,7 @@ interface AppRouteChildren {
   AppIslerWorkIdRoute: typeof AppIslerWorkIdRoute
   AppMesajlarCampaignIdRoute: typeof AppMesajlarCampaignIdRoute
   AppMesajlarYeniRoute: typeof AppMesajlarYeniRoute
+  AppOdemeSonucRoute: typeof AppOdemeSonucRoute
   AppCalisanlarIndexRoute: typeof AppCalisanlarIndexRoute
   AppDairelerIndexRoute: typeof AppDairelerIndexRoute
   AppDuyurularIndexRoute: typeof AppDuyurularIndexRoute
@@ -782,6 +802,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIslerWorkIdRoute: AppIslerWorkIdRoute,
   AppMesajlarCampaignIdRoute: AppMesajlarCampaignIdRoute,
   AppMesajlarYeniRoute: AppMesajlarYeniRoute,
+  AppOdemeSonucRoute: AppOdemeSonucRoute,
   AppCalisanlarIndexRoute: AppCalisanlarIndexRoute,
   AppDairelerIndexRoute: AppDairelerIndexRoute,
   AppDuyurularIndexRoute: AppDuyurularIndexRoute,

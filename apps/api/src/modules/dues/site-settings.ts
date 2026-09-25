@@ -9,6 +9,7 @@ export const DEFAULT_DUE_DAY = 10;
 export interface SiteSettings {
   duesDueDay?: number;
   proportionalDues?: boolean;
+  onlinePayment?: { enabled: boolean; accountId: string | null };
 }
 
 type UnitDataField = 'areaM2' | 'landShare';

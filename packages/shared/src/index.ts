@@ -11,3 +11,4 @@ export * from './finance';
 export * from './dashboard';
 export * from './staff';
 export * from './communication';
+export * from './online';

@@ -44,6 +44,7 @@ import {
   useUnits,
 } from '@/lib/queries';
 import { MissingUnitDataAlert } from '@/features/dues/missing-unit-data';
+import { OnlinePaymentCard } from '@/features/dues/online-settings-card';
 import { labelUnit } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
@@ -433,6 +434,7 @@ function DuesSettingsPage() {
         <AccrueCard />
       </div>
       <ChargeTypesCard />
+      <OnlinePaymentCard />
     </div>
   );
 }

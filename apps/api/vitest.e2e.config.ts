@@ -24,6 +24,7 @@ export default defineConfig({
       LOGIN_RATE_LIMIT: '5',
       WEB_ORIGIN: 'http://localhost:5173',
       UPLOAD_DIR: path.join(os.tmpdir(), 'apartman-e2e-uploads'),
+      PAYMENT_PROVIDER: 'mock',
     },
   },
   plugins: [swc.vite({ module: { type: 'es6' } })],

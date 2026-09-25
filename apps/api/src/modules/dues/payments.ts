@@ -20,6 +20,10 @@ import { cancelEach } from '../../common/bulk';
 import {
   allocatePayment,
   AllocationError,
+  fitToOpenCharges,
+  isDateLocked,
+  type FittedPayment,
+  type IntentItem,
   formatKurusTl,
   kurusToWordsTr,
   paymentMethodLabels,
@@ -46,10 +50,14 @@ import {
   assertDateOpen,
   defaultAccountFor,
   duesIncomeCategoryId,
+  lockedThrough,
   nextCounter,
 } from '../finance/finance.ledger';
 import { DocumentsService } from './documents.service';
 import { byDueOrder, paymentInclude, toPaymentDto } from './ledger.mapper';
+import { loadSiteSettings } from './site-settings';
+
+export type OnlineRecordResult = FittedPayment & { paymentId: string | null };
 
 @Injectable()
 export class PaymentsService {
@@ -90,7 +98,7 @@ export class PaymentsService {
     const accountId = await this.accountFor(input.accountId, input.method);
     const categoryId = await duesIncomeCategoryId(this.prisma, siteId);
 
-    const paymentId = await this.tenant.db.$transaction(async (tx) => {
+    const paymentId = await this.prisma.$transaction(async (tx) => {
       const locked = await tx.$queryRaw<{ id: string }[]>`
         SELECT id FROM units WHERE id = ${input.unitId}::uuid AND "siteId" = ${siteId}::uuid FOR UPDATE`;
       if (locked.length === 0) throw new NotFoundException('Daire bulunamadı');
@@ -107,6 +115,15 @@ export class PaymentsService {
         }))
         .filter((c) => c.remainingKurus > 0);
 
+      const pending = await tx.paymentIntent.count({
+        where: { siteId, unitId: input.unitId, status: 'PENDING', expiresAt: { gt: new Date() } },
+      });
+      if (pending > 0) {
+        throw new ConflictException(
+          'Bu dairenin şu anda devam eden bir online ödemesi var. Fazla ödeme olmaması için ödeme tamamlanana veya süresi dolana kadar tahsilat girilemez.',
+        );
+      }
+
       let allocations: Allocation[];
       try {
         allocations = input.allocations?.length
@@ -117,42 +134,18 @@ export class PaymentsService {
         throw error;
       }
 
-      const receiptNo = await nextCounter(tx, siteId, 'receipt');
-      const payment = await tx.payment.create({
-        data: {
-          siteId,
-          receiptNo,
-          unitId: input.unitId,
-          amountKurus: input.amountKurus,
-          method: input.method,
-          paidAt: dateOnly(input.paidAt),
-          reference: input.reference ?? null,
-          note: input.note ?? null,
-          createdById: this.tenant.userId ?? null,
-        },
+      return this.insertPayment(tx, {
+        unitId: input.unitId,
+        amountKurus: input.amountKurus,
+        method: input.method,
+        paidAt: input.paidAt,
+        reference: input.reference ?? null,
+        note: input.note ?? null,
+        allocations,
+        accountId,
+        categoryId,
+        createdById: this.tenant.userId ?? null,
       });
-      await tx.paymentAllocation.createMany({
-        data: allocations.map((a) => ({
-          siteId,
-          paymentId: payment.id,
-          chargeId: a.chargeId,
-          amountKurus: a.amountKurus,
-        })),
-      });
-      await tx.transaction.create({
-        data: {
-          siteId,
-          type: 'INCOME',
-          amountKurus: input.amountKurus,
-          date: dateOnly(input.paidAt),
-          accountId,
-          categoryId,
-          paymentId: payment.id,
-          visibleToResidents: false,
-          createdById: this.tenant.userId ?? null,
-        },
-      });
-      return payment.id;
     });
 
     const payment = await this.tenant.db.payment.findUniqueOrThrow({
@@ -169,13 +162,67 @@ export class PaymentsService {
     return dto;
   }
 
-  async cancel(id: string, reason: string): Promise<PaymentDto> {
+  async recordOnline(
+    intent: { unitId: string; userId: string; items: IntentItem[]; reference: string },
+    onRecorded: (tx: Prisma.TransactionClient, result: OnlineRecordResult) => Promise<void>,
+  ): Promise<OnlineRecordResult> {
+    const siteId = this.tenant.siteId;
+    const paidAt = todayInIstanbul();
+    const open = !isDateLocked(paidAt, await lockedThrough(this.prisma, siteId));
+    const accountId = await this.onlineAccount();
+    const categoryId = await duesIncomeCategoryId(this.prisma, siteId);
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT id FROM units WHERE id = ${intent.unitId}::uuid AND "siteId" = ${siteId}::uuid FOR UPDATE`;
+      const charges = await tx.charge.findMany({
+        where: { siteId, id: { in: intent.items.map((i) => i.chargeId) }, cancelledAt: null },
+        include: { allocations: { select: { amountKurus: true } } },
+      });
+      const remaining = new Map(
+        charges.map((c) => [
+          c.id,
+          c.amountKurus - c.allocations.reduce((sum, a) => sum + a.amountKurus, 0),
+        ]),
+      );
+      const fit = fitToOpenCharges(intent.items, open ? remaining : new Map());
+      const paymentId =
+        fit.appliedKurus > 0
+          ? await this.insertPayment(tx, {
+              unitId: intent.unitId,
+              amountKurus: fit.appliedKurus,
+              method: 'ONLINE',
+              paidAt,
+              reference: intent.reference,
+              note: null,
+              allocations: fit.allocations,
+              accountId,
+              categoryId,
+              createdById: intent.userId,
+            })
+          : null;
+      const result = { ...fit, paymentId };
+      await onRecorded(tx, result);
+      return result;
+    });
+  }
+
+  async cancel(
+    id: string,
+    reason: string,
+    options: { refunded?: boolean } = {},
+  ): Promise<PaymentDto> {
     const before = await this.tenant.db.payment.findUnique({
       where: { id },
       include: paymentInclude,
     });
     if (!before) throw new NotFoundException('Ödeme bulunamadı');
     if (before.cancelledAt) throw new ConflictException('Bu ödeme zaten iptal edilmiş');
+    if (before.intent && !options.refunded) {
+      throw new BadRequestException(
+        'Online ödeme ancak sakine iade edilerek iptal edilir. Tahsilatlar ekranında "İade et" seçeneğini kullanın.',
+      );
+    }
     await assertDateOpen(this.prisma, this.tenant.siteId, toDateString(before.paidAt));
 
     await this.tenant.db.$transaction(async (tx) => {
@@ -338,6 +385,70 @@ export class PaymentsService {
     const file = await this.documents.render(content);
     const short = unitLabel(payment.site.kind, dto.blockName, dto.unitNumber, 'short');
     return { file, name: `makbuz-${dto.receiptNo ?? dto.id}-${short}.pdf` };
+  }
+
+  private async insertPayment(
+    tx: Prisma.TransactionClient,
+    data: {
+      unitId: string;
+      amountKurus: number;
+      method: PaymentCreateDto['method'];
+      paidAt: string;
+      reference: string | null;
+      note: string | null;
+      allocations: Allocation[];
+      accountId: string;
+      categoryId: string;
+      createdById: string | null;
+    },
+  ): Promise<string> {
+    const siteId = this.tenant.siteId;
+    const receiptNo = await nextCounter(tx, siteId, 'receipt');
+    const payment = await tx.payment.create({
+      data: {
+        siteId,
+        receiptNo,
+        unitId: data.unitId,
+        amountKurus: data.amountKurus,
+        method: data.method,
+        paidAt: dateOnly(data.paidAt),
+        reference: data.reference,
+        note: data.note,
+        createdById: data.createdById,
+      },
+    });
+    await tx.paymentAllocation.createMany({
+      data: data.allocations.map((a) => ({
+        siteId,
+        paymentId: payment.id,
+        chargeId: a.chargeId,
+        amountKurus: a.amountKurus,
+      })),
+    });
+    await tx.transaction.create({
+      data: {
+        siteId,
+        type: 'INCOME',
+        amountKurus: data.amountKurus,
+        date: dateOnly(data.paidAt),
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        paymentId: payment.id,
+        visibleToResidents: false,
+        createdById: data.createdById,
+      },
+    });
+    return payment.id;
+  }
+
+  private async onlineAccount(): Promise<string> {
+    const settings = await loadSiteSettings(this.prisma, this.tenant.siteId);
+    const accountId = settings.onlinePayment?.accountId;
+    if (accountId) {
+      const account = await this.tenant.db.cashAccount.findUnique({ where: { id: accountId } });
+      if (account?.isActive) return account.id;
+    }
+    return defaultAccountFor(this.prisma, this.tenant.siteId, 'BANK_TRANSFER');
   }
 
   private async accountFor(accountId: string | undefined, method: PaymentCreateDto['method']) {

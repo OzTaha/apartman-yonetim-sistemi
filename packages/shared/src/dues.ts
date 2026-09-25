@@ -222,6 +222,7 @@ export interface PaymentDto {
   receiptNo: number | null;
   accountId: string | null;
   accountName: string | null;
+  online: boolean;
   unitId: string;
   blockName: string;
   unitNumber: string;

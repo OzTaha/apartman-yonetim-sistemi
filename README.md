@@ -172,6 +172,23 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Sağlayıcı `MESSAGING_PROVIDER` ile seçilir. Şimdilik yalnızca `log` vardır: mesajları göndermez, kaydeder ve gönderildi sayar.
   SMS/WhatsApp firması seçildiğinde yalnızca yeni bir sağlayıcı sınıfı yazılır; hesap müşteri adına açılır.
 
+## Online ödeme
+
+- Yönetici "Aidat ayarları > Online ödeme" bölümünden açar (varsayılan kapalı) ve gelirin yazılacağı hesabı seçer.
+  Sakin "Dairem" sayfasında açık borçlarını seçer (hepsi önceden işaretli) ve ödeme kuruluşunun sayfasına yönlendirilir.
+  Kart bilgisi bu sistemde işlenmez ve saklanmaz.
+- Ödeme tutarı sunucuda, seçilen borçların kalanından hesaplanır; borç kısmen ödenmez. Başarılı ödemede tahsilat, borç
+  dağıtımı, makbuz ve kasa geliri tek işlemde oluşur.
+- Fazla ödeme olmaz:
+  - Bir dairenin devam eden online ödemesi varken (en fazla 30 dakika) o daireye elle tahsilat girilemez.
+  - Ödeme geç tamamlanır ve borç bu arada başka yoldan kapanmışsa yalnızca açık kalan kısım işlenir, fazlası otomatik iade edilir.
+- Ödeme kuruluşunun bildirimi imzayla doğrulanır; aynı bildirim birden çok kez gelse de tek tahsilat oluşur.
+- Online tahsilat normal iptal edilemez; Tahsilatlar ekranında "İade et" ile tutar karta iade edilir, tahsilat ve kasa geliri
+  iptal olur, borç yeniden açılır. Online tahsilatlar toplu iptale dahil edilmez.
+- Sağlayıcı `PAYMENT_PROVIDER` ile seçilir: `none` (kapalı) veya `mock` (test ödeme sayfası, gerçek para çekilmez).
+  `mock` canlı ortamda (`NODE_ENV=production`) çalışmaz. Ödeme kuruluşu seçildiğinde yalnızca yeni bir sağlayıcı sınıfı yazılır;
+  üye işyeri hesabı müşteri adına açılır.
+
 ## Kurallar
 
 - **Para:** Tüm tutarlar veritabanında kuruş cinsinden tam sayı tutulur. Dönüşüm ve gösterim için `@apartman/shared` içindeki `parseTlToKurus` ve `formatKurus` kullanılır.

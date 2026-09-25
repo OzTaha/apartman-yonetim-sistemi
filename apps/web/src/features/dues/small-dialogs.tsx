@@ -33,11 +33,15 @@ export function CancelDialog({
   description,
   pending,
   onConfirm,
+  reasonLabel = 'İptal nedeni',
+  confirmLabel = 'İptal et',
 }: DialogProps & {
   title: string;
   description: string;
   pending?: boolean;
   onConfirm: (reason: string) => void;
+  reasonLabel?: string;
+  confirmLabel?: string;
 }) {
   const form = useForm<CancelForm>({
     resolver: zodResolver(cancelSchema),
@@ -58,7 +62,7 @@ export function CancelDialog({
         </DialogHeader>
         <form id="cancel-form" noValidate onSubmit={form.handleSubmit((v) => onConfirm(v.reason))}>
           <Field
-            label="İptal nedeni"
+            label={reasonLabel}
             htmlFor="cancel-reason"
             error={form.formState.errors.reason?.message}
             required
@@ -71,7 +75,7 @@ export function CancelDialog({
             Vazgeç
           </Button>
           <Button type="submit" form="cancel-form" variant="destructive" disabled={pending}>
-            İptal et
+            {confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

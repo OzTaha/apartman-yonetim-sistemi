@@ -125,6 +125,14 @@ enum DeliveryStatus {
   SKIPPED
 }
 
+enum PaymentIntentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
 model User {
   id              String   @id @default(uuid(7)) @db.Uuid
   firstName       String
@@ -141,6 +149,7 @@ model User {
   occupancies       Occupancy[]
   refreshTokens     RefreshToken[]
   announcementReads AnnouncementRead[]
+  paymentIntents    PaymentIntent[]
 
   @@map("users")
 }
@@ -184,6 +193,7 @@ model Site {
   messageTemplates  MessageTemplate[]
   campaigns         MessageCampaign[]
   deliveries        MessageDelivery[]
+  paymentIntents    PaymentIntent[]
 
   @@map("sites")
 }
@@ -230,11 +240,12 @@ model Unit {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  site        Site        @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  block       Block       @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
+  site        Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  block       Block           @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
   occupancies Occupancy[]
   charges     Charge[]
   payments    Payment[]
+  intents     PaymentIntent[]
 
   @@unique([blockId, number])
   @@unique([id, siteId])
@@ -410,6 +421,7 @@ model Payment {
   allocations PaymentAllocation[]
   transaction Transaction?
   attachments Attachment[]
+  intent      PaymentIntent?
 
   @@unique([id, siteId])
   @@unique([siteId, receiptNo])
@@ -830,4 +842,35 @@ model MessageDelivery {
 
   @@index([campaignId, status])
   @@map("message_deliveries")
+}
+
+model PaymentIntent {
+  id              String              @id @default(uuid(7)) @db.Uuid
+  siteId          String              @db.Uuid
+  unitId          String              @db.Uuid
+  userId          String              @db.Uuid
+  amountKurus     Int
+  items           Json
+  status          PaymentIntentStatus @default(PENDING)
+  provider        String
+  providerToken   String?             @unique
+  providerPayment String?
+  paymentId       String?             @db.Uuid
+  appliedKurus    Int                 @default(0)
+  refundedKurus   Int                 @default(0)
+  refundReference String?
+  failureReason   String?
+  expiresAt       DateTime
+  completedAt     DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  site    Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  unit    Unit     @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  payment Payment? @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
+
+  @@unique([paymentId, siteId])
+  @@index([unitId, status])
+  @@map("payment_intents")
 }

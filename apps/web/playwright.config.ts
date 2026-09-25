@@ -33,6 +33,7 @@ export default defineConfig({
         PORT: String(API_PORT),
         WEB_ORIGIN: `http://localhost:${WEB_PORT}`,
         LOGIN_RATE_LIMIT: '100',
+        PAYMENT_PROVIDER: 'mock',
       },
     },
     {

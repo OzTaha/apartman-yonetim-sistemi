@@ -1,4 +1,7 @@
 import type {
+  OnlinePaymentSettingsDto,
+  OnlinePaymentStatusDto,
+  PaymentIntentDto,
   AnnouncementDetailDto,
   AnnouncementDto,
   CampaignDetailDto,
@@ -265,6 +268,9 @@ const SITE_SCOPED = new Set([
   'campaign',
   'message-templates',
   'reminder-settings',
+  'online-status',
+  'online-settings',
+  'payment-intent',
 ]);
 
 const isSiteData = (q: { queryKey: readonly unknown[] }) =>
@@ -325,3 +331,23 @@ export const useMessageTemplates = () =>
   useSiteQuery<MessageTemplateDto[]>('message-templates', '/message-templates');
 export const useReminderSettings = () =>
   useSiteQuery<ReminderSettingsDto>('reminder-settings', '/reminder-settings');
+
+export function useOnlineStatus(siteIdOverride?: string) {
+  const { siteId: activeSiteId } = useSession();
+  const siteId = siteIdOverride ?? activeSiteId;
+  return useQuery({
+    queryKey: ['online-status', siteId],
+    queryFn: () => apiFetch<OnlinePaymentStatusDto>('/online-payments/status', { siteId }),
+    enabled: Boolean(siteId),
+  });
+}
+export const useOnlineSettings = () =>
+  useSiteQuery<OnlinePaymentSettingsDto>('online-settings', '/online-payments/settings');
+export function usePaymentIntent(id: string, siteId: string | undefined) {
+  return useQuery({
+    queryKey: ['payment-intent', siteId, id],
+    queryFn: () => apiFetch<PaymentIntentDto>(`/online-payments/intents/${id}`, { siteId }),
+    enabled: Boolean(siteId) && Boolean(id),
+    refetchInterval: (query) => (query.state.data?.status === 'PENDING' ? 2000 : false),
+  });
+}

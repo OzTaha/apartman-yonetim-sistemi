@@ -70,8 +70,16 @@ export function PaymentActions({ payment }: { payment: PaymentDto }) {
   const [open, setOpen] = useState(false);
   const cancel = useApiMutation(
     (reason: string) =>
-      apiFetch<PaymentDto>(`/payments/${payment.id}/cancel`, { method: 'POST', body: { reason } }),
-    { success: 'Ödeme iptal edildi', onSuccess: () => setOpen(false) },
+      apiFetch<PaymentDto>(
+        payment.online
+          ? `/online-payments/payments/${payment.id}/refund`
+          : `/payments/${payment.id}/cancel`,
+        { method: 'POST', body: { reason } },
+      ),
+    {
+      success: payment.online ? 'Ödeme iade edildi' : 'Ödeme iptal edildi',
+      onSuccess: () => setOpen(false),
+    },
   );
   return (
     <div className="inline-flex" onClick={(e) => e.stopPropagation()}>
@@ -96,7 +104,7 @@ export function PaymentActions({ payment }: { payment: PaymentDto }) {
           {!payment.cancelledAt && (
             <DropdownMenuItem variant="destructive" onSelect={() => setOpen(true)}>
               <Ban />
-              Ödemeyi iptal et
+              {payment.online ? 'İade et' : 'Ödemeyi iptal et'}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -104,10 +112,14 @@ export function PaymentActions({ payment }: { payment: PaymentDto }) {
       <CancelDialog
         open={open}
         onOpenChange={setOpen}
-        title="Ödeme iptal edilsin mi?"
-        description={`${formatDate(payment.paidAt)} tarihli ${formatKurus(
-          payment.amountKurus,
-        )} ödeme iptal edilecek ve kapattığı borçlar yeniden açık hale gelecek.`}
+        title={payment.online ? 'Online ödeme iade edilsin mi?' : 'Ödeme iptal edilsin mi?'}
+        description={
+          payment.online
+            ? `${formatKurus(payment.amountKurus)} sakinin kartına iade edilecek, tahsilat ve kasa geliri iptal olacak, kapattığı borçlar yeniden açılacak.`
+            : `${formatDate(payment.paidAt)} tarihli ${formatKurus(payment.amountKurus)} ödeme iptal edilecek ve kapattığı borçlar yeniden açık hale gelecek.`
+        }
+        reasonLabel={payment.online ? 'İade nedeni' : undefined}
+        confirmLabel={payment.online ? 'İade et' : undefined}
         pending={cancel.isPending}
         onConfirm={(reason) => cancel.mutate(reason)}
       />

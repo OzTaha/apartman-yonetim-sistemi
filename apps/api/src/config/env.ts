@@ -1,16 +1,22 @@
 import { z } from 'zod';
 
-export const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(3000),
-  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
-  REDIS_URL: z.url({ protocol: /^rediss?$/ }),
-  WEB_ORIGIN: z.url().default('http://localhost:5173'),
-  JWT_ACCESS_SECRET: z.string().min(32, 'En az 32 karakter olmalıdır'),
-  LOGIN_RATE_LIMIT: z.coerce.number().int().positive().default(10),
-  UPLOAD_DIR: z.string().min(1).default('uploads'),
-  MESSAGING_PROVIDER: z.enum(['log']).default('log'),
-});
+export const envSchema = z
+  .object({
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    PORT: z.coerce.number().int().positive().default(3000),
+    DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+    WEB_ORIGIN: z.url().default('http://localhost:5173'),
+    JWT_ACCESS_SECRET: z.string().min(32, 'En az 32 karakter olmalıdır'),
+    LOGIN_RATE_LIMIT: z.coerce.number().int().positive().default(10),
+    UPLOAD_DIR: z.string().min(1).default('uploads'),
+    MESSAGING_PROVIDER: z.enum(['log']).default('log'),
+    PAYMENT_PROVIDER: z.enum(['none', 'mock']).default('none'),
+  })
+  .refine((env) => !(env.NODE_ENV === 'production' && env.PAYMENT_PROVIDER === 'mock'), {
+    message: 'Test ödeme sağlayıcısı (mock) canlı ortamda kullanılamaz',
+    path: ['PAYMENT_PROVIDER'],
+  });
 
 export type Env = z.infer<typeof envSchema>;
 

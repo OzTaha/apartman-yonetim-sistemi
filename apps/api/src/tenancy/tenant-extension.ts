@@ -29,6 +29,7 @@ export const TENANT_MODELS: ReadonlySet<string> = new Set([
   'MessageTemplate',
   'MessageCampaign',
   'MessageDelivery',
+  'PaymentIntent',
 ]);
 
 const WHERE_OPERATIONS = new Set([
