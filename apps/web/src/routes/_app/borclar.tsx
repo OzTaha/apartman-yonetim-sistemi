@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { BulkCancelBar } from '@/components/bulk-cancel-bar';
 import { DataTable } from '@/components/data-table';
 import { ManagerOnly } from '@/components/manager-only';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
@@ -21,6 +22,7 @@ import { ChargeStatusBadge } from '@/features/dues/status';
 import { formatDate } from '@/lib/format';
 import { type ChargeFilters, useBlocks, useChargeTypes, useCharges } from '@/lib/queries';
 import { labelUnit, useIsApartment } from '@/lib/unit-label';
+import { useSelection } from '@/lib/selection';
 
 type Status = ChargeFilters['status'];
 const statusLabels: Record<Status, string> = {
@@ -133,6 +135,7 @@ function ChargesPage() {
     period: search.donem,
   });
   const total = (charges.data ?? []).reduce((sum, c) => sum + c.remainingKurus, 0);
+  const selection = useSelection(charges.data, (c) => c.id);
 
   const setFilter = (patch: Record<string, string | undefined>) =>
     void navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
@@ -224,11 +227,24 @@ function ChargesPage() {
             void navigate({ to: '/daireler/$unitId', params: { unitId: c.unitId } })
           }
           mobileCard={(c) => <ChargeCard charge={c} />}
+          selection={{
+            selected: selection.selected,
+            onChange: selection.setSelected,
+            canSelect: (c) => !c.cancelledAt && c.paidKurus === 0,
+            label: (c) => `${labelUnit(c.blockName, c.unitNumber, 'short')} ${c.label}`,
+          }}
           empty={
             <EmptyState title="Kayıt yok" description="Seçili filtrelere uygun borç bulunamadı." />
           }
         />
       )}
+      <BulkCancelBar
+        ids={selection.ids}
+        endpoint="/charges/bulk-cancel"
+        noun="borç"
+        description="Seçilen borçlar iptal edildi olarak işaretlenir, silinmez. Ödemesi olan borçlar seçilemez; önce ödemenin iptal edilmesi gerekir."
+        onClear={selection.clear}
+      />
       <ChargeCreateDialog open={adding} onOpenChange={setAdding} />
     </div>
   );

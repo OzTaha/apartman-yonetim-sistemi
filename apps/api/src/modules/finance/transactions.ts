@@ -14,9 +14,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import type { BulkCancelResultDto } from '@apartman/shared';
+import { cancelEach } from '../../common/bulk';
 import { DUES_INCOME_CODE, type TransactionDto } from '@apartman/shared';
 import { dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
-import { CancelDto } from '../../common/dues.dto';
+import { BulkCancelDto, CancelDto } from '../../common/dues.dto';
 import {
   TransactionCreateDto,
   TransactionListQueryDto,
@@ -258,6 +260,12 @@ export class TransactionsController {
     @Body() body: TransactionUpdateDto,
   ): Promise<TransactionDto> {
     return this.transactions.update(id, body);
+  }
+
+  @Post('bulk-cancel')
+  @HttpCode(200)
+  bulkCancel(@Body() body: BulkCancelDto): Promise<BulkCancelResultDto> {
+    return cancelEach(body.ids, (id) => this.transactions.cancel(id, body.reason));
   }
 
   @Post(':id/cancel')

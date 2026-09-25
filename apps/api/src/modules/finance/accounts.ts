@@ -35,7 +35,9 @@ export class AccountsService {
     const siteId = this.tenant.siteId;
     await ensureFinanceDefaults(this.prisma, siteId);
     const [accounts, balances] = await Promise.all([
-      this.tenant.db.cashAccount.findMany({ orderBy: { createdAt: 'asc' } }),
+      this.tenant.db.cashAccount.findMany({
+        orderBy: [{ createdAt: 'asc' }, { kind: 'asc' }, { name: 'asc' }],
+      }),
       accountBalances(this.prisma, siteId),
     ]);
     return accounts.map((a) => ({
@@ -113,7 +115,7 @@ export class CategoriesService {
   async list(): Promise<FinanceCategoryDto[]> {
     await ensureFinanceDefaults(this.prisma, this.tenant.siteId);
     const categories = await this.tenant.db.financeCategory.findMany({
-      orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }, { name: 'asc' }],
     });
     return categories.map(toCategoryDto);
   }

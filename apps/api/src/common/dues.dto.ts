@@ -1,5 +1,6 @@
 import {
   accrueSchema,
+  bulkCancelSchema,
   cancelSchema,
   chargeCreateSchema,
   chargeListQuerySchema,
@@ -24,6 +25,7 @@ export class AccrueDto extends createZodDto(accrueSchema) {}
 export class ChargeCreateDto extends createZodDto(chargeCreateSchema) {}
 export class ChargeUpdateDto extends createZodDto(chargeUpdateSchema) {}
 export class CancelDto extends createZodDto(cancelSchema) {}
+export class BulkCancelDto extends createZodDto(bulkCancelSchema) {}
 export class ChargeListQueryDto extends createZodDto(chargeListQuerySchema) {}
 export class PaymentCreateDto extends createZodDto(paymentCreateSchema) {}
 export class PaymentListQueryDto extends createZodDto(paymentListQuerySchema) {}

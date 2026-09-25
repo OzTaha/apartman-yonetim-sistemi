@@ -14,6 +14,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import type { BulkCancelResultDto } from '@apartman/shared';
+import { cancelEach } from '../../common/bulk';
 import {
   DistributionError,
   splitTotal,
@@ -22,6 +24,7 @@ import {
 } from '@apartman/shared';
 import { dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
 import {
+  BulkCancelDto,
   CancelDto,
   ChargeCreateDto,
   ChargeListQueryDto,
@@ -238,6 +241,12 @@ export class ChargesController {
     @Body() body: ChargeUpdateDto,
   ): Promise<ChargeDto> {
     return this.charges.update(id, body);
+  }
+
+  @Post('bulk-cancel')
+  @HttpCode(200)
+  bulkCancel(@Body() body: BulkCancelDto): Promise<BulkCancelResultDto> {
+    return cancelEach(body.ids, (id) => this.charges.cancel(id, body.reason));
   }
 
   @Post(':id/cancel')

@@ -8,6 +8,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { HandCoins } from 'lucide-react';
 import { useState } from 'react';
+import { BulkCancelBar } from '@/components/bulk-cancel-bar';
 import { DataTable } from '@/components/data-table';
 import { ManagerOnly } from '@/components/manager-only';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
@@ -27,6 +28,7 @@ import { formatDate, todayIso } from '@/lib/format';
 import { usePayments } from '@/lib/queries';
 import { cn } from '@/lib/utils';
 import { labelUnit } from '@/lib/unit-label';
+import { useSelection } from '@/lib/selection';
 
 export const Route = createFileRoute('/_app/tahsilatlar')({
   validateSearch: (
@@ -149,6 +151,7 @@ function PaymentsPage() {
   const payments = usePayments({ from, to, method: search.yontem });
   const active = (payments.data ?? []).filter((p) => !p.cancelledAt);
   const total = active.reduce((sum, p) => sum + p.amountKurus, 0);
+  const selection = useSelection(payments.data, (p) => p.id);
 
   const setFilter = (patch: Record<string, string | undefined>) =>
     void navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
@@ -227,6 +230,12 @@ function PaymentsPage() {
             void navigate({ to: '/daireler/$unitId', params: { unitId: p.unitId } })
           }
           mobileCard={(p) => <PaymentCard payment={p} />}
+          selection={{
+            selected: selection.selected,
+            onChange: selection.setSelected,
+            canSelect: (p) => !p.cancelledAt,
+            label: (p) => `${labelUnit(p.blockName, p.unitNumber, 'short')} ödemesi`,
+          }}
           empty={
             <EmptyState
               title="Bu aralıkta ödeme yok"
@@ -235,6 +244,13 @@ function PaymentsPage() {
           }
         />
       )}
+      <BulkCancelBar
+        ids={selection.ids}
+        endpoint="/payments/bulk-cancel"
+        noun="ödeme"
+        description="Seçilen ödemeler iptal edilir, kapattıkları borçlar yeniden açılır ve kasadaki gelir kayıtları da iptal olur. Kapatılmış aylara ait ödemeler atlanır."
+        onClear={selection.clear}
+      />
       <PaymentDialog open={paying} onOpenChange={setPaying} />
     </div>
   );

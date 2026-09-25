@@ -437,3 +437,69 @@ describe('Ay kapanışı ve raporlar', () => {
     }
   });
 });
+
+describe('Toplu iptal', () => {
+  it('iptal edilebilenler iptal edilir, edilemeyenler nedeniyle atlanır', async () => {
+    const first = await expense({ description: 'Toplu 1' }).expect(201);
+    const second = await expense({ description: 'Toplu 2' }).expect(201);
+    const incomes = await http().get('/api/transactions').query({ type: 'INCOME' }).set(A());
+    const fromPayment = incomes.body.find((t: { paymentId: string | null }) => t.paymentId);
+
+    const res = await http()
+      .post('/api/transactions/bulk-cancel')
+      .set(A())
+      .send({ ids: [first.body.id, second.body.id, fromPayment.id], reason: 'Toplu deneme' })
+      .expect(200);
+    expect(res.body.cancelled).toBe(2);
+    expect(res.body.skipped).toEqual([
+      { id: fromPayment.id, message: expect.stringContaining('tahsilat') },
+    ]);
+  });
+
+  it('borçlarda ödemesi olan atlanır; başka sitenin kayıtları iptal edilemez', async () => {
+    await openCharge(ids.unitA1, 7_000, today);
+    await openCharge(ids.unitA1, 8_000, today);
+    const open = await http()
+      .get('/api/charges')
+      .query({ unitId: ids.unitA1, status: 'open' })
+      .set(A())
+      .expect(200);
+    const [a, b] = open.body as { id: string; amountKurus: number }[];
+    await http()
+      .post('/api/payments')
+      .set(A())
+      .send({
+        unitId: ids.unitA1,
+        amountKurus: 1_000,
+        method: 'CASH',
+        paidAt: today,
+        allocations: [{ chargeId: a!.id, amountKurus: 1_000 }],
+      })
+      .expect(201);
+
+    const foreign = await http()
+      .post('/api/charges/bulk-cancel')
+      .set(B())
+      .send({ ids: [a!.id, b!.id], reason: 'Başka site' })
+      .expect(200);
+    expect(foreign.body).toMatchObject({ cancelled: 0 });
+    expect(foreign.body.skipped).toHaveLength(2);
+
+    const res = await http()
+      .post('/api/charges/bulk-cancel')
+      .set(A())
+      .send({ ids: [a!.id, b!.id], reason: 'Yanlış yazıldı' })
+      .expect(200);
+    expect(res.body.cancelled).toBe(1);
+    expect(res.body.skipped.map((s: { id: string }) => s.id)).toEqual([a!.id]);
+
+    const payments = await http().get('/api/payments').query({ unitId: ids.unitA1 }).set(A());
+    const active = payments.body.filter((p: { cancelledAt: string | null }) => !p.cancelledAt);
+    const bulk = await http()
+      .post('/api/payments/bulk-cancel')
+      .set(A())
+      .send({ ids: active.map((p: { id: string }) => p.id), reason: 'Toplu iptal' })
+      .expect(200);
+    expect(bulk.body).toEqual({ cancelled: active.length, skipped: [] });
+  });
+});

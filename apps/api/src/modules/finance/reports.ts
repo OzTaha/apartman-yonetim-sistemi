@@ -80,7 +80,9 @@ export class FinanceReportsService {
         _sum: { amountKurus: true },
       }),
       this.tenant.db.financeCategory.findMany({ select: { id: true, name: true, kind: true } }),
-      this.tenant.db.cashAccount.findMany({ orderBy: { createdAt: 'asc' } }),
+      this.tenant.db.cashAccount.findMany({
+        orderBy: [{ createdAt: 'asc' }, { kind: 'asc' }, { name: 'asc' }],
+      }),
       accountBalances(this.prisma, siteId, dayBefore(from)),
       accountBalances(this.prisma, siteId, to),
       monthlyTotals(this.prisma, siteId, from, to),

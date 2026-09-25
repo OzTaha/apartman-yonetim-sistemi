@@ -15,6 +15,8 @@ import {
   type StreamableFile,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import type { BulkCancelResultDto } from '@apartman/shared';
+import { cancelEach } from '../../common/bulk';
 import {
   allocatePayment,
   AllocationError,
@@ -29,7 +31,12 @@ import {
 import type { Response } from 'express';
 import type { Content } from 'pdfmake/interfaces';
 import { activeOn, dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
-import { CancelDto, PaymentCreateDto, PaymentListQueryDto } from '../../common/dues.dto';
+import {
+  BulkCancelDto,
+  CancelDto,
+  PaymentCreateDto,
+  PaymentListQueryDto,
+} from '../../common/dues.dto';
 import { formatDateTr, PDF, sendFile } from '../../common/http';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -367,6 +374,12 @@ export class PaymentsController {
   ): Promise<StreamableFile> {
     const { file, name } = await this.payments.receiptPdf(id);
     return sendFile(res, name, PDF, file);
+  }
+
+  @Post('bulk-cancel')
+  @HttpCode(200)
+  bulkCancel(@Body() body: BulkCancelDto): Promise<BulkCancelResultDto> {
+    return cancelEach(body.ids, (id) => this.payments.cancel(id, body.reason));
   }
 
   @Post(':id/cancel')

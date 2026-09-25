@@ -94,6 +94,21 @@ export const chargeUpdateSchema = z.object({
 
 export const cancelSchema = z.object({ reason: reasonSchema });
 
+export const BULK_CANCEL_LIMIT = 500;
+
+export const bulkCancelSchema = z.object({
+  ids: z
+    .array(idSchema)
+    .min(1, 'En az bir kayıt seçin')
+    .max(BULK_CANCEL_LIMIT, `Tek seferde en fazla ${BULK_CANCEL_LIMIT} kayıt iptal edilebilir`),
+  reason: reasonSchema,
+});
+
+export interface BulkCancelResultDto {
+  cancelled: number;
+  skipped: { id: string; message: string }[];
+}
+
 export const paymentCreateSchema = z.object({
   unitId: idSchema,
   amountKurus: amountKurusSchema,

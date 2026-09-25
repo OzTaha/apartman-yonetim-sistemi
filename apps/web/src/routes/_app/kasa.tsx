@@ -9,6 +9,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowLeftRight, Lock, Minus, Paperclip, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { BulkCancelBar } from '@/components/bulk-cancel-bar';
 import { DataTable } from '@/components/data-table';
 import { ManagerOnly } from '@/components/manager-only';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
@@ -28,6 +29,7 @@ import { transactionTitle } from '@/features/finance/files';
 import { TransactionDetailsDialog } from '@/features/finance/transaction-details';
 import { formatDate, todayIso } from '@/lib/format';
 import { useCashAccounts, useTransactions } from '@/lib/queries';
+import { useSelection } from '@/lib/selection';
 import { cn } from '@/lib/utils';
 
 const TYPES = ['INCOME', 'EXPENSE', 'TRANSFER'] as const;
@@ -100,6 +102,7 @@ function CashPage() {
   const accounts = useCashAccounts();
   const transactions = useTransactions({ accountId: search.hesap, type: search.tur, from, to });
   const selected = transactions.data?.find((t) => t.id === selectedId);
+  const selection = useSelection(transactions.data, (t) => t.id);
   const activeAccounts = (accounts.data ?? []).filter((a) => a.isActive || a.balanceKurus !== 0);
   const total = activeAccounts.reduce((sum, a) => sum + a.balanceKurus, 0);
 
@@ -288,6 +291,12 @@ function CashPage() {
           data={transactions.data}
           getRowId={(t) => t.id}
           onRowClick={(t) => setSelectedId(t.id)}
+          selection={{
+            selected: selection.selected,
+            onChange: selection.setSelected,
+            canSelect: (t) => !t.cancelledAt && !t.paymentId && !t.locked,
+            label: (t) => transactionTitle(t),
+          }}
           mobileCard={(t) => (
             <div className="flex items-start justify-between gap-2">
               <div className="grid min-w-0 gap-0.5">
@@ -311,6 +320,13 @@ function CashPage() {
         />
       )}
 
+      <BulkCancelBar
+        ids={selection.ids}
+        endpoint="/transactions/bulk-cancel"
+        noun="kayıt"
+        description="Seçilen gelir, gider ve transferler iptal edilir ve bakiyelerden düşülür; kayıtlar silinmez. Aidat tahsilatları buradan seçilemez, Tahsilatlar ekranından iptal edilir."
+        onClear={selection.clear}
+      />
       {TYPES.map((type) => (
         <TransactionDialog
           key={type}
