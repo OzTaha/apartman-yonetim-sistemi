@@ -38,6 +38,7 @@ import { sendFile } from '../../common/http';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
+import { residentAnnouncementWhere } from '../communication/audience';
 import { assertDateOpen } from './finance.ledger';
 import { attachmentSelect, toAttachmentDto } from './finance.mapper';
 import { detectFileType, FileStorage } from './storage';
@@ -168,11 +169,14 @@ export class AttachmentsService {
         ? await this.tenant.db.transaction.findFirst({ where: { id, cancelledAt: null } })
         : target === 'work'
           ? await this.tenant.db.work.findUnique({ where: { id } })
-          : await this.tenant.db.payment.findFirst({ where: { id, cancelledAt: null } });
+          : target === 'payment'
+            ? await this.tenant.db.payment.findFirst({ where: { id, cancelledAt: null } })
+            : await this.tenant.db.announcement.findUnique({ where: { id } });
     if (!found) throw new NotFoundException('Dosyanın ekleneceği kayıt bulunamadı');
   }
 
   private async residentCanSee(a: {
+    announcementId: string | null;
     transaction: { type: string; visibleToResidents: boolean; cancelledAt: Date | null } | null;
     work: { visibleToResidents: boolean } | null;
     payment: { unitId: string } | null;
@@ -188,6 +192,14 @@ export class AttachmentsService {
     if (a.payment) {
       const count = await this.tenant.db.occupancy.count({
         where: { unitId: a.payment.unitId, userId: this.tenant.userId, ...activeOn() },
+      });
+      return count > 0;
+    }
+    if (a.announcementId) {
+      const where = await residentAnnouncementWhere(this.tenant, this.tenant.userId!);
+      if (!where) return false;
+      const count = await this.tenant.db.announcement.count({
+        where: { AND: [{ id: a.announcementId }, where] },
       });
       return count > 0;
     }

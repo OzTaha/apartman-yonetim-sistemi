@@ -22,6 +22,7 @@ import { Route as AppGelirGiderRouteImport } from './routes/_app/gelir-gider'
 import { Route as AppGiderlerRouteImport } from './routes/_app/giderler'
 import { Route as AppKasaRouteImport } from './routes/_app/kasa'
 import { Route as AppKasaAyarlariRouteImport } from './routes/_app/kasa-ayarlari'
+import { Route as AppMesajAyarlariRouteImport } from './routes/_app/mesaj-ayarlari'
 import { Route as AppPanelRouteImport } from './routes/_app/panel'
 import { Route as AppRaporlarRouteImport } from './routes/_app/raporlar'
 import { Route as AppSakinlerRouteImport } from './routes/_app/sakinler'
@@ -35,10 +36,15 @@ import { Route as AppCalisanlarIndexRouteImport } from './routes/_app/calisanlar
 import { Route as AppCalisanlarEmployeeIdRouteImport } from './routes/_app/calisanlar/$employeeId'
 import { Route as AppDairelerIndexRouteImport } from './routes/_app/daireler/index'
 import { Route as AppDairelerUnitIdRouteImport } from './routes/_app/daireler/$unitId'
+import { Route as AppDuyurularIndexRouteImport } from './routes/_app/duyurular/index'
+import { Route as AppDuyurularAnnouncementIdRouteImport } from './routes/_app/duyurular/$announcementId'
 import { Route as AppGorevlerIndexRouteImport } from './routes/_app/gorevler/index'
 import { Route as AppGorevlerTaskIdRouteImport } from './routes/_app/gorevler/$taskId'
 import { Route as AppIslerIndexRouteImport } from './routes/_app/isler/index'
 import { Route as AppIslerWorkIdRouteImport } from './routes/_app/isler/$workId'
+import { Route as AppMesajlarIndexRouteImport } from './routes/_app/mesajlar/index'
+import { Route as AppMesajlarCampaignIdRouteImport } from './routes/_app/mesajlar/$campaignId'
+import { Route as AppMesajlarYeniRouteImport } from './routes/_app/mesajlar/yeni'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -102,6 +108,11 @@ const AppKasaRoute = AppKasaRouteImport.update({
 const AppKasaAyarlariRoute = AppKasaAyarlariRouteImport.update({
   id: '/kasa-ayarlari',
   path: '/kasa-ayarlari',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMesajAyarlariRoute = AppMesajAyarlariRouteImport.update({
+  id: '/mesaj-ayarlari',
+  path: '/mesaj-ayarlari',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPanelRoute = AppPanelRouteImport.update({
@@ -169,6 +180,17 @@ const AppDairelerUnitIdRoute = AppDairelerUnitIdRouteImport.update({
   path: '/daireler/$unitId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDuyurularIndexRoute = AppDuyurularIndexRouteImport.update({
+  id: '/duyurular/',
+  path: '/duyurular/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDuyurularAnnouncementIdRoute =
+  AppDuyurularAnnouncementIdRouteImport.update({
+    id: '/duyurular/$announcementId',
+    path: '/duyurular/$announcementId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppGorevlerIndexRoute = AppGorevlerIndexRouteImport.update({
   id: '/gorevler/',
   path: '/gorevler/',
@@ -189,6 +211,21 @@ const AppIslerWorkIdRoute = AppIslerWorkIdRouteImport.update({
   path: '/isler/$workId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMesajlarIndexRoute = AppMesajlarIndexRouteImport.update({
+  id: '/mesajlar/',
+  path: '/mesajlar/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMesajlarCampaignIdRoute = AppMesajlarCampaignIdRouteImport.update({
+  id: '/mesajlar/$campaignId',
+  path: '/mesajlar/$campaignId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMesajlarYeniRoute = AppMesajlarYeniRouteImport.update({
+  id: '/mesajlar/yeni',
+  path: '/mesajlar/yeni',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -203,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/giderler': typeof AppGiderlerRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/mesaj-ayarlari': typeof AppMesajAyarlariRoute
   '/panel': typeof AppPanelRoute
   '/raporlar': typeof AppRaporlarRoute
   '/sakinler': typeof AppSakinlerRoute
@@ -214,12 +252,17 @@ export interface FileRoutesByFullPath {
   '/davet/$token': typeof DavetTokenRoute
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/duyurular/$announcementId': typeof AppDuyurularAnnouncementIdRoute
   '/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/isler/$workId': typeof AppIslerWorkIdRoute
+  '/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
+  '/mesajlar/yeni': typeof AppMesajlarYeniRoute
   '/calisanlar/': typeof AppCalisanlarIndexRoute
   '/daireler/': typeof AppDairelerIndexRoute
+  '/duyurular/': typeof AppDuyurularIndexRoute
   '/gorevler/': typeof AppGorevlerIndexRoute
   '/isler/': typeof AppIslerIndexRoute
+  '/mesajlar/': typeof AppMesajlarIndexRoute
 }
 export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
@@ -233,6 +276,7 @@ export interface FileRoutesByTo {
   '/giderler': typeof AppGiderlerRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/mesaj-ayarlari': typeof AppMesajAyarlariRoute
   '/panel': typeof AppPanelRoute
   '/raporlar': typeof AppRaporlarRoute
   '/sakinler': typeof AppSakinlerRoute
@@ -245,12 +289,17 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/duyurular/$announcementId': typeof AppDuyurularAnnouncementIdRoute
   '/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/isler/$workId': typeof AppIslerWorkIdRoute
+  '/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
+  '/mesajlar/yeni': typeof AppMesajlarYeniRoute
   '/calisanlar': typeof AppCalisanlarIndexRoute
   '/daireler': typeof AppDairelerIndexRoute
+  '/duyurular': typeof AppDuyurularIndexRoute
   '/gorevler': typeof AppGorevlerIndexRoute
   '/isler': typeof AppIslerIndexRoute
+  '/mesajlar': typeof AppMesajlarIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -266,6 +315,7 @@ export interface FileRoutesById {
   '/_app/giderler': typeof AppGiderlerRoute
   '/_app/kasa': typeof AppKasaRoute
   '/_app/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/_app/mesaj-ayarlari': typeof AppMesajAyarlariRoute
   '/_app/panel': typeof AppPanelRoute
   '/_app/raporlar': typeof AppRaporlarRoute
   '/_app/sakinler': typeof AppSakinlerRoute
@@ -278,12 +328,17 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/_app/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/_app/duyurular/$announcementId': typeof AppDuyurularAnnouncementIdRoute
   '/_app/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/_app/isler/$workId': typeof AppIslerWorkIdRoute
+  '/_app/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
+  '/_app/mesajlar/yeni': typeof AppMesajlarYeniRoute
   '/_app/calisanlar/': typeof AppCalisanlarIndexRoute
   '/_app/daireler/': typeof AppDairelerIndexRoute
+  '/_app/duyurular/': typeof AppDuyurularIndexRoute
   '/_app/gorevler/': typeof AppGorevlerIndexRoute
   '/_app/isler/': typeof AppIslerIndexRoute
+  '/_app/mesajlar/': typeof AppMesajlarIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -300,6 +355,7 @@ export interface FileRouteTypes {
     | '/giderler'
     | '/kasa'
     | '/kasa-ayarlari'
+    | '/mesaj-ayarlari'
     | '/panel'
     | '/raporlar'
     | '/sakinler'
@@ -311,12 +367,17 @@ export interface FileRouteTypes {
     | '/davet/$token'
     | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
+    | '/duyurular/$announcementId'
     | '/gorevler/$taskId'
     | '/isler/$workId'
+    | '/mesajlar/$campaignId'
+    | '/mesajlar/yeni'
     | '/calisanlar/'
     | '/daireler/'
+    | '/duyurular/'
     | '/gorevler/'
     | '/isler/'
+    | '/mesajlar/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/giris'
@@ -330,6 +391,7 @@ export interface FileRouteTypes {
     | '/giderler'
     | '/kasa'
     | '/kasa-ayarlari'
+    | '/mesaj-ayarlari'
     | '/panel'
     | '/raporlar'
     | '/sakinler'
@@ -342,12 +404,17 @@ export interface FileRouteTypes {
     | '/'
     | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
+    | '/duyurular/$announcementId'
     | '/gorevler/$taskId'
     | '/isler/$workId'
+    | '/mesajlar/$campaignId'
+    | '/mesajlar/yeni'
     | '/calisanlar'
     | '/daireler'
+    | '/duyurular'
     | '/gorevler'
     | '/isler'
+    | '/mesajlar'
   id:
     | '__root__'
     | '/_app'
@@ -362,6 +429,7 @@ export interface FileRouteTypes {
     | '/_app/giderler'
     | '/_app/kasa'
     | '/_app/kasa-ayarlari'
+    | '/_app/mesaj-ayarlari'
     | '/_app/panel'
     | '/_app/raporlar'
     | '/_app/sakinler'
@@ -374,12 +442,17 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/calisanlar/$employeeId'
     | '/_app/daireler/$unitId'
+    | '/_app/duyurular/$announcementId'
     | '/_app/gorevler/$taskId'
     | '/_app/isler/$workId'
+    | '/_app/mesajlar/$campaignId'
+    | '/_app/mesajlar/yeni'
     | '/_app/calisanlar/'
     | '/_app/daireler/'
+    | '/_app/duyurular/'
     | '/_app/gorevler/'
     | '/_app/isler/'
+    | '/_app/mesajlar/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -481,6 +554,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKasaAyarlariRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/mesaj-ayarlari': {
+      id: '/_app/mesaj-ayarlari'
+      path: '/mesaj-ayarlari'
+      fullPath: '/mesaj-ayarlari'
+      preLoaderRoute: typeof AppMesajAyarlariRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/panel': {
       id: '/_app/panel'
       path: '/panel'
@@ -572,6 +652,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDairelerUnitIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/duyurular/': {
+      id: '/_app/duyurular/'
+      path: '/duyurular'
+      fullPath: '/duyurular/'
+      preLoaderRoute: typeof AppDuyurularIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/duyurular/$announcementId': {
+      id: '/_app/duyurular/$announcementId'
+      path: '/duyurular/$announcementId'
+      fullPath: '/duyurular/$announcementId'
+      preLoaderRoute: typeof AppDuyurularAnnouncementIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/gorevler/': {
       id: '/_app/gorevler/'
       path: '/gorevler'
@@ -600,6 +694,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIslerWorkIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/mesajlar/': {
+      id: '/_app/mesajlar/'
+      path: '/mesajlar'
+      fullPath: '/mesajlar/'
+      preLoaderRoute: typeof AppMesajlarIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/mesajlar/$campaignId': {
+      id: '/_app/mesajlar/$campaignId'
+      path: '/mesajlar/$campaignId'
+      fullPath: '/mesajlar/$campaignId'
+      preLoaderRoute: typeof AppMesajlarCampaignIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/mesajlar/yeni': {
+      id: '/_app/mesajlar/yeni'
+      path: '/mesajlar/yeni'
+      fullPath: '/mesajlar/yeni'
+      preLoaderRoute: typeof AppMesajlarYeniRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -614,6 +729,7 @@ interface AppRouteChildren {
   AppGiderlerRoute: typeof AppGiderlerRoute
   AppKasaRoute: typeof AppKasaRoute
   AppKasaAyarlariRoute: typeof AppKasaAyarlariRoute
+  AppMesajAyarlariRoute: typeof AppMesajAyarlariRoute
   AppPanelRoute: typeof AppPanelRoute
   AppRaporlarRoute: typeof AppRaporlarRoute
   AppSakinlerRoute: typeof AppSakinlerRoute
@@ -625,12 +741,17 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppCalisanlarEmployeeIdRoute: typeof AppCalisanlarEmployeeIdRoute
   AppDairelerUnitIdRoute: typeof AppDairelerUnitIdRoute
+  AppDuyurularAnnouncementIdRoute: typeof AppDuyurularAnnouncementIdRoute
   AppGorevlerTaskIdRoute: typeof AppGorevlerTaskIdRoute
   AppIslerWorkIdRoute: typeof AppIslerWorkIdRoute
+  AppMesajlarCampaignIdRoute: typeof AppMesajlarCampaignIdRoute
+  AppMesajlarYeniRoute: typeof AppMesajlarYeniRoute
   AppCalisanlarIndexRoute: typeof AppCalisanlarIndexRoute
   AppDairelerIndexRoute: typeof AppDairelerIndexRoute
+  AppDuyurularIndexRoute: typeof AppDuyurularIndexRoute
   AppGorevlerIndexRoute: typeof AppGorevlerIndexRoute
   AppIslerIndexRoute: typeof AppIslerIndexRoute
+  AppMesajlarIndexRoute: typeof AppMesajlarIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -644,6 +765,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGiderlerRoute: AppGiderlerRoute,
   AppKasaRoute: AppKasaRoute,
   AppKasaAyarlariRoute: AppKasaAyarlariRoute,
+  AppMesajAyarlariRoute: AppMesajAyarlariRoute,
   AppPanelRoute: AppPanelRoute,
   AppRaporlarRoute: AppRaporlarRoute,
   AppSakinlerRoute: AppSakinlerRoute,
@@ -655,12 +777,17 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppCalisanlarEmployeeIdRoute: AppCalisanlarEmployeeIdRoute,
   AppDairelerUnitIdRoute: AppDairelerUnitIdRoute,
+  AppDuyurularAnnouncementIdRoute: AppDuyurularAnnouncementIdRoute,
   AppGorevlerTaskIdRoute: AppGorevlerTaskIdRoute,
   AppIslerWorkIdRoute: AppIslerWorkIdRoute,
+  AppMesajlarCampaignIdRoute: AppMesajlarCampaignIdRoute,
+  AppMesajlarYeniRoute: AppMesajlarYeniRoute,
   AppCalisanlarIndexRoute: AppCalisanlarIndexRoute,
   AppDairelerIndexRoute: AppDairelerIndexRoute,
+  AppDuyurularIndexRoute: AppDuyurularIndexRoute,
   AppGorevlerIndexRoute: AppGorevlerIndexRoute,
   AppIslerIndexRoute: AppIslerIndexRoute,
+  AppMesajlarIndexRoute: AppMesajlarIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

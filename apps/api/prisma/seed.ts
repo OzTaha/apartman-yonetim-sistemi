@@ -3,6 +3,7 @@ import {
   addDays,
   addMonths,
   computeUnitAmounts,
+  DEFAULT_TEMPLATES,
   dueDateFor,
   periodLabel,
   periodOfDate,
@@ -365,6 +366,41 @@ async function seedStaff(
   }
 }
 
+async function seedCommunication(
+  tx: Tx,
+  siteId: string,
+  today: string,
+  announcements: {
+    title: string;
+    body: string;
+    pinned?: boolean;
+    expiresInDays?: number;
+    block?: string;
+    daysAgo: number;
+  }[],
+) {
+  await tx.messageTemplate.createMany({
+    data: DEFAULT_TEMPLATES.map((t) => ({ siteId, ...t })),
+  });
+  for (const a of announcements) {
+    const block = a.block
+      ? await tx.block.findFirstOrThrow({ where: { siteId, name: a.block } })
+      : null;
+    await tx.announcement.create({
+      data: {
+        siteId,
+        title: a.title,
+        body: a.body,
+        audience: block ? 'BLOCKS' : 'ALL',
+        blockIds: block ? [block.id] : [],
+        pinned: a.pinned ?? false,
+        expiresAt: a.expiresInDays ? dateOnly(addDays(today, a.expiresInDays)) : null,
+        publishedAt: new Date(`${addDays(today, -a.daysAgo)}T09:30:00+03:00`),
+      },
+    });
+  }
+}
+
 const person = (
   firstName: string,
   lastName: string,
@@ -616,6 +652,36 @@ async function main() {
             recurring: [{ title: 'Güvenlik tur kontrolü', employee: 1, weekdays: [1, 2, 3, 4, 5] }],
           },
         });
+
+        await seedCommunication(tx, apartment.id, today, [
+          {
+            title: 'Olağan genel kurul toplantısı',
+            body: 'Kat malikleri olağan genel kurul toplantısı ayın son cumartesi saat 14:00’te giriş katında yapılacaktır. Gündem: yönetim kurulu seçimi, bütçe ve dış cephe boyası.',
+            pinned: true,
+            daysAgo: 6,
+          },
+          {
+            title: 'Asansör bakımı',
+            body: 'Asansör yıllık bakımı nedeniyle çarşamba günü 09:00–12:00 arasında kullanılamayacaktır.',
+            expiresInDays: 5,
+            daysAgo: 1,
+          },
+        ]);
+        await seedCommunication(tx, site.id, today, [
+          {
+            title: 'Otopark düzenlemesi',
+            body: 'Otoparkta her daireye bir araçlık yer ayrılmıştır. Misafir araçları için giriş kapısının yanındaki alan kullanılmalıdır.',
+            pinned: true,
+            daysAgo: 10,
+          },
+          {
+            title: 'B blok su kesintisi',
+            body: 'B blokta tesisat onarımı nedeniyle cuma günü 10:00–13:00 arasında su verilemeyecektir.',
+            block: 'B',
+            expiresInDays: 3,
+            daysAgo: 2,
+          },
+        ]);
 
         const resident = await tx.user.create({
           data: { firstName: 'Ayşe', lastName: 'Yılmaz', phone: '+905321000000', passwordHash },

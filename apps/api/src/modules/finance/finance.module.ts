@@ -34,5 +34,6 @@ import { WorksController, WorksService } from './works';
     TransparencyService,
     { provide: FileStorage, useClass: LocalFileStorage },
   ],
+  exports: [FileStorage],
 })
 export class FinanceModule {}

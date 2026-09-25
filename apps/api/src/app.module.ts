@@ -10,6 +10,7 @@ import { validateEnv } from './config/env';
 import { HealthController } from './health/health.controller';
 import { AuditModule } from './modules/audit/audit.service';
 import { AuthModule } from './modules/auth/auth.module';
+import { CommunicationModule } from './modules/communication/communication.module';
 import { BlocksModule } from './modules/blocks/blocks';
 import { DuesModule } from './modules/dues/dues.module';
 import { FinanceModule } from './modules/finance/finance.module';
@@ -46,6 +47,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     DuesModule,
     FinanceModule,
     StaffModule,
+    CommunicationModule,
   ],
   controllers: [HealthController],
   providers: [

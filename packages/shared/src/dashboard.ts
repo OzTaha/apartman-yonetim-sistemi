@@ -1,3 +1,4 @@
+import type { DashboardAnnouncementDto } from './communication';
 import type { DebtReportRowDto } from './dues';
 import type { FinanceMonthDto, TransactionDto } from './finance';
 import type { Kurus } from './money';
@@ -26,4 +27,5 @@ export interface DashboardDto {
   recentTransactions: TransactionDto[];
   upcomingCharges: UpcomingChargeDto[];
   topDebtors: DebtReportRowDto[];
+  announcements: DashboardAnnouncementDto[];
 }

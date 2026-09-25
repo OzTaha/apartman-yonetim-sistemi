@@ -10,6 +10,7 @@ import {
 import { dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { announcementStats, notExpired } from '../communication/audience';
 import { AccountService } from '../dues/account';
 import { chargeLabel, DUES_CODE } from '../dues/ledger.mapper';
 import { currentPeriod } from '../dues/site-settings';
@@ -50,6 +51,7 @@ export class DashboardService {
       recent,
       locked,
       debts,
+      announcements,
     ] = await Promise.all([
       this.tenant.db.unit.count({ where: { archivedAt: null } }),
       this.tenant.db.charge.findMany({
@@ -91,7 +93,13 @@ export class DashboardService {
       }),
       lockedThrough(this.prisma, siteId),
       this.accounts.debtReport(),
+      this.tenant.db.announcement.findMany({
+        where: notExpired(today),
+        orderBy: [{ pinned: 'desc' }, { publishedAt: 'desc' }],
+        take: 3,
+      }),
     ]);
+    const stats = await announcementStats(this.tenant, announcements);
 
     const upcomingCharges: UpcomingChargeDto[] = openCharges
       .map((c) => {
@@ -131,6 +139,13 @@ export class DashboardService {
         .filter((d) => d.overdueKurus > 0)
         .sort((a, b) => b.overdueKurus - a.overdueKurus)
         .slice(0, 5),
+      announcements: announcements.map((a) => ({
+        id: a.id,
+        title: a.title,
+        publishedAt: a.publishedAt.toISOString(),
+        readCount: stats.get(a.id)?.readCount ?? 0,
+        audienceCount: stats.get(a.id)?.audienceCount ?? 0,
+      })),
     };
   }
 }

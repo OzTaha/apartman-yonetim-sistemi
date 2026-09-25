@@ -10,3 +10,4 @@ export * from './dues';
 export * from './finance';
 export * from './dashboard';
 export * from './staff';
+export * from './communication';

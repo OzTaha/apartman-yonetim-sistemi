@@ -6,7 +6,7 @@ import {
   type PaymentDto,
 } from '@apartman/shared';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { FileDown, Receipt, Scale } from 'lucide-react';
+import { FileDown, Megaphone, Pin, Receipt, Scale } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
@@ -17,7 +17,7 @@ import { ChargeStatusBadge } from '@/features/dues/status';
 import { OccupancyTypeBadge } from '@/features/residents/occupancy-actions';
 import { downloadFile, errorMessage } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import { useUnitAccount } from '@/lib/queries';
+import { useMyAnnouncements, useUnitAccount } from '@/lib/queries';
 import { session, useSession } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
@@ -233,6 +233,49 @@ function MyUnit({ occupancy }: { occupancy: MyOccupancyDto }) {
   );
 }
 
+function UnreadAnnouncements({ siteId, siteName }: { siteId: string; siteName: string }) {
+  const navigate = useNavigate();
+  const announcements = useMyAnnouncements(siteId);
+  const unread = (announcements.data ?? []).filter((a) => !a.read);
+  if (unread.length === 0) return null;
+
+  return (
+    <Card className="border-primary">
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <div className="grid gap-1.5">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Megaphone className="size-4" />
+            {unread.length} okunmamış duyuru
+          </CardTitle>
+          <CardDescription>{siteName}</CardDescription>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => {
+            session.setSite(siteId);
+            void navigate({ to: '/duyurular' });
+          }}
+        >
+          Oku
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <ul className="grid gap-1 text-sm">
+          {unread.slice(0, 3).map((a) => (
+            <li key={a.id} className="flex min-w-0 items-center gap-1.5">
+              {a.pinned && <Pin className="size-3.5 shrink-0" aria-label="Sabitlendi" />}
+              <span className="truncate font-medium">{a.title}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {formatDate(a.publishedAt)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
 function MyUnitsPage() {
   const { user } = useSession();
   const occupancies = user?.occupancies ?? [];
@@ -246,7 +289,16 @@ function MyUnitsPage() {
           description="Site yönetiminizle iletişime geçin."
         />
       ) : (
-        occupancies.map((o) => <MyUnit key={o.occupancyId} occupancy={o} />)
+        <>
+          {[...new Map(occupancies.map((o) => [o.siteId, o.siteName])).entries()].map(
+            ([siteId, siteName]) => (
+              <UnreadAnnouncements key={siteId} siteId={siteId} siteName={siteName} />
+            ),
+          )}
+          {occupancies.map((o) => (
+            <MyUnit key={o.occupancyId} occupancy={o} />
+          ))}
+        </>
       )}
     </div>
   );

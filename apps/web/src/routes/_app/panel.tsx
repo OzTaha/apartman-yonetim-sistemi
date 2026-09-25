@@ -69,7 +69,7 @@ function ListCard({
   children,
 }: {
   title: string;
-  to: '/kasa' | '/borclar' | '/raporlar';
+  to: '/kasa' | '/borclar' | '/raporlar' | '/duyurular';
   empty: boolean;
   children: ReactNode;
 }) {
@@ -247,6 +247,32 @@ function DashboardPage() {
               </ul>
             </ListCard>
           </div>
+
+          <ListCard title="Son duyurular" to="/duyurular" empty={d.announcements.length === 0}>
+            <ul className="divide-y">
+              {d.announcements.map((a) => (
+                <li key={a.id}>
+                  <Link
+                    to="/duyurular/$announcementId"
+                    params={{ announcementId: a.id }}
+                    className="flex items-center justify-between gap-2 py-2 text-sm hover:underline"
+                  >
+                    <span className="grid min-w-0">
+                      <span className="truncate font-medium">{a.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(a.publishedAt)}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                      {a.audienceCount > 0
+                        ? `${a.readCount}/${a.audienceCount} okudu`
+                        : 'Portal kullanıcısı yok'}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </ListCard>
 
           <ListCard
             title="Son gelir ve giderler"

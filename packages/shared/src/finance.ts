@@ -34,8 +34,8 @@ export const workStatusLabels: Record<WorkStatus, string> = {
   DONE: 'Tamamlandı',
 };
 
-export type AttachmentTarget = 'transaction' | 'work' | 'payment';
-export const attachmentTargetSchema = z.enum(['transaction', 'work', 'payment']);
+export type AttachmentTarget = 'transaction' | 'work' | 'payment' | 'announcement';
+export const attachmentTargetSchema = z.enum(['transaction', 'work', 'payment', 'announcement']);
 
 export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const ATTACHMENT_MAX_PER_RECORD = 20;

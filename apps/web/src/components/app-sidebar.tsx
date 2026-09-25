@@ -5,6 +5,9 @@ import {
   Check,
   ClipboardList,
   ListChecks,
+  Megaphone,
+  MessageSquare,
+  MessageSquareText,
   Repeat,
   UserCog,
   ChartColumn,
@@ -75,7 +78,10 @@ interface NavItem {
     | '/vardiyalar'
     | '/gorevler'
     | '/tekrarlayan-gorevler'
-    | '/calisan-raporu';
+    | '/calisan-raporu'
+    | '/duyurular'
+    | '/mesajlar'
+    | '/mesaj-ayarlari';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -201,8 +207,10 @@ export function AppSidebar() {
   }
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
-  if (role === 'RESIDENT' && s.siteId)
+  if (role === 'RESIDENT' && s.siteId) {
+    items.push({ to: '/duyurular', label: 'Duyurular', icon: Megaphone });
     items.push({ to: '/giderler', label: 'Giderler ve işler', icon: Scale });
+  }
   if (s.user?.isPlatformAdmin)
     items.push({ to: '/siteler', label: 'Apartman ve siteler', icon: Building });
 
@@ -231,6 +239,13 @@ export function AppSidebar() {
         { to: '/gorevler', label: 'Görevler', icon: ListChecks },
         { to: '/tekrarlayan-gorevler', label: 'Tekrarlayan görevler', icon: Repeat },
         { to: '/calisan-raporu', label: 'Çalışan raporu', icon: ClipboardList },
+      ]
+    : [];
+  const contactItems: NavItem[] = manager
+    ? [
+        { to: '/duyurular', label: 'Duyurular', icon: Megaphone },
+        { to: '/mesajlar', label: 'Mesajlar', icon: MessageSquare },
+        { to: '/mesaj-ayarlari', label: 'Şablonlar ve hatırlatma', icon: MessageSquareText },
       ]
     : [];
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
@@ -275,6 +290,14 @@ export function AppSidebar() {
             <SidebarGroupLabel>Gelir-gider</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>{renderItems(financeItems)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {contactItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>İletişim</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{renderItems(contactItems)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}

@@ -60,7 +60,7 @@ Tüm hesapların şifresi `Deneme123!`.
 Seed iki örnek yer oluşturur: 5 daireli "Örnek Apartmanı" ve 2 bloklu, 4 daireli "Örnek Sitesi".
 Yönetici hesabı ikisini de yönetir. Son 3 ayın aidatı ve ödemeleri yüklenir. Apartmanın 3 numaralı
 dairesi iki ay borçlu, arada bir ay ödenmiş örneğini gösterir. Her yerde iki örnek çalışan, geçen ve bu haftanın vardiyaları,
-açık, gecikmiş ve tamamlanmış görevler ile bir tekrarlayan görev bulunur. Seed yalnızca boş veritabanında çalışır.
+açık, gecikmiş ve tamamlanmış görevler ile bir tekrarlayan görev, iki duyuru ve varsayılan mesaj şablonları bulunur. Seed yalnızca boş veritabanında çalışır.
 
 ## Komutlar
 
@@ -152,6 +152,25 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Geçmişi (vardiya, görev, ödeme) olan çalışan silinmez, pasif yapılır; pasif çalışana yeni vardiya veya görev verilemez.
 - Çalışan raporu seçilen tarih aralığında vardiya sayısı ve süresini, tamamlanan ve geç tamamlanan görevleri, çalışana yapılan
   ödemeleri; ayrıca bugün itibarıyla açık ve geciken görevleri gösterir.
+
+## Duyuru ve mesajlaşma
+
+- Duyurular tüm sakinlere, seçili bloklara veya seçili dairelere yayınlanır; dosya/görsel eklenebilir, üste sabitlenebilir.
+  Bitiş tarihi geçen duyuru sakinlerden gizlenir. Yönetici her duyuruda kimin okuduğunu görür; panelde son duyurular ve
+  okunma oranı, sakinin "Dairem" sayfasında okunmamış duyurular gösterilir.
+- Duyuru yayınlanırken istenirse SMS veya WhatsApp ile de bildirim gönderilir (varsayılan kapalı).
+- Mesaj türleri: aidat hatırlatması, duyuru, acil durum, genel bilgi. Alıcılar tüm sakinler, bloklar, seçili daireler,
+  borcu olan veya gecikmiş borcu olan daireler olarak seçilir. Aidat hatırlatması yalnızca borçtan sorumlu sakinlere gider.
+- Şablonlarda `{ad}`, `{daire}`, `{borc}`, `{site}` alanları her alıcı için doldurulur. Göndermeden önce alıcı sayısı,
+  atlanacak kişiler ve örnek mesaj gösterilir; SMS karakter ve parça sayısı hesaplanır.
+- İletişim onayı veya telefonu olmayan sakinlere mesaj gönderilmez; gönderim geçmişinde "atlandı" olarak nedeniyle görünür.
+  Aynı telefona bir gönderimde tek mesaj gider.
+- Otomatik borç hatırlatması "Şablonlar ve hatırlatma" sayfasından açılır (varsayılan kapalı): son ödeme gününden belirtilen
+  gün sonra hâlâ borcu olan dairelere her gün 10:00'da (İstanbul) gönderilir, aynı gün iki kez gönderilmez.
+- Mesajlar Redis üzerindeki BullMQ kuyruğundan, saniyede en fazla 20 mesaj ve 3 deneme ile gönderilir. Başarısız olanlar
+  gönderim sayfasından yeniden denenebilir.
+- Sağlayıcı `MESSAGING_PROVIDER` ile seçilir. Şimdilik yalnızca `log` vardır: mesajları göndermez, kaydeder ve gönderildi sayar.
+  SMS/WhatsApp firması seçildiğinde yalnızca yeni bir sağlayıcı sınıfı yazılır; hesap müşteri adına açılır.
 
 ## Kurallar
 

@@ -92,6 +92,39 @@ enum RecurrenceFrequency {
   MONTHLY
 }
 
+enum AnnouncementAudience {
+  ALL
+  BLOCKS
+  UNITS
+}
+
+enum MessageChannel {
+  SMS
+  WHATSAPP
+}
+
+enum CampaignKind {
+  DUES_REMINDER
+  ANNOUNCEMENT
+  EMERGENCY
+  INFO
+}
+
+enum RecipientFilter {
+  ALL
+  BLOCKS
+  UNITS
+  DEBTORS
+  OVERDUE
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
 model User {
   id              String   @id @default(uuid(7)) @db.Uuid
   firstName       String
@@ -104,9 +137,10 @@ model User {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  memberships   SiteMembership[]
-  occupancies   Occupancy[]
-  refreshTokens RefreshToken[]
+  memberships       SiteMembership[]
+  occupancies       Occupancy[]
+  refreshTokens     RefreshToken[]
+  announcementReads AnnouncementRead[]
 
   @@map("users")
 }
@@ -121,30 +155,35 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships    SiteMembership[]
-  blocks         Block[]
-  units          Unit[]
-  occupancies    Occupancy[]
-  invitations    Invitation[]
-  auditLogs      AuditLog[]
-  chargeTypes    ChargeType[]
-  duesPlans      DuesPlan[]
-  charges        Charge[]
-  payments       Payment[]
-  allocations    PaymentAllocation[]
-  accounts       CashAccount[]
-  categories     FinanceCategory[]
-  vendors        Vendor[]
-  works          Work[]
-  transactions   Transaction[]
-  attachments    Attachment[]
-  closings       MonthClosing[]
-  counters       SiteCounter[]
-  employees      Employee[]
-  shifts         Shift[]
-  tasks          Task[]
-  taskEvents     TaskEvent[]
-  recurringTasks RecurringTask[]
+  memberships       SiteMembership[]
+  blocks            Block[]
+  units             Unit[]
+  occupancies       Occupancy[]
+  invitations       Invitation[]
+  auditLogs         AuditLog[]
+  chargeTypes       ChargeType[]
+  duesPlans         DuesPlan[]
+  charges           Charge[]
+  payments          Payment[]
+  allocations       PaymentAllocation[]
+  accounts          CashAccount[]
+  categories        FinanceCategory[]
+  vendors           Vendor[]
+  works             Work[]
+  transactions      Transaction[]
+  attachments       Attachment[]
+  closings          MonthClosing[]
+  counters          SiteCounter[]
+  employees         Employee[]
+  shifts            Shift[]
+  tasks             Task[]
+  taskEvents        TaskEvent[]
+  recurringTasks    RecurringTask[]
+  announcements     Announcement[]
+  announcementReads AnnouncementRead[]
+  messageTemplates  MessageTemplate[]
+  campaigns         MessageCampaign[]
+  deliveries        MessageDelivery[]
 
   @@map("sites")
 }
@@ -533,27 +572,30 @@ model Transaction {
 }
 
 model Attachment {
-  id            String   @id @default(uuid(7)) @db.Uuid
-  siteId        String   @db.Uuid
-  fileName      String
-  mimeType      String
-  sizeBytes     Int
-  storageKey    String   @unique
-  sha256        String
-  transactionId String?  @db.Uuid
-  workId        String?  @db.Uuid
-  paymentId     String?  @db.Uuid
-  uploadedById  String?  @db.Uuid
-  createdAt     DateTime @default(now())
+  id             String   @id @default(uuid(7)) @db.Uuid
+  siteId         String   @db.Uuid
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  storageKey     String   @unique
+  sha256         String
+  transactionId  String?  @db.Uuid
+  workId         String?  @db.Uuid
+  paymentId      String?  @db.Uuid
+  announcementId String?  @db.Uuid
+  uploadedById   String?  @db.Uuid
+  createdAt      DateTime @default(now())
 
-  site        Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  transaction Transaction? @relation(fields: [transactionId, siteId], references: [id, siteId], onDelete: Restrict)
-  work        Work?        @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
-  payment     Payment?     @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  transaction  Transaction?  @relation(fields: [transactionId, siteId], references: [id, siteId], onDelete: Restrict)
+  work         Work?         @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
+  payment      Payment?      @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
+  announcement Announcement? @relation(fields: [announcementId, siteId], references: [id, siteId], onDelete: Restrict)
 
   @@index([transactionId])
   @@index([workId])
   @@index([paymentId])
+  @@index([announcementId])
   @@map("attachments")
 }
 
@@ -684,4 +726,108 @@ model TaskEvent {
 
   @@index([taskId, createdAt])
   @@map("task_events")
+}
+
+model Announcement {
+  id          String               @id @default(uuid(7)) @db.Uuid
+  siteId      String               @db.Uuid
+  title       String
+  body        String
+  audience    AnnouncementAudience
+  blockIds    String[]             @db.Uuid
+  unitIds     String[]             @db.Uuid
+  pinned      Boolean              @default(false)
+  expiresAt   DateTime?            @db.Date
+  publishedAt DateTime             @default(now())
+  createdById String?              @db.Uuid
+  updatedAt   DateTime             @updatedAt
+
+  site        Site               @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  reads       AnnouncementRead[]
+  attachments Attachment[]
+  campaigns   MessageCampaign[]
+
+  @@unique([id, siteId])
+  @@index([siteId, publishedAt])
+  @@map("announcements")
+}
+
+model AnnouncementRead {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  siteId         String   @db.Uuid
+  announcementId String   @db.Uuid
+  userId         String   @db.Uuid
+  readAt         DateTime @default(now())
+
+  site         Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  announcement Announcement @relation(fields: [announcementId, siteId], references: [id, siteId], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@map("announcement_reads")
+}
+
+model MessageTemplate {
+  id        String       @id @default(uuid(7)) @db.Uuid
+  siteId    String       @db.Uuid
+  name      String
+  kind      CampaignKind
+  body      String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, name])
+  @@map("message_templates")
+}
+
+model MessageCampaign {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  siteId         String          @db.Uuid
+  kind           CampaignKind
+  channel        MessageChannel
+  filter         RecipientFilter
+  blockIds       String[]        @db.Uuid
+  unitIds        String[]        @db.Uuid
+  body           String
+  announcementId String?         @db.Uuid
+  autoKey        String?
+  createdById    String?         @db.Uuid
+  createdAt      DateTime        @default(now())
+
+  site         Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  announcement Announcement?     @relation(fields: [announcementId, siteId], references: [id, siteId], onDelete: Restrict)
+  deliveries   MessageDelivery[]
+
+  @@unique([id, siteId])
+  @@unique([siteId, autoKey])
+  @@index([siteId, createdAt])
+  @@map("message_campaigns")
+}
+
+model MessageDelivery {
+  id                String         @id @default(uuid(7)) @db.Uuid
+  siteId            String         @db.Uuid
+  campaignId        String         @db.Uuid
+  occupancyId       String?        @db.Uuid
+  name              String
+  blockName         String?
+  unitNumber        String?
+  phone             String?
+  text              String
+  status            DeliveryStatus @default(QUEUED)
+  error             String?
+  attempts          Int            @default(0)
+  providerMessageId String?
+  sentAt            DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  site     Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  campaign MessageCampaign @relation(fields: [campaignId, siteId], references: [id, siteId], onDelete: Cascade)
+
+  @@index([campaignId, status])
+  @@map("message_deliveries")
 }

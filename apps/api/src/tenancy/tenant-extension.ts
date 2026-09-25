@@ -24,6 +24,11 @@ export const TENANT_MODELS: ReadonlySet<string> = new Set([
   'Task',
   'TaskEvent',
   'RecurringTask',
+  'Announcement',
+  'AnnouncementRead',
+  'MessageTemplate',
+  'MessageCampaign',
+  'MessageDelivery',
 ]);
 
 const WHERE_OPERATIONS = new Set([

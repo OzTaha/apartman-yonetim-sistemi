@@ -1,4 +1,11 @@
 import type {
+  AnnouncementDetailDto,
+  AnnouncementDto,
+  CampaignDetailDto,
+  CampaignDto,
+  MessageTemplateDto,
+  ReminderSettingsDto,
+  ResidentAnnouncementDto,
   BlockDto,
   EmployeeDetailDto,
   EmployeeDto,
@@ -251,6 +258,13 @@ const SITE_SCOPED = new Set([
   'task',
   'recurring-tasks',
   'staff-report',
+  'announcements',
+  'announcement',
+  'my-announcements',
+  'campaigns',
+  'campaign',
+  'message-templates',
+  'reminder-settings',
 ]);
 
 const isSiteData = (q: { queryKey: readonly unknown[] }) =>
@@ -283,3 +297,31 @@ export function useApiMutation<TVariables, TResult>(
     },
   });
 }
+
+export const useAnnouncements = () =>
+  useSiteQuery<AnnouncementDto[]>('announcements', '/announcements');
+export const useAnnouncement = (id: string) =>
+  useSiteQuery<AnnouncementDetailDto>('announcement', `/announcements/${id}`, id);
+export function useMyAnnouncements(siteIdOverride?: string) {
+  const { siteId: activeSiteId } = useSession();
+  const siteId = siteIdOverride ?? activeSiteId;
+  return useQuery({
+    queryKey: ['my-announcements', siteId],
+    queryFn: () => apiFetch<ResidentAnnouncementDto[]>('/announcements/mine', { siteId }),
+    enabled: Boolean(siteId),
+  });
+}
+export const useCampaigns = () => useSiteQuery<CampaignDto[]>('campaigns', '/messages');
+export function useCampaign(id: string) {
+  const { siteId } = useSession();
+  return useQuery({
+    queryKey: ['campaign', siteId, id],
+    queryFn: () => apiFetch<CampaignDetailDto>(`/messages/${id}`),
+    enabled: Boolean(siteId),
+    refetchInterval: (query) => (query.state.data?.counts.queued ? 1500 : false),
+  });
+}
+export const useMessageTemplates = () =>
+  useSiteQuery<MessageTemplateDto[]>('message-templates', '/message-templates');
+export const useReminderSettings = () =>
+  useSiteQuery<ReminderSettingsDto>('reminder-settings', '/reminder-settings');

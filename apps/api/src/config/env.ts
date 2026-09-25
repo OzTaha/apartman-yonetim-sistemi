@@ -9,6 +9,7 @@ export const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(32, 'En az 32 karakter olmalıdır'),
   LOGIN_RATE_LIMIT: z.coerce.number().int().positive().default(10),
   UPLOAD_DIR: z.string().min(1).default('uploads'),
+  MESSAGING_PROVIDER: z.enum(['log']).default('log'),
 });
 
 export type Env = z.infer<typeof envSchema>;
