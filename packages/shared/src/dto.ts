@@ -57,6 +57,7 @@ export interface SiteDto {
   id: string;
   name: string;
   kind: SiteKind;
+  proportionalDues: boolean;
   address: string | null;
   city: string | null;
   createdAt: string;

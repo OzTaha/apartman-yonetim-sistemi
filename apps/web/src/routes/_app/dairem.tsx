@@ -40,16 +40,18 @@ function MyUnitCard({ occupancy }: { occupancy: MyOccupancyDto }) {
               <dt className="text-muted-foreground">Kat</dt>
               <dd className="font-medium">{unit.data.floor ?? '—'}</dd>
             </div>
-            <div>
-              <dt className="text-muted-foreground">Alan</dt>
-              <dd className="font-medium">
-                {unit.data.areaM2 !== null ? `${unit.data.areaM2.toLocaleString('tr-TR')} m²` : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Arsa payı</dt>
-              <dd className="font-medium">{unit.data.landShare ?? '—'}</dd>
-            </div>
+            {unit.data.areaM2 !== null && (
+              <div>
+                <dt className="text-muted-foreground">Alan</dt>
+                <dd className="font-medium">{unit.data.areaM2.toLocaleString('tr-TR')} m²</dd>
+              </div>
+            )}
+            {unit.data.landShare !== null && (
+              <div>
+                <dt className="text-muted-foreground">Arsa payı</dt>
+                <dd className="font-medium">{unit.data.landShare}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-muted-foreground">Başlangıç</dt>
               <dd className="font-medium">{formatDate(mine?.startDate)}</dd>

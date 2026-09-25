@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/select';
 import { apiFetch } from '@/lib/api';
 import { toNumberOrNull, toNumberOrUndefined } from '@/lib/format';
-import { useApiMutation, useBlocks } from '@/lib/queries';
+import { useApiMutation, useBlocks, useDuesSettings } from '@/lib/queries';
 import { useIsApartment } from '@/lib/unit-label';
 
 interface DialogProps {
@@ -83,6 +83,8 @@ export function UnitFormDialog({
 }) {
   const blocks = useBlocks();
   const isApartment = useIsApartment();
+  const duesSettings = useDuesSettings().data;
+  const proportional = duesSettings?.proportionalDues ?? false;
   const form = useForm<UnitForm, unknown, UnitOutput>({
     resolver: zodResolver(unitCreateSchema),
     values: {
@@ -117,7 +119,11 @@ export function UnitFormDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{unit ? 'Daireyi düzenle' : 'Daire ekle'}</DialogTitle>
-          <DialogDescription>Kat, alan ve arsa payı bilgileri isteğe bağlıdır.</DialogDescription>
+          <DialogDescription>
+            {proportional
+              ? 'Kat, alan ve arsa payı bilgileri aidat oranlı dağıtılmıyorsa isteğe bağlıdır.'
+              : 'Kat bilgisi isteğe bağlıdır.'}
+          </DialogDescription>
         </DialogHeader>
         <form
           id="unit-form"
@@ -156,25 +162,35 @@ export function UnitFormDialog({
               {...form.register('floor', { setValueAs: toNumberOrNull })}
             />
           </Field>
-          <Field label="Alan (m²)" htmlFor="unit-area" error={errors.areaM2?.message}>
-            <Input
-              id="unit-area"
-              inputMode="decimal"
-              {...form.register('areaM2', { setValueAs: toNumberOrNull })}
-            />
-          </Field>
-          <Field
-            label="Arsa payı"
-            htmlFor="unit-share"
-            error={errors.landShare?.message}
-            className="sm:col-span-2"
-          >
-            <Input
-              id="unit-share"
-              inputMode="numeric"
-              {...form.register('landShare', { setValueAs: toNumberOrNull })}
-            />
-          </Field>
+          {proportional && (
+            <>
+              <Field
+                label="Alan (m²)"
+                htmlFor="unit-area"
+                error={errors.areaM2?.message}
+                required={duesSettings?.currentMethod === 'AREA'}
+              >
+                <Input
+                  id="unit-area"
+                  inputMode="decimal"
+                  {...form.register('areaM2', { setValueAs: toNumberOrNull })}
+                />
+              </Field>
+              <Field
+                label="Arsa payı"
+                htmlFor="unit-share"
+                error={errors.landShare?.message}
+                required={duesSettings?.currentMethod === 'LAND_SHARE'}
+                className="sm:col-span-2"
+              >
+                <Input
+                  id="unit-share"
+                  inputMode="numeric"
+                  {...form.register('landShare', { setValueAs: toNumberOrNull })}
+                />
+              </Field>
+            </>
+          )}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

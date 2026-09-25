@@ -21,8 +21,6 @@ type Tx = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction'
 interface UnitSeed {
   number: string;
   floor: number;
-  areaM2: number;
-  landShare: number;
   occupant?: { firstName: string; lastName: string; phone: string; type: 'OWNER' | 'TENANT' };
   paidPeriods: number[];
 }
@@ -68,8 +66,6 @@ async function createPlace(
           blockId: block.id,
           number: seed.number,
           floor: seed.floor,
-          areaM2: seed.areaM2,
-          landShare: seed.landShare,
         },
       });
       units.push({ id: unit.id, seed });
@@ -93,8 +89,8 @@ async function createPlace(
     units.map((u) => ({
       id: u.id,
       label: u.seed.number,
-      areaM2: u.seed.areaM2,
-      landShare: u.seed.landShare,
+      areaM2: null,
+      landShare: null,
     })),
   );
 
@@ -191,16 +187,12 @@ async function main() {
                 {
                   number: '1',
                   floor: 1,
-                  areaM2: 95,
-                  landShare: 10,
                   paidPeriods: all,
                   occupant: person('Mehmet', 'Kaya', '+905321000011'),
                 },
                 {
                   number: '2',
                   floor: 1,
-                  areaM2: 120,
-                  landShare: 12,
                   paidPeriods: [0, 1],
                   occupant: person('Elif', 'Arslan', '+905321000012'),
                 },
@@ -212,12 +204,10 @@ async function main() {
                 {
                   number: '1',
                   floor: 1,
-                  areaM2: 95,
-                  landShare: 10,
                   paidPeriods: [0, 1],
                   occupant: person('Murat', 'Kara', '+905321000013', 'TENANT'),
                 },
-                { number: '2', floor: 1, areaM2: 120, landShare: 12, paidPeriods: all },
+                { number: '2', floor: 1, paidPeriods: all },
               ],
             },
           ],
@@ -237,36 +227,28 @@ async function main() {
                 {
                   number: '1',
                   floor: 1,
-                  areaM2: 90,
-                  landShare: 10,
                   paidPeriods: all,
                   occupant: person('Ayşe', 'Yılmaz', '+905321000000'),
                 },
                 {
                   number: '2',
                   floor: 1,
-                  areaM2: 90,
-                  landShare: 10,
                   paidPeriods: [0, 1],
                   occupant: person('Ali', 'Çelik', '+905321000002'),
                 },
                 {
                   number: '3',
                   floor: 2,
-                  areaM2: 110,
-                  landShare: 12,
                   paidPeriods: [1],
                   occupant: person('Fatma', 'Demir', '+905321000003'),
                 },
                 {
                   number: '4',
                   floor: 2,
-                  areaM2: 110,
-                  landShare: 12,
                   paidPeriods: all,
                   occupant: person('Zeynep', 'Şahin', '+905321000004', 'TENANT'),
                 },
-                { number: '5', floor: 3, areaM2: 130, landShare: 14, paidPeriods: [0, 1] },
+                { number: '5', floor: 3, paidPeriods: [0, 1] },
               ],
             },
           ],

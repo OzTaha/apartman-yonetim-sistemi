@@ -123,6 +123,7 @@ export const useChargeTypes = () => useSiteQuery<ChargeTypeDto[]>('charge-types'
 export const useDuesPlans = () => useSiteQuery<DuesPlanDto[]>('dues-plans', '/dues/plans');
 export const useDuesSettings = () =>
   useSiteQuery<DuesSettingsDto>('dues-settings', '/dues/settings');
+export const useProportionalDues = () => useDuesSettings().data?.proportionalDues ?? false;
 export const useDebtReport = () =>
   useSiteQuery<DebtReportRowDto[]>('debt-report', '/reports/debts');
 

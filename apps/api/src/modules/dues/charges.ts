@@ -28,14 +28,17 @@ import {
   ChargeUpdateDto,
 } from '../../common/dues.dto';
 import type { Prisma } from '../../generated/prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { compareUnits } from '../residents/occupancy.mapper';
 import { chargeInclude, toChargeDto } from './ledger.mapper';
+import { assertMethodAllowed, loadSiteSettings } from './site-settings';
 
 @Injectable()
 export class ChargesService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly tenant: TenantContext,
     private readonly audit: AuditService,
   ) {}
@@ -77,6 +80,9 @@ export class ChargesService {
   async create(input: ChargeCreateDto): Promise<ChargeCreateResultDto> {
     const type = await this.tenant.db.chargeType.findUnique({ where: { id: input.chargeTypeId } });
     if (!type || !type.isActive) throw new NotFoundException('Borç türü bulunamadı');
+    if (input.amountMode === 'DISTRIBUTE') {
+      assertMethodAllowed(await loadSiteSettings(this.prisma, this.tenant.siteId), input.method);
+    }
 
     const units = (
       await this.tenant.db.unit.findMany({

@@ -40,9 +40,12 @@ import {
   useChargeTypes,
   useDuesPlans,
   useDuesSettings,
+  useProportionalDues,
   useUnits,
 } from '@/lib/queries';
+import { MissingUnitDataAlert } from '@/features/dues/missing-unit-data';
 import { labelUnit } from '@/lib/unit-label';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/aidat-ayarlari')({
   component: () => (
@@ -70,6 +73,7 @@ function planAmountText(p: Pick<DuesPlanDto, 'method' | 'amountKurus'>) {
 
 function PlanCard() {
   const plans = useDuesPlans();
+  const proportional = useProportionalDues();
   const units = useUnits({});
   const form = useForm<PlanInput, unknown, PlanOutput>({
     resolver: zodResolver(planSchema),
@@ -151,28 +155,30 @@ function PlanCard() {
         )}
 
         <form
-          className="grid gap-4 sm:grid-cols-3"
+          className={cn('grid gap-4', proportional ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}
           noValidate
           onSubmit={form.handleSubmit((v) => create.mutate(v))}
         >
-          <Field label="Dağıtım" htmlFor="plan-method">
-            <Controller
-              control={form.control}
-              name="method"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="plan-method" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EQUAL">Her daireye aynı tutar</SelectItem>
-                    <SelectItem value="AREA">Toplamı m²’ye göre dağıt</SelectItem>
-                    <SelectItem value="LAND_SHARE">Toplamı arsa payına göre dağıt</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </Field>
+          {proportional && (
+            <Field label="Dağıtım" htmlFor="plan-method">
+              <Controller
+                control={form.control}
+                name="method"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="plan-method" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EQUAL">Her daireye aynı tutar</SelectItem>
+                      <SelectItem value="AREA">Toplamı m²’ye göre dağıt</SelectItem>
+                      <SelectItem value="LAND_SHARE">Toplamı arsa payına göre dağıt</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </Field>
+          )}
           <Field
             label={w.method === 'EQUAL' ? 'Daire başı tutar (TL)' : 'Aylık toplam tutar (TL)'}
             htmlFor="plan-amount"
@@ -196,12 +202,12 @@ function PlanCard() {
           </Field>
 
           {preview?.error && (
-            <Alert variant="destructive" className="sm:col-span-3">
+            <Alert variant="destructive" className="sm:col-span-full">
               <AlertDescription>{preview.error}</AlertDescription>
             </Alert>
           )}
           {preview && !preview.error && (
-            <p className="text-sm text-muted-foreground sm:col-span-3">
+            <p className="text-sm text-muted-foreground sm:col-span-full">
               {preview.count} daire için aylık toplam{' '}
               <strong className="text-foreground">{formatKurus(preview.total)}</strong>
               {preview.min !== preview.max
@@ -209,7 +215,7 @@ function PlanCard() {
                 : ` · daire başı ${formatKurus(preview.min)}`}
             </p>
           )}
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-full">
             <Button type="submit" disabled={create.isPending || Boolean(preview?.error)}>
               <Plus />
               Aidatı kaydet
@@ -420,6 +426,7 @@ function DuesSettingsPage() {
   return (
     <div className="grid gap-6">
       <PageHeader title="Aidat ayarları" />
+      <MissingUnitDataAlert />
       <PlanCard />
       <div className="grid gap-6 lg:grid-cols-2">
         <DueDayCard />

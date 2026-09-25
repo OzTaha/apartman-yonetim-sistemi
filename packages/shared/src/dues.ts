@@ -156,6 +156,9 @@ export interface DuesPlanDto {
 
 export interface DuesSettingsDto {
   dueDay: number;
+  proportionalDues: boolean;
+  currentMethod: DistributionMethod | null;
+  missingDataUnits: string[];
 }
 
 export interface ChargeCreateResultDto {

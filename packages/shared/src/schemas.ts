@@ -80,10 +80,12 @@ const siteFields = z.object({
   kind: siteKindSchema,
   address: optionalText(300),
   city: optionalText(60),
+  proportionalDues: z.boolean(),
 });
 
 export const siteCreateSchema = siteFields.extend({
   kind: siteKindSchema.default('SITE'),
+  proportionalDues: z.boolean().default(false),
 });
 export type SiteCreateInput = z.input<typeof siteCreateSchema>;
 

@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/select';
 import { apiFetch } from '@/lib/api';
 import { todayIso } from '@/lib/format';
-import { useApiMutation, useChargeTypes, useUnits } from '@/lib/queries';
+import { useApiMutation, useChargeTypes, useProportionalDues, useUnits } from '@/lib/queries';
 import { labelUnit } from '@/lib/unit-label';
 
 interface DialogProps {
@@ -76,6 +76,7 @@ export function ChargeCreateDialog({
 }: DialogProps & { unitId?: string }) {
   const types = useChargeTypes();
   const units = useUnits({});
+  const proportional = useProportionalDues();
   const activeTypes = (types.data ?? []).filter((t) => t.isActive);
   const defaultType = activeTypes.find((t) => t.code === 'FIXTURE') ?? activeTypes[0];
 
@@ -253,13 +254,15 @@ export function ChargeCreateDialog({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="PER_UNIT">Her daireye aynı tutar</SelectItem>
-                        <SelectItem value="DISTRIBUTE">Toplamı dairelere dağıt</SelectItem>
+                        <SelectItem value="DISTRIBUTE">
+                          {proportional ? 'Toplamı dairelere dağıt' : 'Toplamı dairelere eşit böl'}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   )}
                 />
               </Field>
-              {w.amountMode === 'DISTRIBUTE' && (
+              {proportional && w.amountMode === 'DISTRIBUTE' && (
                 <Field label="Dağıtım yöntemi" htmlFor="ch-method">
                   <Controller
                     control={form.control}

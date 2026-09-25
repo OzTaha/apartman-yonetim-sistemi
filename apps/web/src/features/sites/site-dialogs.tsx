@@ -10,6 +10,7 @@ import { Controller, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { Field } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -44,6 +46,7 @@ export function SiteFormDialog({ open, onOpenChange, site }: DialogProps & { sit
       kind: site?.kind ?? 'APARTMENT',
       address: site?.address ?? '',
       city: site?.city ?? '',
+      proportionalDues: site?.proportionalDues ?? false,
     },
   });
   const mutation = useApiMutation(
@@ -100,6 +103,26 @@ export function SiteFormDialog({ open, onOpenChange, site }: DialogProps & { sit
           <Field label="Şehir" htmlFor="site-city" error={errors.city?.message}>
             <Input id="site-city" {...form.register('city')} />
           </Field>
+          <Controller
+            control={form.control}
+            name="proportionalDues"
+            render={({ field }) => (
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="site-proportional"
+                  checked={field.value}
+                  onCheckedChange={(v) => field.onChange(v === true)}
+                />
+                <Label htmlFor="site-proportional" className="grid gap-0.5 font-normal">
+                  <span className="font-medium">Oranlı aidat dağıtımı (m² ve arsa payı)</span>
+                  <span className="text-xs text-muted-foreground">
+                    Kapalıyken aidat her daireye eşit yazılır; daire formunda m² ve arsa payı
+                    alanları görünmez.
+                  </span>
+                </Label>
+              </div>
+            )}
+          />
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

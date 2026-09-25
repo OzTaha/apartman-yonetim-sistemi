@@ -20,7 +20,7 @@ import { OccupancyTypeBadge } from '@/features/residents/occupancy-actions';
 import { BlocksDialog, BulkUnitsDialog, UnitFormDialog } from '@/features/units/unit-dialogs';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { fullName } from '@/lib/format';
-import { useBlocks, useUnits } from '@/lib/queries';
+import { useBlocks, useProportionalDues, useUnits } from '@/lib/queries';
 import { labelUnit, useIsApartment } from '@/lib/unit-label';
 
 interface UnitSearch {
@@ -72,11 +72,13 @@ const columns: ColumnDef<UnitDto>[] = [
   },
   { accessorKey: 'floor', header: 'Kat', cell: ({ getValue }) => getValue<number | null>() ?? '—' },
   {
+    id: 'areaM2',
     accessorKey: 'areaM2',
     header: 'm²',
     cell: ({ getValue }) => getValue<number | null>()?.toLocaleString('tr-TR') ?? '—',
   },
   {
+    id: 'landShare',
     accessorKey: 'landShare',
     header: 'Arsa payı',
     cell: ({ getValue }) => getValue<number | null>() ?? '—',
@@ -89,14 +91,16 @@ const columns: ColumnDef<UnitDto>[] = [
   },
 ];
 
-function UnitCard({ unit }: { unit: UnitDto }) {
+const equalColumns = columns.filter((c) => c.id !== 'areaM2' && c.id !== 'landShare');
+
+function UnitCard({ unit, showArea }: { unit: UnitDto; showArea: boolean }) {
   return (
     <div className="grid gap-1">
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-medium">{labelUnit(unit.blockName, unit.number)}</span>
         <span className="text-xs text-muted-foreground">
           {unit.floor !== null ? `${unit.floor}. kat` : ''}
-          {unit.areaM2 !== null ? ` · ${unit.areaM2.toLocaleString('tr-TR')} m²` : ''}
+          {showArea && unit.areaM2 !== null ? ` · ${unit.areaM2.toLocaleString('tr-TR')} m²` : ''}
         </span>
       </div>
       <div className="text-sm">
@@ -110,6 +114,7 @@ function UnitsPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const isApartment = useIsApartment();
+  const proportional = useProportionalDues();
   const [searchText, setSearchText] = useState(search.ara ?? '');
   const debouncedSearch = useDebouncedValue(searchText.trim());
   const [dialog, setDialog] = useState<'unit' | 'bulk' | 'blocks' | null>(null);
@@ -234,13 +239,13 @@ function UnitsPage() {
             <ErrorState error={units.error} />
           ) : (
             <DataTable
-              columns={columns}
+              columns={proportional ? columns : equalColumns}
               data={units.data}
               getRowId={(u) => u.id}
               onRowClick={(u) =>
                 void navigate({ to: '/daireler/$unitId', params: { unitId: u.id } })
               }
-              mobileCard={(u) => <UnitCard unit={u} />}
+              mobileCard={(u) => <UnitCard unit={u} showArea={proportional} />}
               empty={
                 <EmptyState
                   title={

@@ -13,7 +13,7 @@ import { RemoveUnitDialog } from '@/features/units/remove-unit-dialog';
 import { UnitFormDialog } from '@/features/units/unit-dialogs';
 import { apiFetch } from '@/lib/api';
 import { formatDate, fullName, isActiveOccupancy } from '@/lib/format';
-import { useApiMutation, useUnit } from '@/lib/queries';
+import { useApiMutation, useProportionalDues, useUnit } from '@/lib/queries';
 import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/daireler/$unitId')({
@@ -28,6 +28,7 @@ function UnitDetailPage() {
   const { unitId } = Route.useParams();
   const navigate = useNavigate();
   const unit = useUnit(unitId);
+  const proportional = useProportionalDues();
   const [dialog, setDialog] = useState<'edit' | 'add-resident' | 'delete' | null>(null);
 
   const unarchive = useApiMutation(
@@ -108,16 +109,20 @@ function UnitDetailPage() {
               <dt className="text-muted-foreground">Kat</dt>
               <dd className="text-base font-medium">{data.floor ?? '—'}</dd>
             </div>
-            <div>
-              <dt className="text-muted-foreground">Alan</dt>
-              <dd className="text-base font-medium">
-                {data.areaM2 !== null ? `${data.areaM2.toLocaleString('tr-TR')} m²` : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Arsa payı</dt>
-              <dd className="text-base font-medium">{data.landShare ?? '—'}</dd>
-            </div>
+            {proportional && (
+              <>
+                <div>
+                  <dt className="text-muted-foreground">Alan</dt>
+                  <dd className="text-base font-medium">
+                    {data.areaM2 !== null ? `${data.areaM2.toLocaleString('tr-TR')} m²` : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Arsa payı</dt>
+                  <dd className="text-base font-medium">{data.landShare ?? '—'}</dd>
+                </div>
+              </>
+            )}
           </dl>
         </CardContent>
       </Card>

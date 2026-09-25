@@ -12,6 +12,7 @@ import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { hashPassword } from '../auth/password';
+import { activeDuesMethods, readSiteSettings } from '../dues/site-settings';
 
 const siteInclude = {
   _count: { select: { blocks: true, units: true } },
@@ -30,6 +31,7 @@ function toDto(site: SiteWithRelations): SiteDto {
     id: site.id,
     name: site.name,
     kind: site.kind,
+    proportionalDues: readSiteSettings(site.settings).proportionalDues ?? false,
     address: site.address,
     city: site.city,
     createdAt: site.createdAt.toISOString(),
@@ -64,7 +66,8 @@ export class SitesService {
 
   async create(input: SiteCreateDto): Promise<SiteDto> {
     const site = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.site.create({ data: input });
+      const { proportionalDues, ...data } = input;
+      const created = await tx.site.create({ data: { ...data, settings: { proportionalDues } } });
       if (created.kind === 'APARTMENT') {
         await tx.block.create({ data: { siteId: created.id, name: APARTMENT_BLOCK_NAME } });
       }
@@ -86,6 +89,23 @@ export class SitesService {
       where: { id: siteId },
       include: { _count: { select: { blocks: true } } },
     });
+    const { proportionalDues, ...data } = input;
+    const settings = readSiteSettings(before.settings);
+    const proportionalChanged =
+      proportionalDues !== undefined && proportionalDues !== (settings.proportionalDues ?? false);
+    if (proportionalChanged) {
+      if (!user.isPlatformAdmin) {
+        throw new ForbiddenException(
+          'Oranlı aidat ayarını yalnızca sistem yöneticisi değiştirebilir',
+        );
+      }
+      const methods = await activeDuesMethods(this.prisma, siteId);
+      if (!proportionalDues && methods.all.some((m) => m !== 'EQUAL')) {
+        throw new BadRequestException(
+          'Aidat planı m² veya arsa payına göre. Kapatmadan önce eşit dağıtımlı yeni bir plan tanımlayın.',
+        );
+      }
+    }
     if (input.kind === 'APARTMENT' && before.kind !== 'APARTMENT') {
       if (before._count.blocks > 1) {
         throw new BadRequestException(
@@ -98,7 +118,12 @@ export class SitesService {
     }
     const site = await this.prisma.site.update({
       where: { id: siteId },
-      data: input,
+      data: {
+        ...data,
+        ...(proportionalChanged
+          ? { settings: { ...settings, proportionalDues } as Prisma.InputJsonValue }
+          : {}),
+      },
       include: siteInclude,
     });
     await this.audit.record({
@@ -106,7 +131,13 @@ export class SitesService {
       entityType: 'Site',
       entityId: siteId,
       siteId,
-      before: { name: before.name, kind: before.kind, address: before.address, city: before.city },
+      before: {
+        name: before.name,
+        kind: before.kind,
+        address: before.address,
+        city: before.city,
+        proportionalDues: settings.proportionalDues ?? false,
+      },
       after: input,
     });
     return toDto(site);

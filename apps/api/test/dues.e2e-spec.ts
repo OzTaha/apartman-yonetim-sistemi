@@ -18,7 +18,7 @@ const year = Number(current.slice(0, 4));
 let app: NestExpressApplication;
 let prisma: PrismaService;
 const ids = {} as Record<'siteA' | 'siteB' | 'blockA' | 'unitA1' | 'unitA2' | 'unitB1', string>;
-const tokens = {} as Record<'managerA' | 'managerB' | 'resident', string>;
+const tokens = {} as Record<'admin' | 'managerA' | 'managerB' | 'resident', string>;
 
 const http = () => request(app.getHttpServer());
 const as = (token: string, siteId: string) => ({
@@ -26,6 +26,7 @@ const as = (token: string, siteId: string) => ({
   'X-Site-Id': siteId,
 });
 const A = () => as(tokens.managerA, ids.siteA);
+const B = () => as(tokens.managerB, ids.siteB);
 
 async function login(identifier: string) {
   const res = await http()
@@ -76,7 +77,18 @@ beforeAll(async () => {
       data: { firstName: 'Sakin', lastName: 'Bir', email: 'sakin@dues.test', passwordHash },
     }),
   ]);
-  const siteA = await prisma.site.create({ data: { name: 'Aidat Sitesi A' } });
+  await prisma.user.create({
+    data: {
+      firstName: 'Sistem',
+      lastName: 'Yöneticisi',
+      email: 'admin@dues.test',
+      passwordHash,
+      isPlatformAdmin: true,
+    },
+  });
+  const siteA = await prisma.site.create({
+    data: { name: 'Aidat Sitesi A', settings: { proportionalDues: true } },
+  });
   const siteB = await prisma.site.create({ data: { name: 'Aidat Sitesi B' } });
   await prisma.siteMembership.createMany({
     data: [
@@ -115,6 +127,7 @@ beforeAll(async () => {
     unitA2: unitA2.id,
     unitB1: unitB1.id,
   });
+  tokens.admin = await login('admin@dues.test');
   tokens.managerA = await login('a@dues.test');
   tokens.managerB = await login('b@dues.test');
   tokens.resident = await login('sakin@dues.test');
@@ -190,6 +203,78 @@ describe('Aidat planı ve tahakkuk', () => {
     });
     expect(charges).toHaveLength(2);
     expect(charges.every((c) => c.dueDate.toISOString().startsWith(`${previous}-15`))).toBe(true);
+  });
+});
+
+describe('Oranlı aidat ayarı', () => {
+  it('kapalı yerde yalnızca eşit dağıtım kabul edilir', async () => {
+    const settings = await http().get('/api/dues/settings').set(B()).expect(200);
+    expect(settings.body).toMatchObject({ proportionalDues: false, currentMethod: null });
+    await http()
+      .post('/api/dues/plans')
+      .set(B())
+      .send({ method: 'LAND_SHARE', amountKurus: 100_000, validFrom: current })
+      .expect(400);
+    const types = await http().get('/api/charge-types').set(B()).expect(200);
+    await http()
+      .post('/api/charges')
+      .set(B())
+      .send({
+        chargeTypeId: types.body[0].id,
+        scope: 'ALL',
+        amountMode: 'DISTRIBUTE',
+        method: 'AREA',
+        amountKurus: 10_000,
+        issueDate: today,
+        dueDate: today,
+      })
+      .expect(400);
+  });
+
+  it('m²’ye göre plan varken yeni dairede alan zorunludur', async () => {
+    const settings = await http().get('/api/dues/settings').set(A()).expect(200);
+    expect(settings.body).toMatchObject({
+      proportionalDues: true,
+      currentMethod: 'AREA',
+      missingDataUnits: [],
+    });
+    const res = await http()
+      .post('/api/units')
+      .set(A())
+      .send({ blockId: ids.blockA, number: '9' })
+      .expect(400);
+    expect(res.body.message).toContain('alan');
+    await http().patch(`/api/units/${ids.unitA2}`).set(A()).send({ areaM2: null }).expect(400);
+    const unit = await http()
+      .post('/api/units')
+      .set(A())
+      .send({ blockId: ids.blockA, number: '9', areaM2: 70 })
+      .expect(201);
+    await http().delete(`/api/units/${unit.body.id}`).set(A()).expect(204);
+  });
+
+  it('ayarı yalnızca sistem yöneticisi değiştirir; oranlı plan varken kapatılamaz', async () => {
+    await http()
+      .patch(`/api/sites/${ids.siteA}`)
+      .set(A())
+      .send({ proportionalDues: false })
+      .expect(403);
+    await http()
+      .patch(`/api/sites/${ids.siteA}`)
+      .set({ Authorization: `Bearer ${tokens.admin}` })
+      .send({ proportionalDues: false })
+      .expect(400);
+    const res = await http()
+      .patch(`/api/sites/${ids.siteB}`)
+      .set({ Authorization: `Bearer ${tokens.admin}` })
+      .send({ proportionalDues: true })
+      .expect(200);
+    expect(res.body.proportionalDues).toBe(true);
+    await http()
+      .patch(`/api/sites/${ids.siteB}`)
+      .set({ Authorization: `Bearer ${tokens.admin}` })
+      .send({ proportionalDues: false })
+      .expect(200);
   });
 });
 

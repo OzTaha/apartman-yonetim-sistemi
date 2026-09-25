@@ -31,7 +31,9 @@ import { activeOn } from '../../common/dates';
 import { BulkUnitsDto, UnitCreateDto, UnitListQueryDto, UnitUpdateDto } from '../../common/dto';
 import type { Prisma } from '../../generated/prisma/client';
 import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { activeDuesMethods, assertUnitData, requiredUnitFields } from '../dues/site-settings';
 import { compareUnits, occupancyInclude, toOccupancyDto } from '../residents/occupancy.mapper';
 
 @Injectable()
@@ -79,6 +81,7 @@ function toUnitDto(u: UnitWithOccupants): UnitDto {
 @Injectable()
 export class UnitsService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly tenant: TenantContext,
     private readonly audit: AuditService,
   ) {}
@@ -147,6 +150,10 @@ export class UnitsService {
 
   async create(input: UnitCreateDto): Promise<UnitDto> {
     const blockId = await this.resolveBlockId(input.blockId);
+    assertUnitData(await this.requiredFields(), {
+      areaM2: input.areaM2 ?? null,
+      landShare: input.landShare ?? null,
+    });
     const unit = await this.tenant.db.unit.create({
       data: {
         siteId: this.tenant.siteId,
@@ -205,6 +212,12 @@ export class UnitsService {
     const before = await this.tenant.db.unit.findUnique({ where: { id } });
     if (!before) throw new NotFoundException('Daire bulunamadı');
     if (input.blockId) await this.assertBlock(input.blockId);
+    if (!before.archivedAt) {
+      assertUnitData(await this.requiredFields(), {
+        areaM2: input.areaM2 === undefined ? before.areaM2 : input.areaM2,
+        landShare: input.landShare === undefined ? before.landShare : input.landShare,
+      });
+    }
 
     const unit = await this.tenant.db.unit.update({
       where: { id },
@@ -295,6 +308,11 @@ export class UnitsService {
     });
     await this.audit.record({ action: 'UNARCHIVE', entityType: 'Unit', entityId: id });
     return toUnitDto(unit);
+  }
+
+  private async requiredFields() {
+    const methods = await activeDuesMethods(this.prisma, this.tenant.siteId);
+    return requiredUnitFields(methods.all);
   }
 
   private async resolveBlockId(blockId: string | undefined): Promise<string> {

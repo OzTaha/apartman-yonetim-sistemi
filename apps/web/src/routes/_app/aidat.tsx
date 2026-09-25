@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { MissingUnitDataAlert } from '@/features/dues/missing-unit-data';
 import { PaymentDialog } from '@/features/dues/payment-dialog';
 import { StatusLegend } from '@/features/dues/status';
 import { toneClasses, toneLabels, toneOf } from '@/features/dues/tones';
@@ -124,6 +125,8 @@ function DuesMatrixPage() {
           </Button>
         }
       />
+
+      <MissingUnitDataAlert />
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <Select

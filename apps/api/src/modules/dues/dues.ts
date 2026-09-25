@@ -18,13 +18,13 @@ import {
   DistributionError,
   dueDateFor,
   periodLabel,
-  periodOfDate,
   type AccrualResultDto,
   type DuesPlanDto,
   type DuesSettingsDto,
+  unitLabel,
 } from '@apartman/shared';
 import { ClsService } from 'nestjs-cls';
-import { dateOnly, todayInIstanbul } from '../../common/dates';
+import { dateOnly } from '../../common/dates';
 import {
   AccrueDto,
   DuesPlanDto as DuesPlanBody,
@@ -37,16 +37,14 @@ import { type AppClsStore, SiteScoped, TenantContext } from '../../tenancy/tenan
 import { AuditService } from '../audit/audit.service';
 import { compareUnits } from '../residents/occupancy.mapper';
 import { ChargeTypesService } from './charge-types';
-
-export const DEFAULT_DUE_DAY = 10;
-
-export function currentPeriod(): string {
-  return periodOfDate(todayInIstanbul());
-}
-
-interface SiteSettings {
-  duesDueDay?: number;
-}
+import {
+  activeDuesMethods,
+  assertMethodAllowed,
+  currentPeriod,
+  DEFAULT_DUE_DAY,
+  loadSiteSettings,
+  requiredUnitFields,
+} from './site-settings';
 
 @Injectable()
 export class DuesService implements OnApplicationBootstrap {
@@ -62,24 +60,31 @@ export class DuesService implements OnApplicationBootstrap {
   ) {}
 
   async dueDay(siteId: string): Promise<number> {
-    const site = await this.prisma.site.findUniqueOrThrow({
-      where: { id: siteId },
-      select: { settings: true },
-    });
-    return (site.settings as SiteSettings | null)?.duesDueDay ?? DEFAULT_DUE_DAY;
+    return (await loadSiteSettings(this.prisma, siteId)).duesDueDay ?? DEFAULT_DUE_DAY;
   }
 
   async getSettings(): Promise<DuesSettingsDto> {
-    return { dueDay: await this.dueDay(this.tenant.siteId) };
+    const siteId = this.tenant.siteId;
+    const [settings, methods, kind, units] = await Promise.all([
+      loadSiteSettings(this.prisma, siteId),
+      activeDuesMethods(this.prisma, siteId),
+      this.tenant.siteKind(),
+      this.distributableUnits(),
+    ]);
+    const fields = requiredUnitFields(methods.all);
+    return {
+      dueDay: settings.duesDueDay ?? DEFAULT_DUE_DAY,
+      proportionalDues: settings.proportionalDues ?? false,
+      currentMethod: methods.current,
+      missingDataUnits: units
+        .filter((u) => fields.some((f) => u[f] == null))
+        .map((u) => unitLabel(kind, u.blockName, u.number, 'short')),
+    };
   }
 
   async updateSettings(input: DuesSettingsBody): Promise<DuesSettingsDto> {
     const siteId = this.tenant.siteId;
-    const site = await this.prisma.site.findUniqueOrThrow({
-      where: { id: siteId },
-      select: { settings: true },
-    });
-    const before = (site.settings ?? {}) as SiteSettings & Record<string, unknown>;
+    const before = await loadSiteSettings(this.prisma, siteId);
     await this.prisma.site.update({
       where: { id: siteId },
       data: { settings: { ...before, duesDueDay: input.dueDay } as Prisma.InputJsonValue },
@@ -91,7 +96,7 @@ export class DuesService implements OnApplicationBootstrap {
       before: { dueDay: before.duesDueDay ?? DEFAULT_DUE_DAY },
       after: input,
     });
-    return { dueDay: input.dueDay };
+    return this.getSettings();
   }
 
   async listPlans(): Promise<DuesPlanDto[]> {
@@ -111,6 +116,7 @@ export class DuesService implements OnApplicationBootstrap {
   }
 
   async createPlan(input: DuesPlanBody): Promise<DuesPlanDto> {
+    assertMethodAllowed(await loadSiteSettings(this.prisma, this.tenant.siteId), input.method);
     const units = await this.distributableUnits();
     if (units.length > 0) this.amountsOrThrow(input, units);
 

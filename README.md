@@ -106,7 +106,10 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 
 - Aylık aidat her ayın 1'inde 00:05'te (İstanbul) tüm dairelere otomatik yazılır. Sunucu o gün kapalıysa açılışta o ayın aidatı yazılır.
   Aynı daireye aynı ay iki kez yazılmaz; "Aidat ayarları > Aidatı şimdi oluştur" ile elle de çalıştırılabilir.
-- Aidat eşit (daire başı), m²'ye veya arsa payına göre dağıtılabilir. Dağıtım kuruşu kuruşuna yapılır ve toplam her zaman girilen tutara eşittir.
+- Aidat varsayılan olarak her daireye eşit yazılır. Sistem yöneticisi site ayarlarından "Oranlı aidat dağıtımı"nı açarsa
+  m²'ye veya arsa payına göre dağıtım seçilebilir ve daire formunda bu alanlar görünür. Oranlı plan geçerliyken yeni dairede
+  ilgili bilgi zorunludur; eksik bilgili daireler aidat ekranlarında uyarı olarak listelenir.
+- Dağıtım kuruşu kuruşuna yapılır ve toplam her zaman girilen tutara eşittir.
 - Son ödeme günü site ayarıdır (varsayılan 10). Bu tarihten sonra ödenmeyen borç "gecikmiş" görünür.
 - Borçtan fazla ödeme kabul edilmez. Ödeme varsayılan olarak en eski borçtan başlanarak dağıtılır; istenirse ödenen aylar elle seçilir.
 - Ödemesi olan borç iptal edilemez; önce ödeme iptal edilir. Kayıtlar silinmez, iptal nedeniyle birlikte saklanır.
