@@ -55,7 +55,7 @@ Tüm hesapların şifresi `Deneme123!`.
 | ----------------- | -------------------- |
 | Sistem yöneticisi | `admin@ornek.com`    |
 | Site yöneticisi   | `yonetici@ornek.com` |
-| Sakin (A Blok 1)  | `0532 100 00 00`     |
+| Sakin (Daire 1)   | `05321000000`        |
 
 Seed iki örnek yer oluşturur: 5 daireli "Örnek Apartmanı" ve 2 bloklu, 4 daireli "Örnek Sitesi".
 Yönetici hesabı ikisini de yönetir. Son 3 ayın aidatı ve ödemeleri yüklenir. Apartmanın 3 numaralı

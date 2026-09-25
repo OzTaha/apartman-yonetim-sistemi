@@ -99,7 +99,7 @@ test('gider faturasıyla kaydedilir, işe taksit ödenir ve sakin şeffaflık sa
   await expect(page.getByRole('heading', { name: 'Tahsilatlar' })).toBeVisible();
 
   await page.context().clearCookies();
-  await login(page, '0532 100 00 00');
+  await login(page, '05321000000');
   await expect(page).not.toHaveURL(/giris/);
   await page.goto('/giderler');
   await expect(page.getByRole('heading', { name: 'Giderler ve işler' })).toBeVisible();

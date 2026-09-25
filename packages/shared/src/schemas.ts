@@ -56,8 +56,13 @@ export const idSchema = z.uuid('Geçersiz kimlik');
 
 export const dateSchema = z.iso.date('Geçerli bir tarih girin (YYYY-AA-GG)');
 
+export const removeSpaces = (value: string) => value.replace(/\s+/g, '');
+
 export const loginSchema = z.object({
-  identifier: z.string().trim().min(1, 'E-posta veya telefon girin'),
+  identifier: z
+    .string()
+    .transform((value) => removeSpaces(value))
+    .pipe(z.string().min(1, 'E-posta veya telefon girin')),
   password: z.string().min(1, 'Şifre girin'),
 });
 export type LoginInput = z.input<typeof loginSchema>;

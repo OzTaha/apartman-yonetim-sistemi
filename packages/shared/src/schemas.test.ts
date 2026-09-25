@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  loginSchema,
   bulkUnitsSchema,
   occupancyCreateSchema,
   occupancyUpdateSchema,
@@ -84,5 +85,19 @@ describe('site türü', () => {
     expect(unitLabel('APARTMENT', 'Bina', '5', 'short')).toBe('5');
     expect(unitLabel('SITE', 'A', '5')).toBe('A Blok · Daire 5');
     expect(unitLabel('SITE', 'A', '5', 'short')).toBe('A-5');
+  });
+});
+
+describe('loginSchema', () => {
+  it('e-posta veya telefondaki tüm boşlukları siler', () => {
+    const parse = (identifier: string) =>
+      loginSchema.parse({ identifier, password: 'x' }).identifier;
+    expect(parse('  yonetici @ornek.com ')).toBe('yonetici@ornek.com');
+    expect(parse('0532 100 00 00')).toBe('05321000000');
+    expect(parse('\t0532 100 0000\n')).toBe('05321000000');
+  });
+
+  it('yalnızca boşluktan oluşan değeri reddeder', () => {
+    expect(loginSchema.safeParse({ identifier: '   ', password: 'x' }).success).toBe(false);
   });
 });

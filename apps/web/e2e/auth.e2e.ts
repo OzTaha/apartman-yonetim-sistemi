@@ -1,8 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-test('çıkış yapınca giriş ekranı açılır ve oturum geri gelmez', async ({ page }) => {
+test('girişte boşluk yazılamaz; çıkış yapınca giriş ekranı açılır ve oturum geri gelmez', async ({
+  page,
+}) => {
   await page.goto('/giris');
-  await page.locator('#identifier').fill('yonetici@ornek.com');
+  await page.locator('#identifier').pressSequentially(' yonetici @ornek.com ');
+  await expect(page.locator('#identifier')).toHaveValue('yonetici@ornek.com');
   await page.locator('#password').fill('Deneme123!');
   await page.getByRole('button', { name: 'Giriş yap' }).click();
   await expect(page.getByRole('heading', { name: 'Daireler' })).toBeVisible();

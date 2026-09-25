@@ -1,8 +1,8 @@
-import { loginSchema, type LoginInput } from '@apartman/shared';
+import { loginSchema, removeSpaces, type LoginInput } from '@apartman/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { CircleAlert, LogIn } from 'lucide-react';
-import { useState } from 'react';
+import { type ChangeEvent, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AuthShell } from '@/components/brand';
 import { Field } from '@/components/form-field';
@@ -68,7 +68,14 @@ function LoginPage() {
                 autoComplete="username"
                 inputMode="email"
                 autoFocus
-                {...form.register('identifier')}
+                spellCheck={false}
+                autoCapitalize="none"
+                {...form.register('identifier', {
+                  onChange: (e: ChangeEvent<HTMLInputElement>) => {
+                    const value = removeSpaces(e.target.value);
+                    if (value !== e.target.value) form.setValue('identifier', value);
+                  },
+                })}
               />
             </Field>
             <Field label="Şifre" htmlFor="password" error={form.formState.errors.password?.message}>
