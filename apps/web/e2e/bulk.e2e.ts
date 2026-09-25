@@ -5,7 +5,7 @@ test('toplam tutar dairelere eşit bölünür ve borçlar toplu iptal edilir', a
   await page.locator('#identifier').fill('yonetici@ornek.com');
   await page.locator('#password').fill('Deneme123!');
   await page.getByRole('button', { name: 'Giriş yap' }).click();
-  await expect(page.getByRole('heading', { name: 'Daireler' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
 
   await page.goto('/borclar');
   await page.getByRole('button', { name: 'Borç ekle' }).click();

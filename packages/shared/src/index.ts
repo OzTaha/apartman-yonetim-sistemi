@@ -8,3 +8,4 @@ export * from './dto';
 export * from './ledger';
 export * from './dues';
 export * from './finance';
+export * from './dashboard';

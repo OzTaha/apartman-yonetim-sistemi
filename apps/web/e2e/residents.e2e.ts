@@ -26,8 +26,9 @@ test('yönetici blok ve daire ekler, sakin davetle hesap açıp dairesini görü
   await page.locator('#identifier').fill(MANAGER.identifier);
   await page.locator('#password').fill(MANAGER.password);
   await page.getByRole('button', { name: 'Giriş yap' }).click();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+  await page.goto('/daireler');
   await expect(page.getByRole('heading', { name: 'Daireler' })).toBeVisible();
-  await expect(page).toHaveURL(/\/daireler/);
   await expectNoHorizontalScroll(page);
 
   await page.getByRole('button', { name: 'Bloklar' }).click();

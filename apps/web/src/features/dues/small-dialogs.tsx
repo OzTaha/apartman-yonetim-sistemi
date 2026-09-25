@@ -84,7 +84,8 @@ export function StatementDialog({
   onOpenChange,
   unitId,
   unitLabel,
-}: DialogProps & { unitId: string; unitLabel: string }) {
+  siteId,
+}: DialogProps & { unitId: string; unitLabel: string; siteId?: string }) {
   const today = todayIso();
   const [from, setFrom] = useState(`${today.slice(0, 4)}-01-01`);
   const [to, setTo] = useState(today);
@@ -100,6 +101,7 @@ export function StatementDialog({
       await downloadFile(
         `/units/${unitId}/statement.pdf?from=${from}&to=${to}`,
         `ekstre-${unitLabel}.pdf`,
+        siteId,
       );
       onOpenChange(false);
     } catch (e) {

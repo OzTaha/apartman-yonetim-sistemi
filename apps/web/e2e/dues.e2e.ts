@@ -32,8 +32,9 @@ test('aidat oluşturulur, ödeme alınır, tabloda ödendi görünür ve ekstre 
   await page.locator('#identifier').fill('yonetici@ornek.com');
   await page.locator('#password').fill('Deneme123!');
   await page.getByRole('button', { name: 'Giriş yap' }).click();
-  await expect(page.getByRole('heading', { name: 'Daireler' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
 
+  await page.goto('/daireler');
   await page.getByRole('button', { name: 'Bloklar' }).click();
   await page.getByRole('dialog').locator('#block-name').fill(blockName);
   await page.getByRole('dialog').getByRole('button', { name: 'Ekle' }).click();

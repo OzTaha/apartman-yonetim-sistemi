@@ -26,9 +26,11 @@ test('apartmanda blok görünmez; geçmişi olmayan daire silinir, ödemesi olan
   await page.locator('#identifier').fill('yonetici@ornek.com');
   await page.locator('#password').fill('Deneme123!');
   await page.getByRole('button', { name: 'Giriş yap' }).click();
-  await expect(page.getByRole('heading', { name: 'Daireler' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
 
   await switchPlace(page, 'Örnek Apartmanı');
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+  await page.goto('/daireler');
   await expect(page.getByText('5 daire', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Bloklar' })).toHaveCount(0);
   await expect(page.getByRole('combobox', { name: 'Blok filtresi' })).toHaveCount(0);

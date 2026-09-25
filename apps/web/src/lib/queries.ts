@@ -2,6 +2,7 @@ import type {
   BlockDto,
   CashAccountDto,
   ClosingsDto,
+  DashboardDto,
   FinanceCategoryDto,
   FinanceSummaryDto,
   TransactionDto,
@@ -149,14 +150,18 @@ export const useCharges = (filters: ChargeFilters) =>
 export const usePayments = (filters: PaymentFilters) =>
   useSiteQuery<PaymentDto[]>('payments', `/payments${toQuery({ ...filters })}`, filters);
 
-export function useUnitAccount(unitId: string | undefined) {
-  return useSiteQuery<UnitAccountDto>(
-    'account',
-    `/units/${unitId}/account`,
-    unitId,
-    Boolean(unitId),
-  );
+export function useUnitAccount(unitId: string | undefined, siteIdOverride?: string) {
+  const { siteId: activeSiteId } = useSession();
+  const siteId = siteIdOverride ?? activeSiteId;
+  return useQuery({
+    queryKey: ['account', siteId, unitId],
+    queryFn: () => apiFetch<UnitAccountDto>(`/units/${unitId}/account`, { siteId }),
+    enabled: Boolean(siteId) && Boolean(unitId),
+    placeholderData: (previous) => previous,
+  });
 }
+
+export const useDashboard = () => useSiteQuery<DashboardDto>('dashboard', '/dashboard');
 
 export interface TransactionFilters {
   accountId?: string;
@@ -211,6 +216,7 @@ const SITE_SCOPED = new Set([
   'finance-summary',
   'closings',
   'transparency',
+  'dashboard',
 ]);
 
 const isSiteData = (q: { queryKey: readonly unknown[] }) =>

@@ -14,6 +14,7 @@ import {
   HandCoins,
   Home,
   KeyRound,
+  LayoutDashboard,
   LayoutGrid,
   LogOut,
   ReceiptText,
@@ -49,6 +50,7 @@ import { useSiteOptions } from '@/lib/site-options';
 
 interface NavItem {
   to:
+    | '/panel'
     | '/daireler'
     | '/sakinler'
     | '/dairem'
@@ -183,6 +185,7 @@ export function AppSidebar() {
   const manager = canManage(role) && Boolean(s.siteId);
   const items: NavItem[] = [];
   if (manager) {
+    items.push({ to: '/panel', label: 'Panel', icon: LayoutDashboard });
     items.push({ to: '/daireler', label: 'Daireler', icon: DoorOpen });
     items.push({ to: '/sakinler', label: 'Sakinler', icon: Users });
   }

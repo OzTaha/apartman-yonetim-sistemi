@@ -24,6 +24,6 @@ import { PaymentsController, PaymentsService } from './payments';
     DocumentsService,
     UnitAccessGuard,
   ],
-  exports: [ChargeTypesService, DocumentsService],
+  exports: [ChargeTypesService, DocumentsService, AccountService],
 })
 export class DuesModule {}

@@ -503,3 +503,26 @@ describe('Toplu iptal', () => {
     expect(bulk.body).toEqual({ cancelled: active.length, skipped: [] });
   });
 });
+
+describe('Yönetim paneli', () => {
+  it('panel özetleri kasa ve borç verileriyle tutarlıdır; sakin paneli göremez', async () => {
+    const res = await http().get('/api/dashboard').set(A()).expect(200);
+    const accounts = await http().get('/api/cash-accounts').set(A()).expect(200);
+    const debts = await http().get('/api/reports/debts').set(A()).expect(200);
+    const total = (accounts.body as { balanceKurus: number }[]).reduce(
+      (sum, a) => sum + a.balanceKurus,
+      0,
+    );
+    expect(res.body).toMatchObject({
+      period: current,
+      unitCount: 2,
+      cashBalanceKurus: total,
+      openDebtKurus: (debts.body as { debtKurus: number }[]).reduce((s, d) => s + d.debtKurus, 0),
+    });
+    expect(res.body.months).toHaveLength(6);
+    expect(res.body.months.at(-1).period).toBe(current);
+    expect(res.body.recentTransactions.length).toBeGreaterThan(0);
+    await http().get('/api/dashboard').set(R()).expect(403);
+    await http().get('/api/dashboard').set(B()).expect(200);
+  });
+});

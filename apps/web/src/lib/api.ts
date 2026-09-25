@@ -81,8 +81,13 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   return (await response.json()) as T;
 }
 
-async function authorizedFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const { accessToken, siteId } = session.get();
+async function authorizedFetch(
+  path: string,
+  init: RequestInit = {},
+  siteOverride?: string,
+): Promise<Response> {
+  const { accessToken, siteId: activeSiteId } = session.get();
+  const siteId = siteOverride ?? activeSiteId;
   const request = () =>
     fetch(`/api${path}`, {
       credentials: 'include',
@@ -106,16 +111,20 @@ async function authorizedFetch(path: string, init: RequestInit = {}): Promise<Re
   return response;
 }
 
-async function fetchFile(path: string, fallbackName: string) {
-  const response = await authorizedFetch(path);
+async function fetchFile(path: string, fallbackName: string, siteId?: string) {
+  const response = await authorizedFetch(path, {}, siteId);
   const disposition = response.headers.get('Content-Disposition') ?? '';
   const encoded = /filename\*=UTF-8''([^;]+)/.exec(disposition)?.[1];
   const filename = encoded ? decodeURIComponent(encoded) : fallbackName;
   return { filename, blob: await response.blob() };
 }
 
-export async function downloadFile(path: string, fallbackName: string): Promise<void> {
-  const { filename, blob } = await fetchFile(path, fallbackName);
+export async function downloadFile(
+  path: string,
+  fallbackName: string,
+  siteId?: string,
+): Promise<void> {
+  const { filename, blob } = await fetchFile(path, fallbackName, siteId);
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -133,10 +142,10 @@ export function errorMessage(error: unknown): string {
   return 'Beklenmeyen bir hata oluştu';
 }
 
-export async function openFile(path: string, fallbackName: string): Promise<void> {
+export async function openFile(path: string, fallbackName: string, siteId?: string): Promise<void> {
   const target = window.open('', '_blank');
   try {
-    const { blob } = await fetchFile(path, fallbackName);
+    const { blob } = await fetchFile(path, fallbackName, siteId);
     const url = URL.createObjectURL(blob);
     if (target) target.location.href = url;
     else window.location.assign(url);

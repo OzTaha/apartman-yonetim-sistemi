@@ -26,7 +26,11 @@ test('gider faturasıyla kaydedilir, işe taksit ödenir ve sakin şeffaflık sa
 }, info) => {
   const suffix = `${info.project.name === 'masaustu' ? 'M' : 'T'}${String(Date.now()).slice(-4)}`;
   await login(page, 'yonetici@ornek.com');
-  await expect(page.getByRole('heading', { name: 'Daireler' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+  await expect(page.getByText('Kasa bakiyesi')).toBeVisible();
+  await expect(page.getByText('Bu ay aidatını ödeyen')).toBeVisible();
+  await expectNoHorizontalScroll(page);
+  await page.screenshot({ path: info.outputPath('panel.png'), fullPage: true });
 
   await page.goto('/kasa');
   await expect(page.getByText('Nakit kasa').first()).toBeVisible();
@@ -101,6 +105,20 @@ test('gider faturasıyla kaydedilir, işe taksit ödenir ve sakin şeffaflık sa
   await page.context().clearCookies();
   await login(page, '05321000000');
   await expect(page).not.toHaveURL(/giris/);
+  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(page.getByText('Güncel borç')).toBeVisible();
+  await expect(page.getByText('Ödemelerim')).toBeVisible();
+  const [receipt] = await Promise.all([
+    page.waitForEvent('download'),
+    page
+      .getByRole('button', { name: /ödemesinin makbuzu/ })
+      .first()
+      .click(),
+  ]);
+  expect(receipt.suggestedFilename()).toMatch(/^makbuz-\d+-1\.pdf$/);
+  await expectNoHorizontalScroll(page);
+  await page.screenshot({ path: info.outputPath('dairem.png'), fullPage: true });
+
   await page.goto('/giderler');
   await expect(page.getByRole('heading', { name: 'Giderler ve işler' })).toBeVisible();
   await expect(page.getByText('Dış cephe boyası', { exact: true })).toBeVisible();

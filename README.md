@@ -115,6 +115,15 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Ödemesi olan borç iptal edilemez; önce ödeme iptal edilir. Kayıtlar silinmez, iptal nedeniyle birlikte saklanır.
 - Borç durumu (ödendi / eksik / gecikmiş) ödemelerden hesaplanır, ayrıca saklanmaz.
 
+## Panel ve sakin portalı
+
+- Yönetici girişte paneli görür: daire sayısı, bu ay aidatını ödeyenler, gecikmiş borçlu daireler, aylık tahsilat,
+  bekleyen borç, kasa bakiyesi, son 6 ayın gelir-gideri, geciken ve yaklaşan ödemeler, son hareketler.
+- Sakin "Dairem" sayfasında güncel ve gecikmiş borcunu, ödenecek ve ödenmiş borçlarını, ödemelerini görür;
+  her ödemenin makbuzunu ve istediği tarih aralığının hesap ekstresini indirir.
+- Borç, tahsilat ve kasa hareketleri listelerinde kayıtlar toplu seçilip tek seferde iptal edilebilir. İptal edilemeyenler
+  (ödemesi olan borç, kapatılmış aya ait kayıt vb.) atlanır ve nedeni gösterilir.
+
 ## Gelir-gider ve kasa
 
 - Her yerde "Nakit kasa" ve "Banka hesabı" hazır gelir; başka hesaplar ve kategoriler "Kasa ayarları"ndan eklenir.

@@ -8,7 +8,7 @@ test('girişte boşluk yazılamaz; çıkış yapınca giriş ekranı açılır v
   await expect(page.locator('#identifier')).toHaveValue('yonetici@ornek.com');
   await page.locator('#password').fill('Deneme123!');
   await page.getByRole('button', { name: 'Giriş yap' }).click();
-  await expect(page.getByRole('heading', { name: 'Daireler' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
 
   const menu = page.getByRole('button', { name: 'Kullanıcı menüsü' });
   if (!(await menu.isVisible()))

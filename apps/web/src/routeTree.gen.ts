@@ -21,6 +21,7 @@ import { Route as AppGelirGiderRouteImport } from './routes/_app/gelir-gider'
 import { Route as AppGiderlerRouteImport } from './routes/_app/giderler'
 import { Route as AppKasaRouteImport } from './routes/_app/kasa'
 import { Route as AppKasaAyarlariRouteImport } from './routes/_app/kasa-ayarlari'
+import { Route as AppPanelRouteImport } from './routes/_app/panel'
 import { Route as AppRaporlarRouteImport } from './routes/_app/raporlar'
 import { Route as AppSakinlerRouteImport } from './routes/_app/sakinler'
 import { Route as AppSifreRouteImport } from './routes/_app/sifre'
@@ -91,6 +92,11 @@ const AppKasaAyarlariRoute = AppKasaAyarlariRouteImport.update({
   path: '/kasa-ayarlari',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPanelRoute = AppPanelRouteImport.update({
+  id: '/panel',
+  path: '/panel',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRaporlarRoute = AppRaporlarRouteImport.update({
   id: '/raporlar',
   path: '/raporlar',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/giderler': typeof AppGiderlerRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/panel': typeof AppPanelRoute
   '/raporlar': typeof AppRaporlarRoute
   '/sakinler': typeof AppSakinlerRoute
   '/sifre': typeof AppSifreRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/giderler': typeof AppGiderlerRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/panel': typeof AppPanelRoute
   '/raporlar': typeof AppRaporlarRoute
   '/sakinler': typeof AppSakinlerRoute
   '/sifre': typeof AppSifreRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/_app/giderler': typeof AppGiderlerRoute
   '/_app/kasa': typeof AppKasaRoute
   '/_app/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/_app/panel': typeof AppPanelRoute
   '/_app/raporlar': typeof AppRaporlarRoute
   '/_app/sakinler': typeof AppSakinlerRoute
   '/_app/sifre': typeof AppSifreRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/giderler'
     | '/kasa'
     | '/kasa-ayarlari'
+    | '/panel'
     | '/raporlar'
     | '/sakinler'
     | '/sifre'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/giderler'
     | '/kasa'
     | '/kasa-ayarlari'
+    | '/panel'
     | '/raporlar'
     | '/sakinler'
     | '/sifre'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/_app/giderler'
     | '/_app/kasa'
     | '/_app/kasa-ayarlari'
+    | '/_app/panel'
     | '/_app/raporlar'
     | '/_app/sakinler'
     | '/_app/sifre'
@@ -378,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKasaAyarlariRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/panel': {
+      id: '/_app/panel'
+      path: '/panel'
+      fullPath: '/panel'
+      preLoaderRoute: typeof AppPanelRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/raporlar': {
       id: '/_app/raporlar'
       path: '/raporlar'
@@ -461,6 +480,7 @@ interface AppRouteChildren {
   AppGiderlerRoute: typeof AppGiderlerRoute
   AppKasaRoute: typeof AppKasaRoute
   AppKasaAyarlariRoute: typeof AppKasaAyarlariRoute
+  AppPanelRoute: typeof AppPanelRoute
   AppRaporlarRoute: typeof AppRaporlarRoute
   AppSakinlerRoute: typeof AppSakinlerRoute
   AppSifreRoute: typeof AppSifreRoute
@@ -483,6 +503,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGiderlerRoute: AppGiderlerRoute,
   AppKasaRoute: AppKasaRoute,
   AppKasaAyarlariRoute: AppKasaAyarlariRoute,
+  AppPanelRoute: AppPanelRoute,
   AppRaporlarRoute: AppRaporlarRoute,
   AppSakinlerRoute: AppSakinlerRoute,
   AppSifreRoute: AppSifreRoute,
