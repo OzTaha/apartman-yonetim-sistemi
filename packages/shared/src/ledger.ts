@@ -275,3 +275,17 @@ export function buildStatement(entries: LedgerEntry[], from: string, to: string)
   }
   return { from, to, openingKurus, rows, totalDebitKurus, totalCreditKurus, closingKurus: balance };
 }
+
+export function splitTotal(
+  method: DistributionMethod,
+  totalKurus: Kurus,
+  units: DistributableUnit[],
+): Kurus[] {
+  if (method === 'EQUAL') {
+    return distributeAmount(
+      totalKurus,
+      units.map(() => 1),
+    );
+  }
+  return computeUnitAmounts({ method, amountKurus: totalKurus }, units);
+}

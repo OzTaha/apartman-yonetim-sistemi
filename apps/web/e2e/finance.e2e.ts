@@ -72,6 +72,23 @@ test('gider faturasıyla kaydedilir, işe taksit ödenir ve sakin şeffaflık sa
   await expectNoHorizontalScroll(page);
   await page.screenshot({ path: info.outputPath('is.png'), fullPage: true });
 
+  const longName = `Screenshot 2026-09-25 at 15-07-58 çok uzun bir dosya adı ${'x'.repeat(80)} ${suffix}.pdf`;
+  await page.locator('input[type=file]:not(#file-picker)').setInputFiles({
+    name: longName,
+    mimeType: 'application/pdf',
+    buffer: PDF,
+  });
+  await expect(page.getByText('1 belge yüklendi')).toBeVisible();
+
+  await page.goto('/giderler');
+  const workCard = page
+    .locator('[data-slot="card"]', { hasText: `Çatı onarımı ${suffix}` })
+    .first();
+  const card = await workCard.boundingBox();
+  const file = await workCard.getByRole('listitem').first().boundingBox();
+  expect(file!.x + file!.width).toBeLessThanOrEqual(card!.x + card!.width);
+  await expectNoHorizontalScroll(page);
+
   await page.goto('/gelir-gider');
   await expect(page.getByRole('img', { name: /gelir ve gider grafiği/ })).toBeVisible();
   await expect(page.getByText('Ay kapanışı')).toBeVisible();

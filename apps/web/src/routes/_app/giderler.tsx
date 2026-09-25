@@ -101,8 +101,8 @@ function TransparencyPage() {
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {d.works.map((w) => (
-                  <Card key={w.id} className="py-4">
-                    <CardContent className="grid gap-3">
+                  <Card key={w.id} className="min-w-0 py-4">
+                    <CardContent className="grid min-w-0 grid-cols-1 gap-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="grid gap-0.5">
                           <span className="font-medium">{w.title}</span>
@@ -146,7 +146,7 @@ function TransparencyPage() {
               ) : (
                 <ul className="divide-y">
                   {d.expenses.map((e) => (
-                    <li key={e.id} className="grid gap-2 py-3 first:pt-0 last:pb-0">
+                    <li key={e.id} className="grid grid-cols-1 gap-2 py-3 first:pt-0 last:pb-0">
                       <div className="flex items-start justify-between gap-2 text-sm">
                         <span className="grid min-w-0">
                           <span className="font-medium">{e.description || e.categoryName}</span>

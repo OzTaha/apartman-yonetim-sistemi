@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  splitTotal,
   AllocationError,
   DistributionError,
   addMonths,
@@ -220,5 +221,24 @@ describe('buildStatement', () => {
     const s = buildStatement(entries, '2026-09-01', '2026-09-30');
     expect(s.openingKurus).toBe(1500);
     expect(s.closingKurus).toBe(2000);
+  });
+});
+
+describe('splitTotal', () => {
+  const units = Array.from({ length: 10 }, (_, i) => ({
+    id: String(i),
+    label: String(i + 1),
+    areaM2: null,
+    landShare: null,
+  }));
+
+  it('eşit bölmede toplam tutar daire sayısına bölünür', () => {
+    expect(splitTotal('EQUAL', 10_000_000, units)).toEqual(Array(10).fill(1_000_000));
+  });
+
+  it('bölünmeyen kuruşlar ilk dairelere dağıtılır, toplam korunur', () => {
+    const amounts = splitTotal('EQUAL', 100_003, units.slice(0, 3));
+    expect(amounts.reduce((a, b) => a + b, 0)).toBe(100_003);
+    expect(Math.max(...amounts) - Math.min(...amounts)).toBeLessThanOrEqual(1);
   });
 });

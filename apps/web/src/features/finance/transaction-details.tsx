@@ -258,7 +258,7 @@ export function TransactionDetailsDialog({
           </dl>
         )}
 
-        <div className="grid gap-2">
+        <div className="grid min-w-0 grid-cols-1 gap-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">Belgeler</p>
             {!t.cancelledAt && t.type !== 'TRANSFER' && (

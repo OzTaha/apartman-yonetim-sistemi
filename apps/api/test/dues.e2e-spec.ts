@@ -382,6 +382,31 @@ describe('İptaller', () => {
 });
 
 describe('Elle borç', () => {
+  it('eşit bölmede toplam tutar dairelere bölünür', async () => {
+    const types = await http().get('/api/charge-types').set(A()).expect(200);
+    const fixture = types.body.find((t: { code: string }) => t.code === 'FIXTURE');
+    const res = await http()
+      .post('/api/charges')
+      .set(A())
+      .send({
+        chargeTypeId: fixture.id,
+        scope: 'ALL',
+        amountMode: 'DISTRIBUTE',
+        method: 'EQUAL',
+        amountKurus: 10_000_001,
+        issueDate: today,
+        dueDate: today,
+        description: 'Çatı yalıtımı',
+      })
+      .expect(201);
+    expect(res.body).toEqual({ created: 2, totalKurus: 10_000_001 });
+    const charges = await prisma.charge.findMany({
+      where: { siteId: ids.siteA, description: 'Çatı yalıtımı' },
+    });
+    expect(charges.map((c) => c.amountKurus).sort()).toEqual([5_000_000, 5_000_001]);
+    await prisma.charge.deleteMany({ where: { siteId: ids.siteA, description: 'Çatı yalıtımı' } });
+  });
+
   it('toplam tutar arsa payına göre dağıtılır', async () => {
     const types = await http().get('/api/charge-types').set(A()).expect(200);
     const fixture = types.body.find((t: { code: string }) => t.code === 'FIXTURE');

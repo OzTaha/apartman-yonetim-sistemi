@@ -163,7 +163,7 @@ function UserMenu() {
         <DropdownMenuItem
           onSelect={async () => {
             await logout();
-            await navigate({ to: '/giris' });
+            window.location.replace('/giris');
           }}
         >
           <LogOut />

@@ -1,5 +1,5 @@
 import {
-  computeUnitAmounts,
+  splitTotal,
   dateSchema,
   distributionMethodLabels,
   distributionMethodSchema,
@@ -110,10 +110,7 @@ export function ChargeCreateDialog({
       landShare: u.landShare,
     }));
     try {
-      const amounts = computeUnitAmounts(
-        { method: w.method as DistributionMethod, amountKurus: parsedAmount.data },
-        list,
-      );
+      const amounts = splitTotal(w.method as DistributionMethod, parsedAmount.data, list);
       return {
         rows: list.map((u, i) => ({ label: u.label, amount: amounts[i]! })),
         error: null as string | null,

@@ -15,8 +15,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
-  computeUnitAmounts,
   DistributionError,
+  splitTotal,
   type ChargeCreateResultDto,
   type ChargeDto,
 } from '@apartman/shared';
@@ -112,7 +112,7 @@ export class ChargesService {
       amounts =
         input.amountMode === 'PER_UNIT'
           ? units.map(() => input.amountKurus)
-          : computeUnitAmounts({ method: input.method, amountKurus: input.amountKurus }, units);
+          : splitTotal(input.method, input.amountKurus, units);
     } catch (error) {
       if (error instanceof DistributionError) throw new BadRequestException(error.message);
       throw error;

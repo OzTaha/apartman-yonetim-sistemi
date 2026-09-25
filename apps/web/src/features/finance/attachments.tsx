@@ -35,9 +35,12 @@ export function AttachmentList({
     );
 
   return (
-    <ul className="grid gap-1">
+    <ul className="grid min-w-0 grid-cols-1 gap-1">
       {attachments.map((a) => (
-        <li key={a.id} className="flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm">
+        <li
+          key={a.id}
+          className="flex min-w-0 items-center gap-2 rounded-md border px-2 py-1.5 text-sm"
+        >
           <FileIcon mimeType={a.mimeType} />
           <button
             type="button"
