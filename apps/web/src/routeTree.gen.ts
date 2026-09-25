@@ -16,6 +16,11 @@ import { Route as AppAidatRouteImport } from './routes/_app/aidat'
 import { Route as AppAidatAyarlariRouteImport } from './routes/_app/aidat-ayarlari'
 import { Route as AppBorclarRouteImport } from './routes/_app/borclar'
 import { Route as AppDairemRouteImport } from './routes/_app/dairem'
+import { Route as AppFirmalarRouteImport } from './routes/_app/firmalar'
+import { Route as AppGelirGiderRouteImport } from './routes/_app/gelir-gider'
+import { Route as AppGiderlerRouteImport } from './routes/_app/giderler'
+import { Route as AppKasaRouteImport } from './routes/_app/kasa'
+import { Route as AppKasaAyarlariRouteImport } from './routes/_app/kasa-ayarlari'
 import { Route as AppRaporlarRouteImport } from './routes/_app/raporlar'
 import { Route as AppSakinlerRouteImport } from './routes/_app/sakinler'
 import { Route as AppSifreRouteImport } from './routes/_app/sifre'
@@ -24,6 +29,8 @@ import { Route as AppTahsilatlarRouteImport } from './routes/_app/tahsilatlar'
 import { Route as DavetTokenRouteImport } from './routes/davet.$token'
 import { Route as AppDairelerIndexRouteImport } from './routes/_app/daireler/index'
 import { Route as AppDairelerUnitIdRouteImport } from './routes/_app/daireler/$unitId'
+import { Route as AppIslerIndexRouteImport } from './routes/_app/isler/index'
+import { Route as AppIslerWorkIdRouteImport } from './routes/_app/isler/$workId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -57,6 +64,31 @@ const AppBorclarRoute = AppBorclarRouteImport.update({
 const AppDairemRoute = AppDairemRouteImport.update({
   id: '/dairem',
   path: '/dairem',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFirmalarRoute = AppFirmalarRouteImport.update({
+  id: '/firmalar',
+  path: '/firmalar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGelirGiderRoute = AppGelirGiderRouteImport.update({
+  id: '/gelir-gider',
+  path: '/gelir-gider',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGiderlerRoute = AppGiderlerRouteImport.update({
+  id: '/giderler',
+  path: '/giderler',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKasaRoute = AppKasaRouteImport.update({
+  id: '/kasa',
+  path: '/kasa',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKasaAyarlariRoute = AppKasaAyarlariRouteImport.update({
+  id: '/kasa-ayarlari',
+  path: '/kasa-ayarlari',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRaporlarRoute = AppRaporlarRouteImport.update({
@@ -99,6 +131,16 @@ const AppDairelerUnitIdRoute = AppDairelerUnitIdRouteImport.update({
   path: '/daireler/$unitId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppIslerIndexRoute = AppIslerIndexRouteImport.update({
+  id: '/isler/',
+  path: '/isler/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIslerWorkIdRoute = AppIslerWorkIdRouteImport.update({
+  id: '/isler/$workId',
+  path: '/isler/$workId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -107,6 +149,11 @@ export interface FileRoutesByFullPath {
   '/aidat-ayarlari': typeof AppAidatAyarlariRoute
   '/borclar': typeof AppBorclarRoute
   '/dairem': typeof AppDairemRoute
+  '/firmalar': typeof AppFirmalarRoute
+  '/gelir-gider': typeof AppGelirGiderRoute
+  '/giderler': typeof AppGiderlerRoute
+  '/kasa': typeof AppKasaRoute
+  '/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/raporlar': typeof AppRaporlarRoute
   '/sakinler': typeof AppSakinlerRoute
   '/sifre': typeof AppSifreRoute
@@ -114,7 +161,9 @@ export interface FileRoutesByFullPath {
   '/tahsilatlar': typeof AppTahsilatlarRoute
   '/davet/$token': typeof DavetTokenRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/isler/$workId': typeof AppIslerWorkIdRoute
   '/daireler/': typeof AppDairelerIndexRoute
+  '/isler/': typeof AppIslerIndexRoute
 }
 export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
@@ -122,6 +171,11 @@ export interface FileRoutesByTo {
   '/aidat-ayarlari': typeof AppAidatAyarlariRoute
   '/borclar': typeof AppBorclarRoute
   '/dairem': typeof AppDairemRoute
+  '/firmalar': typeof AppFirmalarRoute
+  '/gelir-gider': typeof AppGelirGiderRoute
+  '/giderler': typeof AppGiderlerRoute
+  '/kasa': typeof AppKasaRoute
+  '/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/raporlar': typeof AppRaporlarRoute
   '/sakinler': typeof AppSakinlerRoute
   '/sifre': typeof AppSifreRoute
@@ -130,7 +184,9 @@ export interface FileRoutesByTo {
   '/davet/$token': typeof DavetTokenRoute
   '/': typeof AppIndexRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/isler/$workId': typeof AppIslerWorkIdRoute
   '/daireler': typeof AppDairelerIndexRoute
+  '/isler': typeof AppIslerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,6 +196,11 @@ export interface FileRoutesById {
   '/_app/aidat-ayarlari': typeof AppAidatAyarlariRoute
   '/_app/borclar': typeof AppBorclarRoute
   '/_app/dairem': typeof AppDairemRoute
+  '/_app/firmalar': typeof AppFirmalarRoute
+  '/_app/gelir-gider': typeof AppGelirGiderRoute
+  '/_app/giderler': typeof AppGiderlerRoute
+  '/_app/kasa': typeof AppKasaRoute
+  '/_app/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/_app/raporlar': typeof AppRaporlarRoute
   '/_app/sakinler': typeof AppSakinlerRoute
   '/_app/sifre': typeof AppSifreRoute
@@ -148,7 +209,9 @@ export interface FileRoutesById {
   '/davet/$token': typeof DavetTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/daireler/$unitId': typeof AppDairelerUnitIdRoute
+  '/_app/isler/$workId': typeof AppIslerWorkIdRoute
   '/_app/daireler/': typeof AppDairelerIndexRoute
+  '/_app/isler/': typeof AppIslerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,6 +222,11 @@ export interface FileRouteTypes {
     | '/aidat-ayarlari'
     | '/borclar'
     | '/dairem'
+    | '/firmalar'
+    | '/gelir-gider'
+    | '/giderler'
+    | '/kasa'
+    | '/kasa-ayarlari'
     | '/raporlar'
     | '/sakinler'
     | '/sifre'
@@ -166,7 +234,9 @@ export interface FileRouteTypes {
     | '/tahsilatlar'
     | '/davet/$token'
     | '/daireler/$unitId'
+    | '/isler/$workId'
     | '/daireler/'
+    | '/isler/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/giris'
@@ -174,6 +244,11 @@ export interface FileRouteTypes {
     | '/aidat-ayarlari'
     | '/borclar'
     | '/dairem'
+    | '/firmalar'
+    | '/gelir-gider'
+    | '/giderler'
+    | '/kasa'
+    | '/kasa-ayarlari'
     | '/raporlar'
     | '/sakinler'
     | '/sifre'
@@ -182,7 +257,9 @@ export interface FileRouteTypes {
     | '/davet/$token'
     | '/'
     | '/daireler/$unitId'
+    | '/isler/$workId'
     | '/daireler'
+    | '/isler'
   id:
     | '__root__'
     | '/_app'
@@ -191,6 +268,11 @@ export interface FileRouteTypes {
     | '/_app/aidat-ayarlari'
     | '/_app/borclar'
     | '/_app/dairem'
+    | '/_app/firmalar'
+    | '/_app/gelir-gider'
+    | '/_app/giderler'
+    | '/_app/kasa'
+    | '/_app/kasa-ayarlari'
     | '/_app/raporlar'
     | '/_app/sakinler'
     | '/_app/sifre'
@@ -199,7 +281,9 @@ export interface FileRouteTypes {
     | '/davet/$token'
     | '/_app/'
     | '/_app/daireler/$unitId'
+    | '/_app/isler/$workId'
     | '/_app/daireler/'
+    | '/_app/isler/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -259,6 +343,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDairemRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/firmalar': {
+      id: '/_app/firmalar'
+      path: '/firmalar'
+      fullPath: '/firmalar'
+      preLoaderRoute: typeof AppFirmalarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/gelir-gider': {
+      id: '/_app/gelir-gider'
+      path: '/gelir-gider'
+      fullPath: '/gelir-gider'
+      preLoaderRoute: typeof AppGelirGiderRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/giderler': {
+      id: '/_app/giderler'
+      path: '/giderler'
+      fullPath: '/giderler'
+      preLoaderRoute: typeof AppGiderlerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/kasa': {
+      id: '/_app/kasa'
+      path: '/kasa'
+      fullPath: '/kasa'
+      preLoaderRoute: typeof AppKasaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/kasa-ayarlari': {
+      id: '/_app/kasa-ayarlari'
+      path: '/kasa-ayarlari'
+      fullPath: '/kasa-ayarlari'
+      preLoaderRoute: typeof AppKasaAyarlariRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/raporlar': {
       id: '/_app/raporlar'
       path: '/raporlar'
@@ -315,6 +434,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDairelerUnitIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/isler/': {
+      id: '/_app/isler/'
+      path: '/isler'
+      fullPath: '/isler/'
+      preLoaderRoute: typeof AppIslerIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/isler/$workId': {
+      id: '/_app/isler/$workId'
+      path: '/isler/$workId'
+      fullPath: '/isler/$workId'
+      preLoaderRoute: typeof AppIslerWorkIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -323,6 +456,11 @@ interface AppRouteChildren {
   AppAidatAyarlariRoute: typeof AppAidatAyarlariRoute
   AppBorclarRoute: typeof AppBorclarRoute
   AppDairemRoute: typeof AppDairemRoute
+  AppFirmalarRoute: typeof AppFirmalarRoute
+  AppGelirGiderRoute: typeof AppGelirGiderRoute
+  AppGiderlerRoute: typeof AppGiderlerRoute
+  AppKasaRoute: typeof AppKasaRoute
+  AppKasaAyarlariRoute: typeof AppKasaAyarlariRoute
   AppRaporlarRoute: typeof AppRaporlarRoute
   AppSakinlerRoute: typeof AppSakinlerRoute
   AppSifreRoute: typeof AppSifreRoute
@@ -330,7 +468,9 @@ interface AppRouteChildren {
   AppTahsilatlarRoute: typeof AppTahsilatlarRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDairelerUnitIdRoute: typeof AppDairelerUnitIdRoute
+  AppIslerWorkIdRoute: typeof AppIslerWorkIdRoute
   AppDairelerIndexRoute: typeof AppDairelerIndexRoute
+  AppIslerIndexRoute: typeof AppIslerIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -338,6 +478,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppAidatAyarlariRoute: AppAidatAyarlariRoute,
   AppBorclarRoute: AppBorclarRoute,
   AppDairemRoute: AppDairemRoute,
+  AppFirmalarRoute: AppFirmalarRoute,
+  AppGelirGiderRoute: AppGelirGiderRoute,
+  AppGiderlerRoute: AppGiderlerRoute,
+  AppKasaRoute: AppKasaRoute,
+  AppKasaAyarlariRoute: AppKasaAyarlariRoute,
   AppRaporlarRoute: AppRaporlarRoute,
   AppSakinlerRoute: AppSakinlerRoute,
   AppSifreRoute: AppSifreRoute,
@@ -345,7 +490,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppTahsilatlarRoute: AppTahsilatlarRoute,
   AppIndexRoute: AppIndexRoute,
   AppDairelerUnitIdRoute: AppDairelerUnitIdRoute,
+  AppIslerWorkIdRoute: AppIslerWorkIdRoute,
   AppDairelerIndexRoute: AppDairelerIndexRoute,
+  AppIslerIndexRoute: AppIslerIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

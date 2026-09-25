@@ -12,6 +12,7 @@ import { AuditModule } from './modules/audit/audit.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { BlocksModule } from './modules/blocks/blocks';
 import { DuesModule } from './modules/dues/dues.module';
+import { FinanceModule } from './modules/finance/finance.module';
 import { ResidentsModule } from './modules/residents/residents';
 import { SitesModule } from './modules/sites/sites.module';
 import { UnitsModule } from './modules/units/units';
@@ -42,6 +43,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     UnitsModule,
     ResidentsModule,
     DuesModule,
+    FinanceModule,
   ],
   controllers: [HealthController],
   providers: [

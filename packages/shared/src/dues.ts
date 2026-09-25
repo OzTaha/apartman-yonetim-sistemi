@@ -98,6 +98,7 @@ export const paymentCreateSchema = z.object({
   unitId: idSchema,
   amountKurus: amountKurusSchema,
   method: paymentMethodSchema,
+  accountId: idSchema.optional(),
   paidAt: dateSchema,
   reference: optionalText(100),
   note: optionalText(300),
@@ -203,6 +204,9 @@ export interface PaymentAllocationDto {
 
 export interface PaymentDto {
   id: string;
+  receiptNo: number | null;
+  accountId: string | null;
+  accountName: string | null;
   unitId: string;
   blockName: string;
   unitNumber: string;

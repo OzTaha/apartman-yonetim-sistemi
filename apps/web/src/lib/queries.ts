@@ -1,5 +1,15 @@
 import type {
   BlockDto,
+  CashAccountDto,
+  ClosingsDto,
+  FinanceCategoryDto,
+  FinanceSummaryDto,
+  TransactionDto,
+  TransactionType,
+  TransparencyDto,
+  VendorDto,
+  WorkDetailDto,
+  WorkDto,
   ChargeDto,
   ChargeTypeDto,
   DebtReportRowDto,
@@ -148,6 +158,37 @@ export function useUnitAccount(unitId: string | undefined) {
   );
 }
 
+export interface TransactionFilters {
+  accountId?: string;
+  type?: TransactionType;
+  categoryId?: string;
+  from?: string;
+  to?: string;
+  cancelled?: 'include' | 'only';
+}
+
+export const useCashAccounts = () =>
+  useSiteQuery<CashAccountDto[]>('cash-accounts', '/cash-accounts');
+export const useFinanceCategories = () =>
+  useSiteQuery<FinanceCategoryDto[]>('finance-categories', '/finance-categories');
+export const useVendors = () => useSiteQuery<VendorDto[]>('vendors', '/vendors');
+export const useWorks = () => useSiteQuery<WorkDto[]>('works', '/works');
+export const useWork = (id: string) => useSiteQuery<WorkDetailDto>('work', `/works/${id}`, id);
+export const useTransactions = (filters: TransactionFilters) =>
+  useSiteQuery<TransactionDto[]>(
+    'transactions',
+    `/transactions${toQuery({ ...filters })}`,
+    filters,
+  );
+export const useFinanceSummary = (from: string, to: string) =>
+  useSiteQuery<FinanceSummaryDto>('finance-summary', `/finance/summary${toQuery({ from, to })}`, {
+    from,
+    to,
+  });
+export const useClosings = () => useSiteQuery<ClosingsDto>('closings', '/finance/closings');
+export const useTransparency = (year: number) =>
+  useSiteQuery<TransparencyDto>('transparency', `/transparency?year=${year}`, year);
+
 const SITE_SCOPED = new Set([
   'blocks',
   'units',
@@ -161,7 +202,24 @@ const SITE_SCOPED = new Set([
   'charges',
   'payments',
   'account',
+  'cash-accounts',
+  'finance-categories',
+  'vendors',
+  'works',
+  'work',
+  'transactions',
+  'finance-summary',
+  'closings',
+  'transparency',
 ]);
+
+const isSiteData = (q: { queryKey: readonly unknown[] }) =>
+  q.queryKey[0] === 'sites' || SITE_SCOPED.has(String(q.queryKey[0]));
+
+export function useRefreshSiteData() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ predicate: isSiteData });
+}
 
 export function useApiMutation<TVariables, TResult>(
   fn: (variables: TVariables) => Promise<TResult>,
@@ -174,9 +232,7 @@ export function useApiMutation<TVariables, TResult>(
   return useMutation({
     mutationFn: fn,
     onSuccess: async (result) => {
-      await queryClient.invalidateQueries({
-        predicate: (q) => q.queryKey[0] === 'sites' || SITE_SCOPED.has(String(q.queryKey[0])),
-      });
+      await queryClient.invalidateQueries({ predicate: isSiteData });
       const message =
         typeof options.success === 'function' ? options.success(result) : options.success;
       if (message) toast.success(message);

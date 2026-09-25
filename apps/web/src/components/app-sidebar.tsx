@@ -2,6 +2,12 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   Building,
   Check,
+  ChartColumn,
+  Hammer,
+  Store,
+  Wallet,
+  WalletCards,
+  Scale,
   ChevronsUpDown,
   DoorOpen,
   FileBarChart,
@@ -51,7 +57,13 @@ interface NavItem {
     | '/borclar'
     | '/tahsilatlar'
     | '/raporlar'
-    | '/aidat-ayarlari';
+    | '/aidat-ayarlari'
+    | '/kasa'
+    | '/isler'
+    | '/firmalar'
+    | '/gelir-gider'
+    | '/kasa-ayarlari'
+    | '/giderler';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -176,6 +188,8 @@ export function AppSidebar() {
   }
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
+  if (role === 'RESIDENT' && s.siteId)
+    items.push({ to: '/giderler', label: 'Giderler ve işler', icon: Scale });
   if (s.user?.isPlatformAdmin)
     items.push({ to: '/siteler', label: 'Apartman ve siteler', icon: Building });
 
@@ -186,6 +200,15 @@ export function AppSidebar() {
         { to: '/tahsilatlar', label: 'Tahsilatlar', icon: HandCoins },
         { to: '/raporlar', label: 'Raporlar', icon: FileBarChart },
         { to: '/aidat-ayarlari', label: 'Aidat ayarları', icon: Settings2 },
+      ]
+    : [];
+  const financeItems: NavItem[] = manager
+    ? [
+        { to: '/kasa', label: 'Kasa', icon: Wallet },
+        { to: '/isler', label: 'Yapılan işler', icon: Hammer },
+        { to: '/firmalar', label: 'Firmalar', icon: Store },
+        { to: '/gelir-gider', label: 'Gelir-gider raporu', icon: ChartColumn },
+        { to: '/kasa-ayarlari', label: 'Kasa ayarları', icon: WalletCards },
       ]
     : [];
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
@@ -222,6 +245,14 @@ export function AppSidebar() {
             <SidebarGroupLabel>Aidat ve borç</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>{renderItems(duesItems)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {financeItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Gelir-gider</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{renderItems(financeItems)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}

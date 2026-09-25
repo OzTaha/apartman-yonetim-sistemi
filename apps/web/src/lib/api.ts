@@ -81,11 +81,12 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   return (await response.json()) as T;
 }
 
-export async function downloadFile(path: string, fallbackName: string): Promise<void> {
+async function authorizedFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const { accessToken, siteId } = session.get();
   const request = () =>
     fetch(`/api${path}`, {
       credentials: 'include',
+      ...init,
       headers: {
         ...(session.get().accessToken
           ? { Authorization: `Bearer ${session.get().accessToken}` }
@@ -99,13 +100,23 @@ export async function downloadFile(path: string, fallbackName: string): Promise<
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as Partial<ApiErrorBody>;
     const message =
-      typeof body.message === 'string' ? body.message : `Dosya indirilemedi (${response.status})`;
+      typeof body.message === 'string' ? body.message : `İstek başarısız oldu (${response.status})`;
     throw new ApiError(response.status, message);
   }
+  return response;
+}
+
+async function fetchFile(path: string, fallbackName: string) {
+  const response = await authorizedFetch(path);
   const disposition = response.headers.get('Content-Disposition') ?? '';
   const encoded = /filename\*=UTF-8''([^;]+)/.exec(disposition)?.[1];
   const filename = encoded ? decodeURIComponent(encoded) : fallbackName;
-  const url = URL.createObjectURL(await response.blob());
+  return { filename, blob: await response.blob() };
+}
+
+export async function downloadFile(path: string, fallbackName: string): Promise<void> {
+  const { filename, blob } = await fetchFile(path, fallbackName);
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
@@ -120,4 +131,25 @@ export function errorMessage(error: unknown): string {
   if (error instanceof TypeError)
     return 'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.';
   return 'Beklenmeyen bir hata oluştu';
+}
+
+export async function openFile(path: string, fallbackName: string): Promise<void> {
+  const target = window.open('', '_blank');
+  try {
+    const { blob } = await fetchFile(path, fallbackName);
+    const url = URL.createObjectURL(blob);
+    if (target) target.location.href = url;
+    else window.location.assign(url);
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (error) {
+    target?.close();
+    throw error;
+  }
+}
+
+export async function uploadFile<T>(path: string, file: File): Promise<T> {
+  const body = new FormData();
+  body.append('file', file);
+  const response = await authorizedFetch(path, { method: 'POST', body });
+  return (await response.json()) as T;
 }

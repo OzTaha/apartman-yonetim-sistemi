@@ -48,6 +48,13 @@ export const Route = createFileRoute('/_app/tahsilatlar')({
 
 const columns: ColumnDef<PaymentDto>[] = [
   {
+    accessorKey: 'receiptNo',
+    header: 'Makbuz',
+    cell: ({ row }) => (
+      <span className="text-muted-foreground tabular-nums">{row.original.receiptNo ?? '—'}</span>
+    ),
+  },
+  {
     accessorKey: 'paidAt',
     header: 'Tarih',
     cell: ({ row }) => <span className="whitespace-nowrap">{formatDate(row.original.paidAt)}</span>,
@@ -120,6 +127,7 @@ function PaymentCard({ payment }: { payment: PaymentDto }) {
         </span>
         <span className="text-xs text-muted-foreground">
           {formatDate(payment.paidAt)} · {paymentMethodLabels[payment.method]}
+          {payment.receiptNo ? ` · Makbuz ${payment.receiptNo}` : ''}
           {payment.cancelledAt ? ` · İptal: ${payment.cancelReason}` : ''}
         </span>
         <span className="text-xs text-muted-foreground">

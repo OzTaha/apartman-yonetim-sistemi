@@ -25,6 +25,7 @@ id_ed25519*
 *.dump
 *.sql.gz
 backups/
+uploads/
 
 # Prisma istemcisi
 apps/api/src/generated/

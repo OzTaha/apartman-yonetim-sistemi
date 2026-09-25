@@ -35,6 +35,28 @@ enum PaymentMethod {
   ONLINE
 }
 
+enum CashAccountKind {
+  CASH
+  BANK
+}
+
+enum FinanceKind {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum WorkStatus {
+  PLANNED
+  IN_PROGRESS
+  DONE
+}
+
 model User {
   id              String   @id @default(uuid(7)) @db.Uuid
   firstName       String
@@ -64,17 +86,25 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships SiteMembership[]
-  blocks      Block[]
-  units       Unit[]
-  occupancies Occupancy[]
-  invitations Invitation[]
-  auditLogs   AuditLog[]
-  chargeTypes ChargeType[]
-  duesPlans   DuesPlan[]
-  charges     Charge[]
-  payments    Payment[]
-  allocations PaymentAllocation[]
+  memberships  SiteMembership[]
+  blocks       Block[]
+  units        Unit[]
+  occupancies  Occupancy[]
+  invitations  Invitation[]
+  auditLogs    AuditLog[]
+  chargeTypes  ChargeType[]
+  duesPlans    DuesPlan[]
+  charges      Charge[]
+  payments     Payment[]
+  allocations  PaymentAllocation[]
+  accounts     CashAccount[]
+  categories   FinanceCategory[]
+  vendors      Vendor[]
+  works        Work[]
+  transactions Transaction[]
+  attachments  Attachment[]
+  closings     MonthClosing[]
+  counters     SiteCounter[]
 
   @@map("sites")
 }
@@ -284,6 +314,7 @@ model Payment {
   id            String        @id @default(uuid(7)) @db.Uuid
   siteId        String        @db.Uuid
   unitId        String        @db.Uuid
+  receiptNo     Int?
   amountKurus   Int
   method        PaymentMethod
   paidAt        DateTime      @db.Date
@@ -298,8 +329,11 @@ model Payment {
   site        Site                @relation(fields: [siteId], references: [id], onDelete: Cascade)
   unit        Unit                @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
   allocations PaymentAllocation[]
+  transaction Transaction?
+  attachments Attachment[]
 
   @@unique([id, siteId])
+  @@unique([siteId, receiptNo])
   @@index([siteId, paidAt])
   @@index([unitId])
   @@map("payments")
@@ -320,4 +354,176 @@ model PaymentAllocation {
   @@unique([paymentId, chargeId])
   @@index([chargeId])
   @@map("payment_allocations")
+}
+
+model SiteCounter {
+  siteId String @db.Uuid
+  name   String
+  value  Int    @default(0)
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@id([siteId, name])
+  @@map("site_counters")
+}
+
+model CashAccount {
+  id                  String          @id @default(uuid(7)) @db.Uuid
+  siteId              String          @db.Uuid
+  code                String?
+  name                String
+  kind                CashAccountKind
+  openingBalanceKurus Int             @default(0)
+  isActive            Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  transactions Transaction[] @relation("TransactionAccount")
+  transfersIn  Transaction[] @relation("TransactionToAccount")
+
+  @@unique([siteId, name])
+  @@unique([siteId, code])
+  @@unique([id, siteId])
+  @@map("cash_accounts")
+}
+
+model FinanceCategory {
+  id        String      @id @default(uuid(7)) @db.Uuid
+  siteId    String      @db.Uuid
+  code      String?
+  kind      FinanceKind
+  name      String
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([siteId, kind, name])
+  @@unique([siteId, code])
+  @@unique([id, siteId])
+  @@map("finance_categories")
+}
+
+model Vendor {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  siteId    String   @db.Uuid
+  name      String
+  phone     String?
+  taxNumber String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  works        Work[]
+  transactions Transaction[]
+
+  @@unique([siteId, name])
+  @@unique([id, siteId])
+  @@map("vendors")
+}
+
+model Work {
+  id                 String     @id @default(uuid(7)) @db.Uuid
+  siteId             String     @db.Uuid
+  title              String
+  description        String?
+  vendorId           String?    @db.Uuid
+  startDate          DateTime?  @db.Date
+  endDate            DateTime?  @db.Date
+  agreedKurus        Int?
+  status             WorkStatus @default(PLANNED)
+  visibleToResidents Boolean    @default(true)
+  createdById        String?    @db.Uuid
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  vendor       Vendor?       @relation(fields: [vendorId, siteId], references: [id, siteId], onDelete: Restrict)
+  transactions Transaction[]
+  attachments  Attachment[]
+
+  @@unique([id, siteId])
+  @@index([siteId, createdAt])
+  @@map("works")
+}
+
+model Transaction {
+  id                 String          @id @default(uuid(7)) @db.Uuid
+  siteId             String          @db.Uuid
+  type               TransactionType
+  amountKurus        Int
+  date               DateTime        @db.Date
+  accountId          String          @db.Uuid
+  toAccountId        String?         @db.Uuid
+  categoryId         String?         @db.Uuid
+  vendorId           String?         @db.Uuid
+  workId             String?         @db.Uuid
+  paymentId          String?         @db.Uuid
+  description        String?
+  documentNo         String?
+  visibleToResidents Boolean         @default(true)
+  createdById        String?         @db.Uuid
+  createdAt          DateTime        @default(now())
+  cancelledAt        DateTime?
+  cancelReason       String?
+  cancelledById      String?         @db.Uuid
+
+  site        Site             @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  account     CashAccount      @relation("TransactionAccount", fields: [accountId, siteId], references: [id, siteId], onDelete: Restrict)
+  toAccount   CashAccount?     @relation("TransactionToAccount", fields: [toAccountId, siteId], references: [id, siteId], onDelete: Restrict)
+  category    FinanceCategory? @relation(fields: [categoryId, siteId], references: [id, siteId], onDelete: Restrict)
+  vendor      Vendor?          @relation(fields: [vendorId, siteId], references: [id, siteId], onDelete: Restrict)
+  work        Work?            @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
+  payment     Payment?         @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
+  attachments Attachment[]
+
+  @@unique([id, siteId])
+  @@unique([paymentId, siteId])
+  @@index([siteId, date])
+  @@index([accountId])
+  @@index([workId])
+  @@index([vendorId])
+  @@map("transactions")
+}
+
+model Attachment {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  siteId        String   @db.Uuid
+  fileName      String
+  mimeType      String
+  sizeBytes     Int
+  storageKey    String   @unique
+  sha256        String
+  transactionId String?  @db.Uuid
+  workId        String?  @db.Uuid
+  paymentId     String?  @db.Uuid
+  uploadedById  String?  @db.Uuid
+  createdAt     DateTime @default(now())
+
+  site        Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId, siteId], references: [id, siteId], onDelete: Restrict)
+  work        Work?        @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
+  payment     Payment?     @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
+
+  @@index([transactionId])
+  @@index([workId])
+  @@index([paymentId])
+  @@map("attachments")
+}
+
+model MonthClosing {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  siteId     String   @db.Uuid
+  period     String
+  summary    Json
+  closedById String?  @db.Uuid
+  closedAt   DateTime @default(now())
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, period])
+  @@map("month_closings")
 }

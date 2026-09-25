@@ -12,6 +12,13 @@ export const TENANT_MODELS: ReadonlySet<string> = new Set([
   'Charge',
   'Payment',
   'PaymentAllocation',
+  'CashAccount',
+  'FinanceCategory',
+  'Vendor',
+  'Work',
+  'Transaction',
+  'Attachment',
+  'MonthClosing',
 ]);
 
 const WHERE_OPERATIONS = new Set([

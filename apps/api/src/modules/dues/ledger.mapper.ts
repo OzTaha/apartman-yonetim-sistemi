@@ -58,6 +58,7 @@ export function toChargeDto(c: ChargeWithRelations, today: string): ChargeDto {
 
 export const paymentInclude = {
   unit: { select: { number: true, block: { select: { name: true } } } },
+  transaction: { select: { accountId: true, account: { select: { name: true } } } },
   allocations: {
     select: {
       chargeId: true,
@@ -74,6 +75,9 @@ export type PaymentWithRelations = Prisma.PaymentGetPayload<{ include: typeof pa
 export function toPaymentDto(p: PaymentWithRelations): PaymentDto {
   return {
     id: p.id,
+    receiptNo: p.receiptNo,
+    accountId: p.transaction?.accountId ?? null,
+    accountName: p.transaction?.account.name ?? null,
     unitId: p.unitId,
     blockName: p.unit.block.name,
     unitNumber: p.unit.number,

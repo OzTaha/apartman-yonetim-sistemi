@@ -115,6 +115,18 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Ödemesi olan borç iptal edilemez; önce ödeme iptal edilir. Kayıtlar silinmez, iptal nedeniyle birlikte saklanır.
 - Borç durumu (ödendi / eksik / gecikmiş) ödemelerden hesaplanır, ayrıca saklanmaz.
 
+## Gelir-gider ve kasa
+
+- Her yerde "Nakit kasa" ve "Banka hesabı" hazır gelir; başka hesaplar ve kategoriler "Kasa ayarları"ndan eklenir.
+- Aidat ödemesi seçilen hesaba otomatik gelir olarak yazılır ve sıra numaralı PDF makbuz üretilir. Ödeme iptal edilirse gelir kaydı da iptal olur.
+- Gider, gelir ve yapılan işlere PDF, JPG, PNG veya WEBP belge (en fazla 10 MB) eklenebilir. Dosya türü içeriğinden kontrol edilir;
+  dosyalar yalnızca yetkili kullanıcıya, oturum açılarak verilir.
+- Yapılan işlerde anlaşılan tutar, işe bağlı ödemeler (taksitler) ve kalan tutar izlenir.
+- Sakinler "Giderler ve işler" sayfasında kasa toplamını, aylık gelir-gideri, işleri ve giderleri belgeleriyle görür.
+  Yönetici tek tek kayıtları sakinlerden gizleyebilir; gizlenen tutarlar toplamlara dahil kalır.
+- Ay kapanışı, kapanan ay ve öncesindeki gelir, gider, tahsilat ve belgeleri kilitler. Yalnızca son kapanış geri alınabilir.
+- Yüklenen dosyalar `UPLOAD_DIR` klasöründe (varsayılan `apps/api/uploads`) tutulur; veritabanı ile birlikte yedeklenmelidir.
+
 ## Kurallar
 
 - **Para:** Tüm tutarlar veritabanında kuruş cinsinden tam sayı tutulur. Dönüşüm ve gösterim için `@apartman/shared` içindeki `parseTlToKurus` ve `formatKurus` kullanılır.

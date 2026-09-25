@@ -1,5 +1,5 @@
 import { formatKurus, type ChargeDto, type PaymentDto } from '@apartman/shared';
-import { Ban, MoreHorizontal, Pencil } from 'lucide-react';
+import { Ban, FileDown, MoreHorizontal, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,7 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { apiFetch } from '@/lib/api';
+import { toast } from 'sonner';
+import { apiFetch, downloadFile, errorMessage } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { useApiMutation } from '@/lib/queries';
 import { ChargeEditDialog } from './charge-dialogs';
@@ -72,7 +73,6 @@ export function PaymentActions({ payment }: { payment: PaymentDto }) {
       apiFetch<PaymentDto>(`/payments/${payment.id}/cancel`, { method: 'POST', body: { reason } }),
     { success: 'Ödeme iptal edildi', onSuccess: () => setOpen(false) },
   );
-  if (payment.cancelledAt) return null;
   return (
     <div className="inline-flex" onClick={(e) => e.stopPropagation()}>
       <DropdownMenu>
@@ -82,10 +82,23 @@ export function PaymentActions({ payment }: { payment: PaymentDto }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem variant="destructive" onSelect={() => setOpen(true)}>
-            <Ban />
-            Ödemeyi iptal et
+          <DropdownMenuItem
+            onSelect={() =>
+              void downloadFile(
+                `/payments/${payment.id}/receipt.pdf`,
+                `makbuz-${payment.receiptNo ?? payment.id}.pdf`,
+              ).catch((e: unknown) => toast.error(errorMessage(e)))
+            }
+          >
+            <FileDown />
+            Makbuz indir
           </DropdownMenuItem>
+          {!payment.cancelledAt && (
+            <DropdownMenuItem variant="destructive" onSelect={() => setOpen(true)}>
+              <Ban />
+              Ödemeyi iptal et
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <CancelDialog

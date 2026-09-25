@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
@@ -21,6 +23,7 @@ export default defineConfig({
       JWT_ACCESS_SECRET: 'e2e-test-secret-e2e-test-secret-e2e-test',
       LOGIN_RATE_LIMIT: '5',
       WEB_ORIGIN: 'http://localhost:5173',
+      UPLOAD_DIR: path.join(os.tmpdir(), 'apartman-e2e-uploads'),
     },
   },
   plugins: [swc.vite({ module: { type: 'es6' } })],

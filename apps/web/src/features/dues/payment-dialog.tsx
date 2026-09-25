@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/select';
 import { apiFetch } from '@/lib/api';
 import { formatDate, todayIso } from '@/lib/format';
-import { useApiMutation, useUnitAccount, useUnits } from '@/lib/queries';
+import { useApiMutation, useCashAccounts, useUnitAccount, useUnits } from '@/lib/queries';
 import { cn } from '@/lib/utils';
 import { labelUnit } from '@/lib/unit-label';
 
@@ -89,6 +89,18 @@ export function PaymentDialog({ open, onOpenChange, unitId: fixedUnitId }: Props
     },
   });
   const amountText = useWatch({ control: form.control, name: 'amount' });
+  const method = useWatch({ control: form.control, name: 'method' });
+  const cashAccounts = useCashAccounts();
+  const [accountChoice, setAccountChoice] = useState('');
+  const activeAccounts = (cashAccounts.data ?? []).filter((a) => a.isActive);
+  const preferredCode = method === 'CASH' ? 'CASH' : 'BANK';
+  const accountId =
+    accountChoice ||
+    (
+      activeAccounts.find((a) => a.code === preferredCode) ??
+      activeAccounts.find((a) => a.kind === preferredCode) ??
+      activeAccounts[0]
+    )?.id;
 
   const manualTotal = openCharges
     .filter((c) => picked.has(c.id))
@@ -119,6 +131,7 @@ export function PaymentDialog({ open, onOpenChange, unitId: fixedUnitId }: Props
     });
     setPicked(new Set());
     setMode('auto');
+    setAccountChoice('');
     if (!fixedUnitId) setSelectedUnit(undefined);
   }
 
@@ -130,6 +143,7 @@ export function PaymentDialog({ open, onOpenChange, unitId: fixedUnitId }: Props
           unitId,
           amountKurus,
           method: values.method,
+          accountId,
           paidAt: values.paidAt,
           reference: values.reference,
           note: values.note,
@@ -329,6 +343,20 @@ export function PaymentDialog({ open, onOpenChange, unitId: fixedUnitId }: Props
                   </Select>
                 )}
               />
+            </Field>
+            <Field label="Hesap" htmlFor="pay-account" hint="Ödemenin girdiği kasa veya banka.">
+              <Select value={accountId ?? ''} onValueChange={setAccountChoice}>
+                <SelectTrigger id="pay-account" className="w-full">
+                  <SelectValue placeholder="Hesap seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Referans / dekont no" htmlFor="pay-ref">
               <Input id="pay-ref" {...form.register('reference')} />

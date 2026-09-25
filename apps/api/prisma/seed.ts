@@ -12,11 +12,24 @@ import { PrismaClient } from '../src/generated/prisma/client';
 import { dateOnly, todayInIstanbul } from '../src/common/dates';
 import { hashPassword } from '../src/modules/auth/password';
 import { DEFAULT_CHARGE_TYPES, DUES_CODE } from '../src/modules/dues/ledger.mapper';
+import { ensureFinanceDefaults } from '../src/modules/finance/finance.ledger';
 
 export const SEED_PASSWORD = 'Deneme123!';
 const DUE_DAY = 10;
 
 type Tx = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>;
+
+interface FinanceSeed {
+  openingKurus: { cash: number; bank: number };
+  monthly: { code: string; amountKurus: number; description: string; vendor?: string }[];
+  work?: {
+    title: string;
+    description: string;
+    vendor: string;
+    agreedKurus: number;
+    paidKurus: number;
+  };
+}
 
 interface UnitSeed {
   number: string;
@@ -35,6 +48,7 @@ async function createPlace(
     plan: { method: DistributionMethod; amountKurus: number };
     periods: string[];
     today: string;
+    finance: FinanceSeed;
   },
 ) {
   const site = await tx.site.create({
@@ -52,6 +66,23 @@ async function createPlace(
   const duesType = await tx.chargeType.findUniqueOrThrow({
     where: { siteId_code: { siteId: site.id, code: DUES_CODE } },
   });
+  await ensureFinanceDefaults(tx, site.id);
+  const accounts = Object.fromEntries(
+    (await tx.cashAccount.findMany({ where: { siteId: site.id } })).map((a) => [a.code, a.id]),
+  );
+  await tx.cashAccount.update({
+    where: { id: accounts['CASH'] },
+    data: { openingBalanceKurus: options.finance.openingKurus.cash },
+  });
+  await tx.cashAccount.update({
+    where: { id: accounts['BANK'] },
+    data: { openingBalanceKurus: options.finance.openingKurus.bank },
+  });
+  const categories = Object.fromEntries(
+    (await tx.financeCategory.findMany({ where: { siteId: site.id } })).map((c) => [c.code, c.id]),
+  );
+  let receiptNo = 0;
+
   const plan = await tx.duesPlan.create({
     data: { siteId: site.id, ...options.plan, validFrom: options.periods[0]! },
   });
@@ -111,17 +142,95 @@ async function createPlace(
       });
       const paidAt = `${period}-05`;
       if (!unit.seed.paidPeriods.includes(p) || paidAt > options.today) continue;
-      await tx.payment.create({
+      receiptNo += 1;
+      const method = i % 2 === 0 ? 'BANK_TRANSFER' : 'CASH';
+      const payment = await tx.payment.create({
         data: {
           siteId: site.id,
           unitId: unit.id,
+          receiptNo,
           amountKurus: amounts[i]!,
-          method: i % 2 === 0 ? 'BANK_TRANSFER' : 'CASH',
+          method,
           paidAt: dateOnly(paidAt),
           allocations: { create: { chargeId: charge.id, amountKurus: amounts[i]! } },
         },
       });
+      await tx.transaction.create({
+        data: {
+          siteId: site.id,
+          paymentId: payment.id,
+          type: 'INCOME',
+          amountKurus: amounts[i]!,
+          date: dateOnly(paidAt),
+          accountId: accounts[method === 'CASH' ? 'CASH' : 'BANK']!,
+          categoryId: categories['DUES_INCOME']!,
+          visibleToResidents: false,
+        },
+      });
     }
+  }
+  if (receiptNo > 0) {
+    await tx.siteCounter.create({ data: { siteId: site.id, name: 'receipt', value: receiptNo } });
+  }
+
+  const { finance } = options;
+  const vendorNames = [
+    ...new Set(
+      [...finance.monthly.map((m) => m.vendor), finance.work?.vendor].filter(
+        (v): v is string => !!v,
+      ),
+    ),
+  ];
+  const vendors: Record<string, string> = {};
+  for (const name of vendorNames) {
+    vendors[name] = (await tx.vendor.create({ data: { siteId: site.id, name } })).id;
+  }
+
+  for (const period of options.periods) {
+    const date = `${period}-15`;
+    if (date > options.today) continue;
+    for (const item of finance.monthly) {
+      await tx.transaction.create({
+        data: {
+          siteId: site.id,
+          type: 'EXPENSE',
+          amountKurus: item.amountKurus,
+          date: dateOnly(date),
+          accountId: accounts['BANK']!,
+          categoryId: categories[item.code]!,
+          vendorId: item.vendor ? vendors[item.vendor]! : null,
+          description: item.description,
+        },
+      });
+    }
+  }
+
+  if (finance.work) {
+    const start = `${options.periods[1]}-03`;
+    const work = await tx.work.create({
+      data: {
+        siteId: site.id,
+        title: finance.work.title,
+        description: finance.work.description,
+        vendorId: vendors[finance.work.vendor]!,
+        agreedKurus: finance.work.agreedKurus,
+        startDate: dateOnly(start),
+        status: 'IN_PROGRESS',
+      },
+    });
+    await tx.transaction.create({
+      data: {
+        siteId: site.id,
+        type: 'EXPENSE',
+        amountKurus: finance.work.paidKurus,
+        date: dateOnly(start),
+        accountId: accounts['BANK']!,
+        categoryId: categories['RENOVATION']!,
+        vendorId: vendors[finance.work.vendor]!,
+        workId: work.id,
+        description: 'Peşinat',
+      },
+    });
   }
   return site;
 }
@@ -178,6 +287,18 @@ async function main() {
           kind: 'SITE',
           address: 'Bağdat Cad. No: 10, Kadıköy',
           plan: { method: 'EQUAL', amountKurus: 175_000 },
+          finance: {
+            openingKurus: { cash: 500_000, bank: 4_000_000 },
+            monthly: [
+              { code: 'ELECTRICITY', amountKurus: 185_000, description: 'Ortak alan elektriği' },
+              {
+                code: 'CLEANING',
+                amountKurus: 250_000,
+                description: 'Aylık temizlik',
+                vendor: 'Parlak Temizlik',
+              },
+            ],
+          },
           periods,
           today,
           blocks: [
@@ -218,6 +339,29 @@ async function main() {
           kind: 'APARTMENT',
           address: 'Moda Cad. No: 25, Kadıköy',
           plan: { method: 'EQUAL', amountKurus: 150_000 },
+          finance: {
+            openingKurus: { cash: 250_000, bank: 2_500_000 },
+            monthly: [
+              {
+                code: 'ELECTRICITY',
+                amountKurus: 95_000,
+                description: 'Merdiven ve asansör elektriği',
+              },
+              {
+                code: 'ELEVATOR',
+                amountKurus: 120_000,
+                description: 'Aylık asansör bakımı',
+                vendor: 'Yıldız Asansör',
+              },
+            ],
+            work: {
+              title: 'Dış cephe boyası',
+              description: 'Bina dış cephesinin iskele kurularak boyanması',
+              vendor: 'Renk Boya Ltd.',
+              agreedKurus: 3_000_000,
+              paidKurus: 1_500_000,
+            },
+          },
           periods,
           today,
           blocks: [

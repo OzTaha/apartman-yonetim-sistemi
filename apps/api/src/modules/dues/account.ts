@@ -8,7 +8,7 @@ import {
   ParseUUIDPipe,
   Query,
   Res,
-  StreamableFile,
+  type StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -27,6 +27,7 @@ import {
 } from '@apartman/shared';
 import type { Response } from 'express';
 import { activeOn, dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
+import { formatDateTr, PDF, sendFile, XLSX } from '../../common/http';
 import { MatrixQueryDto, PaymentReportQueryDto, StatementQueryDto } from '../../common/dues.dto';
 import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { compareUnits } from '../residents/occupancy.mapper';
@@ -40,27 +41,6 @@ import {
   toPaymentDto,
 } from './ledger.mapper';
 import { PaymentsService } from './payments';
-
-const formatDateTr = (iso: string) => {
-  const [y, m, d] = iso.slice(0, 10).split('-');
-  return `${d}.${m}.${y}`;
-};
-
-function attachment(res: Response, filename: string, type: string, data: Buffer): StreamableFile {
-  const ascii = filename
-    .normalize('NFKD')
-    .replace(/[^\x20-\x7e]/g, '')
-    .replace(/"/g, '');
-  res.setHeader('Content-Type', type);
-  res.setHeader(
-    'Content-Disposition',
-    `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
-  );
-  return new StreamableFile(data);
-}
-
-const PDF = 'application/pdf';
-const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 @Injectable()
 export class AccountService {
@@ -480,7 +460,7 @@ export class AccountController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const { file, name } = await this.account.statementPdf(id, query.from, query.to);
-    return attachment(res, name, PDF, file);
+    return sendFile(res, name, PDF, file);
   }
 
   @Get('dues/matrix')
@@ -500,7 +480,7 @@ export class AccountController {
   ): Promise<StreamableFile> {
     if (format !== 'pdf' && format !== 'xlsx') throw new NotFoundException();
     const { file, name } = await this.account.debtReportFile(format);
-    return attachment(res, name, format === 'pdf' ? PDF : XLSX, file);
+    return sendFile(res, name, format === 'pdf' ? PDF : XLSX, file);
   }
 
   @Get('reports/payments.:format')
@@ -511,6 +491,6 @@ export class AccountController {
   ): Promise<StreamableFile> {
     if (format !== 'pdf' && format !== 'xlsx') throw new NotFoundException();
     const { file, name } = await this.account.paymentReportFile(query.from, query.to, format);
-    return attachment(res, name, format === 'pdf' ? PDF : XLSX, file);
+    return sendFile(res, name, format === 'pdf' ? PDF : XLSX, file);
   }
 }

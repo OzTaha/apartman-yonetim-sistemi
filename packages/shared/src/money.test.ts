@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatKurus, parseTlToKurus } from './money';
+import { formatKurus, kurusToWordsTr, parseTlToKurus } from './money';
 
 const NBSP_CHARS = new RegExp(`[${String.fromCharCode(0x00a0, 0x202f)}]`, 'g');
 const normalizeSpaces = (s: string) => s.replace(NBSP_CHARS, ' ');
@@ -37,5 +37,20 @@ describe('parseTlToKurus', () => {
 
   it.each(['', 'abc', '12,345', '1,2,3', '12.3.4'])('geçersiz girdiyi reddeder: "%s"', (input) => {
     expect(() => parseTlToKurus(input)).toThrow(RangeError);
+  });
+});
+
+describe('kurusToWordsTr', () => {
+  it.each([
+    [0, 'sıfır Türk lirası'],
+    [100, 'bir Türk lirası'],
+    [150_000, 'bin beş yüz Türk lirası'],
+    [175_050, 'bin yedi yüz elli Türk lirası elli kuruş'],
+    [5, 'beş kuruş'],
+    [11_111_100, 'yüz on bir bin yüz on bir Türk lirası'],
+    [200_000_000, 'iki milyon Türk lirası'],
+    [100_100_000, 'bir milyon bin Türk lirası'],
+  ])('%i kuruş → "%s"', (kurus, expected) => {
+    expect(kurusToWordsTr(kurus)).toBe(expected);
   });
 });
