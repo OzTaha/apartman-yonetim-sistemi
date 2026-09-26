@@ -12,3 +12,4 @@ export * from './dashboard';
 export * from './staff';
 export * from './communication';
 export * from './online';
+export * from './branding';

@@ -8,6 +8,7 @@ import {
   Megaphone,
   MessageSquare,
   MessageSquareText,
+  Palette,
   Repeat,
   UserCog,
   ChartColumn,
@@ -81,7 +82,8 @@ interface NavItem {
     | '/calisan-raporu'
     | '/duyurular'
     | '/mesajlar'
-    | '/mesaj-ayarlari';
+    | '/mesaj-ayarlari'
+    | '/marka';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -211,8 +213,10 @@ export function AppSidebar() {
     items.push({ to: '/duyurular', label: 'Duyurular', icon: Megaphone });
     items.push({ to: '/giderler', label: 'Giderler ve işler', icon: Scale });
   }
-  if (s.user?.isPlatformAdmin)
+  if (s.user?.isPlatformAdmin) {
     items.push({ to: '/siteler', label: 'Apartman ve siteler', icon: Building });
+    items.push({ to: '/marka', label: 'Marka ayarları', icon: Palette });
+  }
 
   const duesItems: NavItem[] = manager
     ? [

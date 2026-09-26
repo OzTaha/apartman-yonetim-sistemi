@@ -874,3 +874,12 @@ model PaymentIntent {
   @@index([unitId, status])
   @@map("payment_intents")
 }
+
+model Branding {
+  id        Int      @id @default(1)
+  appName   String
+  logoKey   String?
+  updatedAt DateTime @updatedAt
+
+  @@map("branding")
+}

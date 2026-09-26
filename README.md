@@ -9,6 +9,8 @@ apps/api         NestJS 11 API (PostgreSQL + Prisma 7, Redis)
 apps/web         React 19 + Vite + Tailwind 4 + shadcn/ui + TanStack Router/Query
 packages/shared  Web ve API'nin ortak kullandığı Zod şemaları, tipler ve yardımcılar
 docker/          Geliştirme ortamı için PostgreSQL ve Redis
+deploy/          Canlı kurulum: Docker Compose, Caddy, kurulum, güncelleme, yedek ve geri yükleme betikleri
+docs/            Müşteriye kurulum rehberi ve müşteri için teslim/kullanım rehberi
 ```
 
 ## Gereksinimler
@@ -75,6 +77,7 @@ açık, gecikmiş ve tamamlanmış görevler ile bir tekrarlayan görev, iki duy
 | `pnpm lint`                                  | ESLint                                                   |
 | `pnpm format`                                | Prettier ile biçimlendirme                               |
 | `pnpm db:up` / `pnpm db:down`                | Geliştirme veritabanını başlatır / durdurur              |
+| `pnpm release`                               | Commit edilmiş koddan müşteri sunucusu için sürüm paketi |
 | `pnpm --filter @apartman/api prisma:migrate` | Şema değişikliğinden migration oluşturur ve uygular      |
 | `pnpm --filter @apartman/api prisma:studio`  | Prisma Studio ile veritabanını görüntüler                |
 
@@ -188,6 +191,28 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Sağlayıcı `PAYMENT_PROVIDER` ile seçilir: `none` (kapalı) veya `mock` (test ödeme sayfası, gerçek para çekilmez).
   `mock` canlı ortamda (`NODE_ENV=production`) çalışmaz. Ödeme kuruluşu seçildiğinde yalnızca yeni bir sağlayıcı sınıfı yazılır;
   üye işyeri hesabı müşteri adına açılır.
+
+## Marka ve mobil uygulama
+
+- Sistem yöneticisi "Marka ayarları" sayfasından uygulama adını ve logoyu (kare PNG, 512–2048 px) değiştirir. Ad ve logo
+  giriş ekranında, menüde, sekme başlığında, telefona eklenen uygulamada ve PDF/Excel çıktılarında kullanılır.
+- Uygulama PWA olarak telefona eklenebilir. Uygulama kabuğu önbelleğe alınır; internet yokken açıldığında bağlantı
+  olmadığı bildirilir. PWA bildirimi (manifest) marka ayarlarına göre API'den üretilir.
+
+## Canlı kurulum
+
+Her müşteri için ayrı sunucuya kurulur; ayrıntılar [docs/kurulum.md](docs/kurulum.md) dosyasındadır. Müşteriye verilecek
+rehber [docs/teslim-ve-kullanim.md](docs/teslim-ve-kullanim.md) dosyasındadır.
+
+- `pnpm release` ile hazırlanan paket sunucuya kopyalanır ve `deploy/install.sh` çalıştırılır. Sunucu GitHub'a veya
+  geliştiricinin hesaplarına bağlanmaz.
+- Servisler: PostgreSQL, Redis (şifreli), API ve Caddy. Dışarıya yalnızca 80/443 açılır; Caddy Let's Encrypt
+  sertifikasını kendisi alır ve yeniler, güvenlik başlıklarını (HSTS, CSP vb.) ekler.
+- Veritabanı, Redis ve oturum anahtarları kurulumda sunucuda rastgele üretilir ve yalnızca sunucudaki `deploy/.env`
+  dosyasında tutulur.
+- API her açılışta bekleyen veritabanı değişikliklerini uygular. Günlükler 10 MB × 5 dosya ile sınırlıdır.
+- Her gece yedek alınır (14 gün); istenirse müşterinin S3 uyumlu deposuna da kopyalanır. `update.sh` güncellemeden önce,
+  `restore.sh` geri yüklemeden önce ayrıca yedek alır.
 
 ## Kurallar
 

@@ -1,0 +1,15 @@
+.git
+**/node_modules
+**/dist
+**/dist-e2e
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+**/uploads
+**/test-results
+**/playwright-report
+apps/api/src/generated
+release
+deploy/backups

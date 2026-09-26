@@ -1,0 +1,94 @@
+name: apartman
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '5'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: apartman
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: apartman
+      TZ: Europe/Istanbul
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U apartman -d apartman']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD:?}']
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  api:
+    build:
+      context: ..
+      target: api
+    image: apartman-api:latest
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://apartman:${POSTGRES_PASSWORD}@postgres:5432/apartman?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      WEB_ORIGIN: https://${DOMAIN:?}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?}
+      LOGIN_RATE_LIMIT: 10
+      UPLOAD_DIR: /data/uploads
+      MESSAGING_PROVIDER: ${MESSAGING_PROVIDER:-log}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-none}
+      TZ: Europe/Istanbul
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *logging
+
+  web:
+    build:
+      context: ..
+      target: web
+    image: apartman-web:latest
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?}
+      ACME_EMAIL: ${ACME_EMAIL:?}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+    logging: *logging
+
+volumes:
+  postgres-data:
+  redis-data:
+  uploads:
+  caddy-data:
+  caddy-config:

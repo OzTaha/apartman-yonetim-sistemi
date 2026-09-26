@@ -35,3 +35,6 @@ apps/api/src/generated/
 Thumbs.db
 .idea/
 *.log
+
+# Sürüm paketleri
+release/

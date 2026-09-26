@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:up": "docker compose -f docker/docker-compose.yml up -d",
-    "db:down": "docker compose -f docker/docker-compose.yml down"
+    "db:down": "docker compose -f docker/docker-compose.yml down",
+    "release": "bash scripts/package-release.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

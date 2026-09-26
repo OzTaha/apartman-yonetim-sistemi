@@ -12,6 +12,7 @@ import { AuditModule } from './modules/audit/audit.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { CommunicationModule } from './modules/communication/communication.module';
 import { BlocksModule } from './modules/blocks/blocks';
+import { BrandingModule } from './modules/branding/branding';
 import { DuesModule } from './modules/dues/dues.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { OnlinePaymentsModule } from './modules/online-payments/online-payments.module';
@@ -50,6 +51,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     StaffModule,
     CommunicationModule,
     OnlinePaymentsModule,
+    BrandingModule,
   ],
   controllers: [HealthController],
   providers: [

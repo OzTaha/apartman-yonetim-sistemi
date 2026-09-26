@@ -5,6 +5,8 @@ import * as pdfmakeModule from 'pdfmake';
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import robotoFonts from 'pdfmake/fonts/Roboto';
 import path from 'node:path';
+import { appName } from '../../common/branding';
+import { PrismaService } from '../../prisma/prisma.service';
 
 const pdfmake = ((pdfmakeModule as unknown as { default?: typeof pdfmakeModule }).default ??
   pdfmakeModule) as typeof pdfmakeModule;
@@ -43,6 +45,8 @@ const formatCell = (value: string | number | null, money: boolean | undefined): 
 
 @Injectable()
 export class DocumentsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async reportPdf<T>(report: ReportDefinition<T>): Promise<Buffer> {
     const body = [
       report.columns.map((c) => ({
@@ -88,7 +92,7 @@ export class DocumentsService {
 
   async reportXlsx<T>(report: ReportDefinition<T>): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Apartman Yönetim Sistemi';
+    workbook.creator = await appName(this.prisma);
     const sheet = workbook.addWorksheet(report.title.slice(0, 31));
     sheet.addRow([report.title]).font = { bold: true, size: 14 };
     if (report.subtitle) sheet.addRow([report.subtitle]);
@@ -125,6 +129,7 @@ export class DocumentsService {
     orientation: 'portrait' | 'landscape' = 'portrait',
   ): Promise<Buffer> {
     const created = new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
+    const name = await appName(this.prisma);
     const doc: TDocumentDefinitions = {
       pageSize: 'A4',
       pageOrientation: orientation,
@@ -138,7 +143,7 @@ export class DocumentsService {
       content,
       footer: (currentPage, pageCount) => ({
         columns: [
-          { text: `Oluşturulma: ${created}`, fontSize: 7, color: '#777777' },
+          { text: `${name} · Oluşturulma: ${created}`, fontSize: 7, color: '#777777' },
           {
             text: `Sayfa ${currentPage} / ${pageCount}`,
             alignment: 'right',

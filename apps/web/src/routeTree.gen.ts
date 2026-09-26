@@ -22,6 +22,7 @@ import { Route as AppGelirGiderRouteImport } from './routes/_app/gelir-gider'
 import { Route as AppGiderlerRouteImport } from './routes/_app/giderler'
 import { Route as AppKasaRouteImport } from './routes/_app/kasa'
 import { Route as AppKasaAyarlariRouteImport } from './routes/_app/kasa-ayarlari'
+import { Route as AppMarkaRouteImport } from './routes/_app/marka'
 import { Route as AppMesajAyarlariRouteImport } from './routes/_app/mesaj-ayarlari'
 import { Route as AppPanelRouteImport } from './routes/_app/panel'
 import { Route as AppRaporlarRouteImport } from './routes/_app/raporlar'
@@ -109,6 +110,11 @@ const AppKasaRoute = AppKasaRouteImport.update({
 const AppKasaAyarlariRoute = AppKasaAyarlariRouteImport.update({
   id: '/kasa-ayarlari',
   path: '/kasa-ayarlari',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMarkaRoute = AppMarkaRouteImport.update({
+  id: '/marka',
+  path: '/marka',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMesajAyarlariRoute = AppMesajAyarlariRouteImport.update({
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/giderler': typeof AppGiderlerRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/marka': typeof AppMarkaRoute
   '/mesaj-ayarlari': typeof AppMesajAyarlariRoute
   '/panel': typeof AppPanelRoute
   '/raporlar': typeof AppRaporlarRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/giderler': typeof AppGiderlerRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/marka': typeof AppMarkaRoute
   '/mesaj-ayarlari': typeof AppMesajAyarlariRoute
   '/panel': typeof AppPanelRoute
   '/raporlar': typeof AppRaporlarRoute
@@ -323,6 +331,7 @@ export interface FileRoutesById {
   '/_app/giderler': typeof AppGiderlerRoute
   '/_app/kasa': typeof AppKasaRoute
   '/_app/kasa-ayarlari': typeof AppKasaAyarlariRoute
+  '/_app/marka': typeof AppMarkaRoute
   '/_app/mesaj-ayarlari': typeof AppMesajAyarlariRoute
   '/_app/panel': typeof AppPanelRoute
   '/_app/raporlar': typeof AppRaporlarRoute
@@ -364,6 +373,7 @@ export interface FileRouteTypes {
     | '/giderler'
     | '/kasa'
     | '/kasa-ayarlari'
+    | '/marka'
     | '/mesaj-ayarlari'
     | '/panel'
     | '/raporlar'
@@ -401,6 +411,7 @@ export interface FileRouteTypes {
     | '/giderler'
     | '/kasa'
     | '/kasa-ayarlari'
+    | '/marka'
     | '/mesaj-ayarlari'
     | '/panel'
     | '/raporlar'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/_app/giderler'
     | '/_app/kasa'
     | '/_app/kasa-ayarlari'
+    | '/_app/marka'
     | '/_app/mesaj-ayarlari'
     | '/_app/panel'
     | '/_app/raporlar'
@@ -564,6 +576,13 @@ declare module '@tanstack/react-router' {
       path: '/kasa-ayarlari'
       fullPath: '/kasa-ayarlari'
       preLoaderRoute: typeof AppKasaAyarlariRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/marka': {
+      id: '/_app/marka'
+      path: '/marka'
+      fullPath: '/marka'
+      preLoaderRoute: typeof AppMarkaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/mesaj-ayarlari': {
@@ -748,6 +767,7 @@ interface AppRouteChildren {
   AppGiderlerRoute: typeof AppGiderlerRoute
   AppKasaRoute: typeof AppKasaRoute
   AppKasaAyarlariRoute: typeof AppKasaAyarlariRoute
+  AppMarkaRoute: typeof AppMarkaRoute
   AppMesajAyarlariRoute: typeof AppMesajAyarlariRoute
   AppPanelRoute: typeof AppPanelRoute
   AppRaporlarRoute: typeof AppRaporlarRoute
@@ -785,6 +805,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGiderlerRoute: AppGiderlerRoute,
   AppKasaRoute: AppKasaRoute,
   AppKasaAyarlariRoute: AppKasaAyarlariRoute,
+  AppMarkaRoute: AppMarkaRoute,
   AppMesajAyarlariRoute: AppMesajAyarlariRoute,
   AppPanelRoute: AppPanelRoute,
   AppRaporlarRoute: AppRaporlarRoute,
