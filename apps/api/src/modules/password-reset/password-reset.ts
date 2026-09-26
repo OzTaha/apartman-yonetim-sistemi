@@ -63,7 +63,7 @@ export class PasswordResetService {
 
   async forResident(occupancyId: string, send?: MessageChannel): Promise<PasswordResetLinkDto> {
     const occupancy = await this.tenant.db.occupancy.findFirst({
-      where: { id: occupancyId, ...activeOn() },
+      where: { id: occupancyId, ...activeOn(), unit: this.tenant.unitScope() },
       include: {
         user: { include: { memberships: { select: { role: true } } } },
         site: { select: { name: true } },
@@ -86,6 +86,11 @@ export class PasswordResetService {
     ) {
       throw new ForbiddenException(
         'Bu kişi yönetici olduğu için şifre bağlantısını yalnızca sistem yöneticisi oluşturabilir.',
+      );
+    }
+    if (this.tenant.blockScope && user.memberships.some((m) => m.role !== 'RESIDENT')) {
+      throw new ForbiddenException(
+        'Bu kişi yetkili olduğu için şifre bağlantısını site yöneticisi oluşturabilir.',
       );
     }
 
@@ -215,7 +220,7 @@ export class PasswordResetPublicController {
 
 @ApiTags('Sakinler')
 @ApiBearerAuth()
-@SiteScoped('SITE_MANAGER')
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER')
 @Controller('residents')
 export class ResidentPasswordResetController {
   constructor(private readonly resets: PasswordResetService) {}

@@ -26,6 +26,7 @@ import { PaymentDialog } from '@/features/dues/payment-dialog';
 import { PaymentActions } from '@/features/dues/row-actions';
 import { formatDate, todayIso } from '@/lib/format';
 import { usePayments } from '@/lib/queries';
+import { canManage, useRole } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import { labelUnit } from '@/lib/unit-label';
 import { useSelection } from '@/lib/selection';
@@ -42,7 +43,7 @@ export const Route = createFileRoute('/_app/tahsilatlar')({
         : undefined,
   }),
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER', 'AUDITOR']}>
       <PaymentsPage />
     </ManagerOnly>
   ),
@@ -142,6 +143,8 @@ function PaymentCard({ payment }: { payment: PaymentDto }) {
 }
 
 function PaymentsPage() {
+  const role = useRole();
+  const full = canManage(role);
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const today = todayIso();
@@ -164,10 +167,12 @@ function PaymentsPage() {
           payments.data ? `${active.length} ödeme · toplam ${formatKurus(total)}` : undefined
         }
         actions={
-          <Button onClick={() => setPaying(true)}>
-            <HandCoins />
-            Ödeme al
-          </Button>
+          role !== 'AUDITOR' && (
+            <Button onClick={() => setPaying(true)}>
+              <HandCoins />
+              Ödeme al
+            </Button>
+          )
         }
       />
       <div className="grid gap-2 sm:grid-cols-3">
@@ -230,12 +235,16 @@ function PaymentsPage() {
             void navigate({ to: '/daireler/$unitId', params: { unitId: p.unitId } })
           }
           mobileCard={(p) => <PaymentCard payment={p} />}
-          selection={{
-            selected: selection.selected,
-            onChange: selection.setSelected,
-            canSelect: (p) => !p.cancelledAt && !p.online,
-            label: (p) => `${labelUnit(p.blockName, p.unitNumber, 'short')} ödemesi`,
-          }}
+          selection={
+            full
+              ? {
+                  selected: selection.selected,
+                  onChange: selection.setSelected,
+                  canSelect: (p) => !p.cancelledAt && !p.online,
+                  label: (p) => `${labelUnit(p.blockName, p.unitNumber, 'short')} ödemesi`,
+                }
+              : undefined
+          }
           empty={
             <EmptyState
               title="Bu aralıkta ödeme yok"

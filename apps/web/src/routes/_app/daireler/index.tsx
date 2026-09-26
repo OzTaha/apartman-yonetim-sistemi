@@ -21,6 +21,7 @@ import { BlocksDialog, BulkUnitsDialog, UnitFormDialog } from '@/features/units/
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { fullName } from '@/lib/format';
 import { useBlocks, useProportionalDues, useUnits } from '@/lib/queries';
+import { canManage, useRole } from '@/lib/session';
 import { labelUnit, useIsApartment } from '@/lib/unit-label';
 
 interface UnitSearch {
@@ -36,7 +37,7 @@ export const Route = createFileRoute('/_app/daireler/')({
     arsiv: search['arsiv'] === true ? true : undefined,
   }),
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER']}>
       <UnitsPage />
     </ManagerOnly>
   ),
@@ -111,6 +112,7 @@ function UnitCard({ unit, showArea }: { unit: UnitDto; showArea: boolean }) {
 }
 
 function UnitsPage() {
+  const full = canManage(useRole());
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const isApartment = useIsApartment();
@@ -142,22 +144,24 @@ function UnitsPage() {
             : undefined
         }
         actions={
-          <>
-            {!isApartment && (
-              <Button variant="outline" onClick={() => setDialog('blocks')}>
-                <Blocks />
-                Bloklar
+          full && (
+            <>
+              {!isApartment && (
+                <Button variant="outline" onClick={() => setDialog('blocks')}>
+                  <Blocks />
+                  Bloklar
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => setDialog('bulk')} disabled={!hasBlocks}>
+                <Layers />
+                Toplu ekle
               </Button>
-            )}
-            <Button variant="outline" onClick={() => setDialog('bulk')} disabled={!hasBlocks}>
-              <Layers />
-              Toplu ekle
-            </Button>
-            <Button onClick={() => setDialog('unit')} disabled={!hasBlocks}>
-              <Plus />
-              Daire ekle
-            </Button>
-          </>
+              <Button onClick={() => setDialog('unit')} disabled={!hasBlocks}>
+                <Plus />
+                Daire ekle
+              </Button>
+            </>
+          )
         }
       />
 

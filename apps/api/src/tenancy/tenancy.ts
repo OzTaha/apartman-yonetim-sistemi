@@ -17,15 +17,18 @@ import { z } from 'zod';
 import type { AuthenticatedRequest } from '../common/auth-user';
 import { activeOn } from '../common/dates';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../generated/prisma/client';
 import { createTenantClient, type TenantClient } from './tenant-extension';
 
 export interface AppClsStore extends ClsStore {
   userId?: string;
   siteId?: string;
   siteRole?: SiteRole | 'PLATFORM_ADMIN';
+  blockIds?: string[];
 }
 
 export const SITE_ROLES_KEY = 'siteRoles';
+export const AUDITOR_READ_KEY = 'auditorRead';
 export const SITE_HEADER = 'x-site-id';
 
 const uuid = z.uuid();
@@ -70,13 +73,43 @@ export class TenantGuard implements CanActivate {
       select: { role: true },
     });
     if (!membership) throw new ForbiddenException('Bu siteye erişim yetkiniz yok');
-    if (allowedRoles.length > 0 && !allowedRoles.includes(membership.role)) {
-      throw new ForbiddenException('Bu işlem için yetkiniz yok');
-    }
+
+    const role = this.effectiveRole(context, membership.role, allowedRoles);
+    if (!role) throw new ForbiddenException('Bu işlem için yetkiniz yok');
 
     this.cls.set('siteId', siteId);
-    this.cls.set('siteRole', membership.role);
+    this.cls.set('siteRole', role);
+    if (role === 'BLOCK_MANAGER') {
+      const blocks = await this.prisma.blockManager.findMany({
+        where: { siteId, userId: user.id },
+        select: { blockId: true },
+      });
+      this.cls.set(
+        'blockIds',
+        blocks.map((b) => b.blockId),
+      );
+    }
     return true;
+  }
+
+  private effectiveRole(
+    context: ExecutionContext,
+    role: SiteRole,
+    allowed: SiteRole[],
+  ): SiteRole | null {
+    if (allowed.length === 0 || allowed.includes(role)) return role;
+    const auditorRead = this.reflector.getAllAndOverride<boolean | undefined>(AUDITOR_READ_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    const method = context.switchToHttp().getRequest<AuthenticatedRequest>().method;
+    if (role === 'AUDITOR' && auditorRead && method === 'GET' && allowed.includes('SITE_MANAGER')) {
+      return 'AUDITOR';
+    }
+    if ((role === 'BLOCK_MANAGER' || role === 'AUDITOR') && allowed.includes('RESIDENT')) {
+      return 'RESIDENT';
+    }
+    return null;
   }
 }
 
@@ -89,6 +122,8 @@ export function SiteScoped(...roles: SiteRole[]) {
 }
 
 export const SiteRoles = (...roles: SiteRole[]) => SetMetadata(SITE_ROLES_KEY, roles);
+
+export const AuditorReadable = () => SetMetadata(AUDITOR_READ_KEY, true);
 
 @Injectable()
 export class TenantContext {
@@ -121,6 +156,29 @@ export class TenantContext {
 
   get isResident(): boolean {
     return this.cls.get('siteRole') === 'RESIDENT';
+  }
+
+  get blockScope(): string[] | null {
+    return this.cls.get('siteRole') === 'BLOCK_MANAGER' ? (this.cls.get('blockIds') ?? []) : null;
+  }
+
+  unitScope(): Prisma.UnitWhereInput {
+    const scope = this.blockScope;
+    return scope ? { blockId: { in: scope } } : {};
+  }
+
+  async assertUnitInScope(unitId: string): Promise<void> {
+    const scope = this.blockScope;
+    if (!scope) return;
+    const count = await this.db.unit.count({ where: { id: unitId, blockId: { in: scope } } });
+    if (count === 0) throw new NotFoundException('Daire bulunamadı');
+  }
+
+  assertBlockInScope(blockId: string | null): void {
+    const scope = this.blockScope;
+    if (scope && (!blockId || !scope.includes(blockId))) {
+      throw new ForbiddenException('Yalnızca yöneticisi olduğunuz blok için işlem yapabilirsiniz');
+    }
   }
 
   async residentBlockIds(): Promise<string[]> {

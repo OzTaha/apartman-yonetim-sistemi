@@ -10,7 +10,8 @@ function HomeRedirect() {
   const s = useSession();
   const role = activeRole(s);
 
-  if (canManage(role) && s.siteId) return <Navigate to="/panel" replace />;
+  if ((canManage(role) || role === 'AUDITOR') && s.siteId) return <Navigate to="/panel" replace />;
+  if (role === 'BLOCK_MANAGER' && s.siteId) return <Navigate to="/daireler" replace />;
   if ((s.user?.occupancies.length ?? 0) > 0) return <Navigate to="/dairem" replace />;
   if (s.user?.isPlatformAdmin) return <Navigate to="/siteler" replace />;
 

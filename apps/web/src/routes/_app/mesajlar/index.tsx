@@ -11,7 +11,7 @@ import { useCampaigns } from '@/lib/queries';
 
 export const Route = createFileRoute('/_app/mesajlar/')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER']}>
       <CampaignsPage />
     </ManagerOnly>
   ),

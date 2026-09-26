@@ -33,7 +33,13 @@ import {
 import type { Env } from '../../config/env';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { type AppClsStore, SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import {
+  type AppClsStore,
+  AuditorReadable,
+  SiteRoles,
+  SiteScoped,
+  TenantContext,
+} from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { compareUnits } from '../residents/occupancy.mapper';
 import { ChargeTypesService } from './charge-types';
@@ -278,10 +284,12 @@ export class DuesService implements OnApplicationBootstrap {
 @ApiTags('Aidat ve borçlar')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('dues')
 export class DuesController {
   constructor(private readonly dues: DuesService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get('settings')
   settings(): Promise<DuesSettingsDto> {
     return this.dues.getSettings();

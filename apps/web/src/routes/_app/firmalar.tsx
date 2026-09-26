@@ -18,11 +18,12 @@ import { VendorDialog } from '@/features/finance/work-dialogs';
 import { apiFetch } from '@/lib/api';
 import { formatPhone } from '@/lib/format';
 import { useApiMutation, useVendors } from '@/lib/queries';
+import { useRole } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/firmalar')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['AUDITOR']}>
       <VendorsPage />
     </ManagerOnly>
   ),
@@ -67,6 +68,7 @@ function VendorActions({ vendor, onEdit }: { vendor: VendorDto; onEdit: () => vo
 }
 
 function VendorsPage() {
+  const auditor = useRole() === 'AUDITOR';
   const vendors = useVendors();
   const [editing, setEditing] = useState<VendorDto | null>(null);
   const [creating, setCreating] = useState(false);
@@ -110,9 +112,8 @@ function VendorsPage() {
       id: 'actions',
       header: '',
       enableSorting: false,
-      cell: ({ row }) => (
-        <VendorActions vendor={row.original} onEdit={() => setEditing(row.original)} />
-      ),
+      cell: ({ row }) =>
+        !auditor && <VendorActions vendor={row.original} onEdit={() => setEditing(row.original)} />,
     },
   ];
 
@@ -122,10 +123,12 @@ function VendorsPage() {
         title="Firmalar"
         description="İş yaptırılan ve fatura kesen firmalar; her birine ödenen toplam tutar."
         actions={
-          <Button onClick={() => setCreating(true)}>
-            <Plus />
-            Firma ekle
-          </Button>
+          !auditor && (
+            <Button onClick={() => setCreating(true)}>
+              <Plus />
+              Firma ekle
+            </Button>
+          )
         }
       />
       {vendors.isPending ? (

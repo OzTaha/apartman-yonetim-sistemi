@@ -33,6 +33,7 @@ import { Route as AppSitelerRouteImport } from './routes/_app/siteler'
 import { Route as AppTahsilatlarRouteImport } from './routes/_app/tahsilatlar'
 import { Route as AppTekrarlayanGorevlerRouteImport } from './routes/_app/tekrarlayan-gorevler'
 import { Route as AppVardiyalarRouteImport } from './routes/_app/vardiyalar'
+import { Route as AppYetkililerRouteImport } from './routes/_app/yetkililer'
 import { Route as DavetTokenRouteImport } from './routes/davet.$token'
 import { Route as SifreYenileTokenRouteImport } from './routes/sifre-yenile.$token'
 import { Route as AppCalisanlarIndexRouteImport } from './routes/_app/calisanlar/index'
@@ -169,6 +170,11 @@ const AppVardiyalarRoute = AppVardiyalarRouteImport.update({
   path: '/vardiyalar',
   getParentRoute: () => AppRoute,
 } as any)
+const AppYetkililerRoute = AppYetkililerRouteImport.update({
+  id: '/yetkililer',
+  path: '/yetkililer',
+  getParentRoute: () => AppRoute,
+} as any)
 const DavetTokenRoute = DavetTokenRouteImport.update({
   id: '/davet/$token',
   path: '/davet/$token',
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/tahsilatlar': typeof AppTahsilatlarRoute
   '/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
   '/vardiyalar': typeof AppVardiyalarRoute
+  '/yetkililer': typeof AppYetkililerRoute
   '/davet/$token': typeof DavetTokenRoute
   '/sifre-yenile/$token': typeof SifreYenileTokenRoute
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
@@ -315,6 +322,7 @@ export interface FileRoutesByTo {
   '/tahsilatlar': typeof AppTahsilatlarRoute
   '/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
   '/vardiyalar': typeof AppVardiyalarRoute
+  '/yetkililer': typeof AppYetkililerRoute
   '/davet/$token': typeof DavetTokenRoute
   '/sifre-yenile/$token': typeof SifreYenileTokenRoute
   '/': typeof AppIndexRoute
@@ -358,6 +366,7 @@ export interface FileRoutesById {
   '/_app/tahsilatlar': typeof AppTahsilatlarRoute
   '/_app/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
   '/_app/vardiyalar': typeof AppVardiyalarRoute
+  '/_app/yetkililer': typeof AppYetkililerRoute
   '/davet/$token': typeof DavetTokenRoute
   '/sifre-yenile/$token': typeof SifreYenileTokenRoute
   '/_app/': typeof AppIndexRoute
@@ -402,6 +411,7 @@ export interface FileRouteTypes {
     | '/tahsilatlar'
     | '/tekrarlayan-gorevler'
     | '/vardiyalar'
+    | '/yetkililer'
     | '/davet/$token'
     | '/sifre-yenile/$token'
     | '/calisanlar/$employeeId'
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/tahsilatlar'
     | '/tekrarlayan-gorevler'
     | '/vardiyalar'
+    | '/yetkililer'
     | '/davet/$token'
     | '/sifre-yenile/$token'
     | '/'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/_app/tahsilatlar'
     | '/_app/tekrarlayan-gorevler'
     | '/_app/vardiyalar'
+    | '/_app/yetkililer'
     | '/davet/$token'
     | '/sifre-yenile/$token'
     | '/_app/'
@@ -680,6 +692,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVardiyalarRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/yetkililer': {
+      id: '/_app/yetkililer'
+      path: '/yetkililer'
+      fullPath: '/yetkililer'
+      preLoaderRoute: typeof AppYetkililerRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/davet/$token': {
       id: '/davet/$token'
       path: '/davet/$token'
@@ -817,6 +836,7 @@ interface AppRouteChildren {
   AppTahsilatlarRoute: typeof AppTahsilatlarRoute
   AppTekrarlayanGorevlerRoute: typeof AppTekrarlayanGorevlerRoute
   AppVardiyalarRoute: typeof AppVardiyalarRoute
+  AppYetkililerRoute: typeof AppYetkililerRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCalisanlarEmployeeIdRoute: typeof AppCalisanlarEmployeeIdRoute
   AppDairelerUnitIdRoute: typeof AppDairelerUnitIdRoute
@@ -856,6 +876,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTahsilatlarRoute: AppTahsilatlarRoute,
   AppTekrarlayanGorevlerRoute: AppTekrarlayanGorevlerRoute,
   AppVardiyalarRoute: AppVardiyalarRoute,
+  AppYetkililerRoute: AppYetkililerRoute,
   AppIndexRoute: AppIndexRoute,
   AppCalisanlarEmployeeIdRoute: AppCalisanlarEmployeeIdRoute,
   AppDairelerUnitIdRoute: AppDairelerUnitIdRoute,

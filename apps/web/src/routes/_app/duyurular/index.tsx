@@ -21,7 +21,12 @@ export const Route = createFileRoute('/_app/duyurular/')({
 
 function AnnouncementsPage() {
   const s = useSession();
-  return canManage(activeRole(s)) ? <ManagerAnnouncements /> : <ResidentAnnouncements />;
+  const role = activeRole(s);
+  return canManage(role) || role === 'BLOCK_MANAGER' ? (
+    <ManagerAnnouncements />
+  ) : (
+    <ResidentAnnouncements />
+  );
 }
 
 function ReadRatio({ a }: { a: AnnouncementDto }) {

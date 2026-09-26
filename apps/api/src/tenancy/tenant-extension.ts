@@ -4,6 +4,7 @@ import type { PrismaService } from '../prisma/prisma.service';
 export const TENANT_MODELS: ReadonlySet<string> = new Set([
   'SiteMembership',
   'Block',
+  'BlockManager',
   'Unit',
   'Occupancy',
   'Invitation',

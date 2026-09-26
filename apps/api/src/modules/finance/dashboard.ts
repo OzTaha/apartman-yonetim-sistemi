@@ -9,7 +9,7 @@ import {
 } from '@apartman/shared';
 import { dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { announcementStats, notExpired } from '../communication/audience';
 import { AccountService } from '../dues/account';
 import { chargeLabel, DUES_CODE } from '../dues/ledger.mapper';
@@ -153,6 +153,7 @@ export class DashboardService {
 @ApiTags('Yönetim paneli')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboard: DashboardService) {}

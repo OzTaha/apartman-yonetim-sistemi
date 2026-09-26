@@ -49,7 +49,7 @@ export const Route = createFileRoute('/_app/mesajlar/yeni')({
     tur: KINDS.includes(s['tur'] as CampaignKind) ? (s['tur'] as CampaignKind) : undefined,
   }),
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER']}>
       <ComposePage />
     </ManagerOnly>
   ),

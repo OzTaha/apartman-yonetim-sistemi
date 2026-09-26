@@ -32,7 +32,7 @@ import {
 } from '../../common/dues.dto';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { compareUnits } from '../residents/occupancy.mapper';
 import { chargeInclude, toChargeDto } from './ledger.mapper';
@@ -50,7 +50,10 @@ export class ChargesService {
     const where: Prisma.ChargeWhereInput = {
       cancelledAt: null,
       ...(query.unitId ? { unitId: query.unitId } : {}),
-      ...(query.blockId ? { unit: { blockId: query.blockId } } : {}),
+      AND: [
+        query.blockId ? { unit: { blockId: query.blockId } } : {},
+        { unit: this.tenant.unitScope() },
+      ],
       ...(query.chargeTypeId ? { chargeTypeId: query.chargeTypeId } : {}),
       ...(query.period ? { period: query.period } : {}),
     };
@@ -229,10 +232,12 @@ export class ChargesService {
 @ApiTags('Aidat ve borçlar')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('charges')
 export class ChargesController {
   constructor(private readonly charges: ChargesService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get()
   list(@Query() query: ChargeListQueryDto): Promise<ChargeDto[]> {
     return this.charges.list(query);

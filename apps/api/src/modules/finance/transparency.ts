@@ -4,7 +4,7 @@ import { periodRange, type TransparencyDto } from '@apartman/shared';
 import { dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
 import { TransparencyQueryDto } from '../../common/finance.dto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { currentPeriod } from '../dues/site-settings';
 import { accountBalances, monthlyTotals } from './finance.ledger';
 import { attachmentSelect, toAttachmentDto } from './finance.mapper';
@@ -88,6 +88,7 @@ export class TransparencyService {
 @ApiTags('Gelir-gider')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('transparency')
 export class TransparencyController {
   constructor(private readonly transparency: TransparencyService) {}

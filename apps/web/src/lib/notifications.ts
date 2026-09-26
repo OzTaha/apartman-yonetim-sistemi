@@ -14,7 +14,9 @@ export const notificationKeys = {
 export function useCanReceiveNotifications(): boolean {
   const { user } = useSession();
   return Boolean(
-    user && (user.isPlatformAdmin || user.memberships.some((m) => m.role === 'SITE_MANAGER')),
+    user &&
+    (user.isPlatformAdmin ||
+      user.memberships.some((m) => m.role === 'SITE_MANAGER' || m.role === 'BLOCK_MANAGER')),
   );
 }
 

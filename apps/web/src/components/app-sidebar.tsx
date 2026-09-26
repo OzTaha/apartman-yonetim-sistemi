@@ -1,6 +1,8 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
+  Bell,
   Building,
+  ShieldCheck,
   CalendarClock,
   Check,
   ClipboardList,
@@ -53,7 +55,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { siteRoleLabels } from '@apartman/shared';
 import { logout } from '@/lib/auth';
+import { useCanReceiveNotifications, useNotificationCount } from '@/lib/notifications';
 import { activeRole, canManage, session, useSession } from '@/lib/session';
 import { useSiteOptions } from '@/lib/site-options';
 
@@ -83,15 +87,16 @@ interface NavItem {
     | '/duyurular'
     | '/mesajlar'
     | '/mesaj-ayarlari'
-    | '/marka';
+    | '/marka'
+    | '/bildirimler'
+    | '/yetkililer';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
 
 const roleLabels = {
   PLATFORM_ADMIN: 'Sistem yöneticisi',
-  SITE_MANAGER: 'Site yöneticisi',
-  RESIDENT: 'Sakin',
+  ...siteRoleLabels,
 } as const;
 
 function SiteSwitcher() {
@@ -200,17 +205,26 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { setOpenMobile } = useSidebar();
 
-  const manager = canManage(role) && Boolean(s.siteId);
+  const unread = useNotificationCount().data?.unread ?? 0;
+  const notifications = useCanReceiveNotifications();
+  const hasSite = Boolean(s.siteId);
+  const manager = canManage(role) && hasSite;
+  const blockManager = role === 'BLOCK_MANAGER' && hasSite;
+  const auditor = role === 'AUDITOR' && hasSite;
   const items: NavItem[] = [];
-  if (manager) {
-    items.push({ to: '/panel', label: 'Panel', icon: LayoutDashboard });
+  if (manager || auditor) items.push({ to: '/panel', label: 'Panel', icon: LayoutDashboard });
+  if (manager || blockManager) {
     items.push({ to: '/daireler', label: 'Daireler', icon: DoorOpen });
     items.push({ to: '/sakinler', label: 'Sakinler', icon: Users });
   }
+  if (manager) items.push({ to: '/yetkililer', label: 'Yetkililer', icon: ShieldCheck });
+  if (notifications) items.push({ to: '/bildirimler', label: 'Bildirimler', icon: Bell });
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
-  if (role === 'RESIDENT' && s.siteId) {
+  if ((role === 'RESIDENT' || auditor) && hasSite) {
     items.push({ to: '/duyurular', label: 'Duyurular', icon: Megaphone });
+  }
+  if ((role === 'RESIDENT' || auditor || blockManager) && hasSite) {
     items.push({ to: '/giderler', label: 'Giderler ve işler', icon: Scale });
   }
   if (s.user?.isPlatformAdmin) {
@@ -218,24 +232,38 @@ export function AppSidebar() {
     items.push({ to: '/marka', label: 'Marka ayarları', icon: Palette });
   }
 
-  const duesItems: NavItem[] = manager
-    ? [
-        { to: '/aidat', label: 'Aidat tablosu', icon: LayoutGrid },
-        { to: '/borclar', label: 'Borçlar', icon: ReceiptText },
-        { to: '/tahsilatlar', label: 'Tahsilatlar', icon: HandCoins },
-        { to: '/raporlar', label: 'Raporlar', icon: FileBarChart },
-        { to: '/aidat-ayarlari', label: 'Aidat ayarları', icon: Settings2 },
-      ]
-    : [];
-  const financeItems: NavItem[] = manager
-    ? [
-        { to: '/kasa', label: 'Kasa', icon: Wallet },
-        { to: '/isler', label: 'Yapılan işler', icon: Hammer },
-        { to: '/firmalar', label: 'Firmalar', icon: Store },
-        { to: '/gelir-gider', label: 'Gelir-gider raporu', icon: ChartColumn },
-        { to: '/kasa-ayarlari', label: 'Kasa ayarları', icon: WalletCards },
-      ]
-    : [];
+  const duesItems: NavItem[] = [
+    ...(manager || blockManager || auditor
+      ? ([
+          { to: '/aidat', label: 'Aidat tablosu', icon: LayoutGrid },
+          { to: '/borclar', label: 'Borçlar', icon: ReceiptText },
+          { to: '/tahsilatlar', label: 'Tahsilatlar', icon: HandCoins },
+        ] as NavItem[])
+      : []),
+    ...(manager || auditor
+      ? ([{ to: '/raporlar', label: 'Raporlar', icon: FileBarChart }] as NavItem[])
+      : []),
+    ...(manager
+      ? ([{ to: '/aidat-ayarlari', label: 'Aidat ayarları', icon: Settings2 }] as NavItem[])
+      : []),
+  ];
+  const financeItems: NavItem[] = [
+    ...(manager || blockManager || auditor
+      ? ([
+          { to: '/kasa', label: blockManager ? 'Blok giderleri' : 'Kasa', icon: Wallet },
+        ] as NavItem[])
+      : []),
+    ...(manager || auditor
+      ? ([
+          { to: '/isler', label: 'Yapılan işler', icon: Hammer },
+          { to: '/firmalar', label: 'Firmalar', icon: Store },
+          { to: '/gelir-gider', label: 'Gelir-gider raporu', icon: ChartColumn },
+        ] as NavItem[])
+      : []),
+    ...(manager
+      ? ([{ to: '/kasa-ayarlari', label: 'Kasa ayarları', icon: WalletCards }] as NavItem[])
+      : []),
+  ];
   const staffItems: NavItem[] = manager
     ? [
         { to: '/calisanlar', label: 'Çalışanlar', icon: UserCog },
@@ -245,13 +273,19 @@ export function AppSidebar() {
         { to: '/calisan-raporu', label: 'Çalışan raporu', icon: ClipboardList },
       ]
     : [];
-  const contactItems: NavItem[] = manager
-    ? [
-        { to: '/duyurular', label: 'Duyurular', icon: Megaphone },
-        { to: '/mesajlar', label: 'Mesajlar', icon: MessageSquare },
-        { to: '/mesaj-ayarlari', label: 'Şablonlar ve hatırlatma', icon: MessageSquareText },
-      ]
-    : [];
+  const contactItems: NavItem[] = [
+    ...(manager || blockManager
+      ? ([
+          { to: '/duyurular', label: 'Duyurular', icon: Megaphone },
+          { to: '/mesajlar', label: 'Mesajlar', icon: MessageSquare },
+        ] as NavItem[])
+      : []),
+    ...(manager
+      ? ([
+          { to: '/mesaj-ayarlari', label: 'Şablonlar ve hatırlatma', icon: MessageSquareText },
+        ] as NavItem[])
+      : []),
+  ];
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
   const renderItems = (list: NavItem[]) =>
     list.map((item) => (
@@ -260,6 +294,14 @@ export function AppSidebar() {
           <Link to={item.to} onClick={() => setOpenMobile(false)}>
             <item.icon />
             <span>{item.label}</span>
+            {item.to === '/bildirimler' && unread > 0 && (
+              <span
+                className="ml-auto rounded-full bg-destructive px-1.5 text-xs leading-5 font-medium text-white tabular-nums"
+                aria-label={`${unread} okunmamış`}
+              >
+                {unread > 99 ? '99+' : unread}
+              </span>
+            )}
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>

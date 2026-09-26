@@ -33,7 +33,7 @@ import { FinanceReportQueryDto, MonthCloseDto } from '../../common/finance.dto';
 import { formatDateTr, PDF, sendFile, XLSX } from '../../common/http';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { currentPeriod } from '../dues/site-settings';
 import { DocumentsService } from '../dues/documents.service';
@@ -410,6 +410,7 @@ export class FinanceReportsService {
 @ApiTags('Gelir-gider')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('finance')
 export class FinanceReportsController {
   constructor(private readonly reports: FinanceReportsService) {}

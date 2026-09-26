@@ -63,6 +63,7 @@ export class ResidentsService {
           statusFilter,
           query.unitId ? { unitId: query.unitId } : {},
           query.blockId ? { unit: { blockId: query.blockId } } : {},
+          { unit: this.tenant.unitScope() },
           search
             ? {
                 OR: [
@@ -94,6 +95,7 @@ export class ResidentsService {
       select: { id: true, archivedAt: true },
     });
     if (!unit) throw new NotFoundException('Daire bulunamadı');
+    await this.tenant.assertUnitInScope(unit.id);
     if (unit.archivedAt) throw new BadRequestException('Arşivlenmiş daireye sakin eklenemez');
 
     const occupancy = await this.tenant.db.occupancy.create({
@@ -227,7 +229,7 @@ export class ResidentsService {
 
   private async findOrThrow(id: string) {
     const occupancy = await this.tenant.db.occupancy.findUnique({
-      where: { id },
+      where: { id, unit: this.tenant.unitScope() },
       include: occupancyInclude,
     });
     if (!occupancy) throw new NotFoundException('Sakin kaydı bulunamadı');
@@ -237,7 +239,7 @@ export class ResidentsService {
 
 @ApiTags('Sakinler')
 @ApiBearerAuth()
-@SiteScoped('SITE_MANAGER')
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER')
 @Controller('residents')
 export class ResidentsController {
   constructor(private readonly residents: ResidentsService) {}

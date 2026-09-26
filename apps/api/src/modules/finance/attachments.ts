@@ -36,7 +36,7 @@ import { activeOn, toDateString } from '../../common/dates';
 import { AttachmentUploadQueryDto } from '../../common/finance.dto';
 import { sendFile } from '../../common/http';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { residentAnnouncementWhere } from '../communication/audience';
 import { assertDateOpen } from './finance.ledger';
@@ -92,6 +92,9 @@ export class AttachmentsService {
 
     const target = { [`${query.target}Id`]: query.targetId };
     await this.assertTarget(query.target, query.targetId);
+    if (this.tenant.blockScope && !(await this.inBlockScope(target))) {
+      throw new NotFoundException('Dosyanın ekleneceği kayıt bulunamadı');
+    }
     const count = await this.tenant.db.attachment.count({ where: target });
     if (count >= ATTACHMENT_MAX_PER_RECORD) {
       throw new BadRequestException(
@@ -144,6 +147,13 @@ export class AttachmentsService {
     if (this.tenant.isResident && !(await this.residentCanSee(attachment))) {
       throw new NotFoundException('Dosya bulunamadı');
     }
+    if (
+      this.tenant.blockScope &&
+      !(await this.inBlockScope(attachment)) &&
+      !(await this.residentCanSee(attachment))
+    ) {
+      throw new NotFoundException('Dosya bulunamadı');
+    }
     return { attachment, stream: this.storage.open(attachment.storageKey) };
   }
 
@@ -152,7 +162,9 @@ export class AttachmentsService {
       where: { id },
       include: { transaction: { select: { date: true } }, payment: { select: { paidAt: true } } },
     });
-    if (!attachment) throw new NotFoundException('Dosya bulunamadı');
+    if (!attachment || (this.tenant.blockScope && !(await this.inBlockScope(attachment)))) {
+      throw new NotFoundException('Dosya bulunamadı');
+    }
     const date = attachment.transaction?.date ?? attachment.payment?.paidAt;
     if (date) await assertDateOpen(this.prisma, this.tenant.siteId, toDateString(date));
     await this.tenant.db.attachment.delete({ where: { id } });
@@ -175,6 +187,37 @@ export class AttachmentsService {
             ? await this.tenant.db.payment.findFirst({ where: { id, cancelledAt: null } })
             : await this.tenant.db.announcement.findUnique({ where: { id } });
     if (!found) throw new NotFoundException('Dosyanın ekleneceği kayıt bulunamadı');
+  }
+
+  private async inBlockScope(a: {
+    transactionId?: string | null;
+    paymentId?: string | null;
+    workId?: string | null;
+    announcementId?: string | null;
+  }): Promise<boolean> {
+    const scope = this.tenant.blockScope ?? [];
+    const inScope = (blockId: string | null | undefined) =>
+      Boolean(blockId && scope.includes(blockId));
+    if (a.transactionId) {
+      const t = await this.tenant.db.transaction.findUnique({ where: { id: a.transactionId } });
+      return inScope(t?.blockId);
+    }
+    if (a.workId) {
+      const w = await this.tenant.db.work.findUnique({ where: { id: a.workId } });
+      return inScope(w?.blockId);
+    }
+    if (a.paymentId) {
+      const p = await this.tenant.db.payment.findUnique({
+        where: { id: a.paymentId },
+        select: { unit: { select: { blockId: true } } },
+      });
+      return inScope(p?.unit.blockId);
+    }
+    if (a.announcementId) {
+      const n = await this.tenant.db.announcement.findUnique({ where: { id: a.announcementId } });
+      return n?.createdById === this.tenant.userId;
+    }
+    return false;
   }
 
   private async residentCanSee(a: {
@@ -219,7 +262,8 @@ export class AttachmentsService {
 
 @ApiTags('Gelir-gider')
 @ApiBearerAuth()
-@SiteScoped('SITE_MANAGER')
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER')
+@AuditorReadable()
 @Controller('attachments')
 export class AttachmentsController {
   constructor(private readonly attachments: AttachmentsService) {}
@@ -237,7 +281,7 @@ export class AttachmentsController {
     return this.attachments.upload(query, file);
   }
 
-  @SiteRoles('SITE_MANAGER', 'RESIDENT')
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'RESIDENT')
   @Get(':id')
   async download(
     @Param('id', ParseUUIDPipe) id: string,

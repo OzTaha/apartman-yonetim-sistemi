@@ -21,6 +21,7 @@ import { ChargeActions } from '@/features/dues/row-actions';
 import { ChargeStatusBadge } from '@/features/dues/status';
 import { formatDate } from '@/lib/format';
 import { type ChargeFilters, useBlocks, useChargeTypes, useCharges } from '@/lib/queries';
+import { canManage, useRole } from '@/lib/session';
 import { labelUnit, useIsApartment } from '@/lib/unit-label';
 import { useSelection } from '@/lib/selection';
 
@@ -45,7 +46,7 @@ export const Route = createFileRoute('/_app/borclar')({
     donem: typeof s['donem'] === 'string' ? s['donem'] : undefined,
   }),
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER', 'AUDITOR']}>
       <ChargesPage />
     </ManagerOnly>
   ),
@@ -121,6 +122,7 @@ function ChargeCard({ charge }: { charge: ChargeDto }) {
 }
 
 function ChargesPage() {
+  const full = canManage(useRole());
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const isApartment = useIsApartment();
@@ -150,10 +152,12 @@ function ChargesPage() {
             : undefined
         }
         actions={
-          <Button onClick={() => setAdding(true)}>
-            <Plus />
-            Borç ekle
-          </Button>
+          full && (
+            <Button onClick={() => setAdding(true)}>
+              <Plus />
+              Borç ekle
+            </Button>
+          )
         }
       />
       <div className="grid gap-2 sm:grid-cols-4">
@@ -227,12 +231,16 @@ function ChargesPage() {
             void navigate({ to: '/daireler/$unitId', params: { unitId: c.unitId } })
           }
           mobileCard={(c) => <ChargeCard charge={c} />}
-          selection={{
-            selected: selection.selected,
-            onChange: selection.setSelected,
-            canSelect: (c) => !c.cancelledAt && c.paidKurus === 0,
-            label: (c) => `${labelUnit(c.blockName, c.unitNumber, 'short')} ${c.label}`,
-          }}
+          selection={
+            full
+              ? {
+                  selected: selection.selected,
+                  onChange: selection.setSelected,
+                  canSelect: (c) => !c.cancelledAt && c.paidKurus === 0,
+                  label: (c) => `${labelUnit(c.blockName, c.unitNumber, 'short')} ${c.label}`,
+                }
+              : undefined
+          }
           empty={
             <EmptyState title="Kayıt yok" description="Seçili filtrelere uygun borç bulunamadı." />
           }

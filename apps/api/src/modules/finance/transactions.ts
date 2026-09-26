@@ -3,6 +3,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   Injectable,
@@ -33,7 +34,7 @@ import {
 } from '../../common/finance.dto';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { assertMethodAllowed, loadSiteSettings } from '../dues/site-settings';
 import { compareUnits } from '../residents/occupancy.mapper';
@@ -64,6 +65,9 @@ export class TransactionsService {
       ...(query.workId ? { workId: query.workId } : {}),
       ...(query.employeeId ? { employeeId: query.employeeId } : {}),
       ...(query.block ? { blockId: query.block === SITE_WIDE ? null : query.block } : {}),
+      AND: [
+        this.tenant.blockScope ? { type: 'EXPENSE', blockId: { in: this.tenant.blockScope } } : {},
+      ],
       ...(query.from || query.to
         ? {
             date: {
@@ -90,7 +94,7 @@ export class TransactionsService {
       this.tenant.db.transaction.findUnique({ where: { id }, include: transactionInclude }),
       lockedThrough(this.prisma, this.tenant.siteId),
     ]);
-    if (!row) throw new NotFoundException('Kayıt bulunamadı');
+    if (!row || !this.inScope(row)) throw new NotFoundException('Kayıt bulunamadı');
     return toTransactionDto(row, locked);
   }
 
@@ -99,6 +103,12 @@ export class TransactionsService {
       throw new BadRequestException('İleri tarihli kayıt girilemez');
     }
     const siteId = this.tenant.siteId;
+    if (this.tenant.blockScope) {
+      if (input.type !== 'EXPENSE' || input.employeeId) {
+        throw new ForbiddenException('Blok yöneticisi yalnızca blok gideri girebilir');
+      }
+      this.tenant.assertBlockInScope(input.blockId ?? null);
+    }
     await assertDateOpen(this.prisma, siteId, input.date);
     await this.assertAccount(input.accountId);
     if (input.type === 'TRANSFER') await this.assertAccount(input.toAccountId!);
@@ -179,6 +189,7 @@ export class TransactionsService {
   async update(id: string, input: TransactionUpdateDto): Promise<TransactionDto> {
     const before = await this.editable(id);
     if (input.blockId !== undefined && input.blockId !== before.blockId) {
+      this.tenant.assertBlockInScope(input.blockId);
       if (before.type !== 'EXPENSE') {
         throw new BadRequestException('Yalnızca gider bir bloğa ait olabilir');
       }
@@ -278,7 +289,9 @@ export class TransactionsService {
 
   async reflect(id: string, input: ExpenseReflectDto): Promise<TransactionDto> {
     const expense = await this.tenant.db.transaction.findUnique({ where: { id } });
-    if (!expense || expense.cancelledAt) throw new NotFoundException('Gider bulunamadı');
+    if (!expense || expense.cancelledAt || !this.inScope(expense)) {
+      throw new NotFoundException('Gider bulunamadı');
+    }
     if (expense.type !== 'EXPENSE') {
       throw new BadRequestException('Yalnızca gider dairelere yansıtılabilir');
     }
@@ -359,7 +372,7 @@ export class TransactionsService {
 
   private async editable(id: string) {
     const row = await this.tenant.db.transaction.findUnique({ where: { id } });
-    if (!row) throw new NotFoundException('Kayıt bulunamadı');
+    if (!row || !this.inScope(row)) throw new NotFoundException('Kayıt bulunamadı');
     if (row.cancelledAt) throw new ConflictException('Bu kayıt iptal edilmiş');
     if (row.paymentId) {
       throw new BadRequestException(
@@ -399,6 +412,11 @@ export class TransactionsService {
     if (!vendor) throw new NotFoundException('Firma bulunamadı');
   }
 
+  private inScope(row: { blockId: string | null }): boolean {
+    const scope = this.tenant.blockScope;
+    return !scope || (row.blockId !== null && scope.includes(row.blockId));
+  }
+
   private async assertBlock(id: string) {
     const block = await this.tenant.db.block.findUnique({ where: { id } });
     if (!block) throw new NotFoundException('Blok bulunamadı');
@@ -412,7 +430,8 @@ export class TransactionsService {
 
 @ApiTags('Gelir-gider')
 @ApiBearerAuth()
-@SiteScoped('SITE_MANAGER')
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER')
+@AuditorReadable()
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactions: TransactionsService) {}

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Body,
   Controller,
   Delete,
@@ -60,6 +61,7 @@ export class AnnouncementsService {
 
   async list(): Promise<AnnouncementDto[]> {
     const rows = await this.tenant.db.announcement.findMany({
+      where: this.ownOnly(),
       include: announcementInclude,
       orderBy: ordering,
     });
@@ -68,7 +70,7 @@ export class AnnouncementsService {
 
   async get(id: string): Promise<AnnouncementDetailDto> {
     const row = await this.tenant.db.announcement.findUnique({
-      where: { id },
+      where: { id, ...this.ownOnly() },
       include: announcementInclude,
     });
     if (!row) throw new NotFoundException('Duyuru bulunamadı');
@@ -121,7 +123,9 @@ export class AnnouncementsService {
   }
 
   async update(id: string, input: AnnouncementUpdateDto): Promise<AnnouncementDto> {
-    const before = await this.tenant.db.announcement.findUnique({ where: { id } });
+    const before = await this.tenant.db.announcement.findUnique({
+      where: { id, ...this.ownOnly() },
+    });
     if (!before) throw new NotFoundException('Duyuru bulunamadı');
     await this.assertTargets(input, before.expiresAt);
     await this.tenant.db.announcement.update({ where: { id }, data: this.data(input) });
@@ -137,7 +141,7 @@ export class AnnouncementsService {
 
   async remove(id: string): Promise<void> {
     const before = await this.tenant.db.announcement.findUnique({
-      where: { id },
+      where: { id, ...this.ownOnly() },
       include: { attachments: { select: { storageKey: true } } },
     });
     if (!before) throw new NotFoundException('Duyuru bulunamadı');
@@ -215,16 +219,28 @@ export class AnnouncementsService {
     if (input.expiresAt && input.expiresAt < todayInIstanbul() && !unchanged) {
       throw new BadRequestException('Bitiş tarihi geçmiş bir gün olamaz');
     }
+    const scope = this.tenant.blockScope;
+    if (scope && input.audience === 'ALL') {
+      throw new ForbiddenException('Blok yöneticisi yalnızca kendi bloğuna duyuru yayınlayabilir');
+    }
     if (input.audience === 'BLOCKS') {
       const ids = [...new Set(input.blockIds)];
-      const count = await this.tenant.db.block.count({ where: { id: { in: ids } } });
+      const count = await this.tenant.db.block.count({
+        where: { AND: [{ id: { in: ids } }, scope ? { id: { in: scope } } : {}] },
+      });
       if (count !== ids.length) throw new BadRequestException('Blok bulunamadı');
     }
     if (input.audience === 'UNITS') {
       const ids = [...new Set(input.unitIds)];
-      const count = await this.tenant.db.unit.count({ where: { id: { in: ids } } });
+      const count = await this.tenant.db.unit.count({
+        where: { id: { in: ids }, ...this.tenant.unitScope() },
+      });
       if (count !== ids.length) throw new BadRequestException('Daire bulunamadı');
     }
+  }
+
+  private ownOnly() {
+    return this.tenant.blockScope ? { createdById: this.tenant.userId } : {};
   }
 
   private async one(id: string): Promise<AnnouncementDto> {
@@ -287,7 +303,7 @@ export class AnnouncementsService {
 
 @ApiTags('İletişim')
 @ApiBearerAuth()
-@SiteScoped('SITE_MANAGER')
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER')
 @Controller('announcements')
 export class AnnouncementsController {
   constructor(private readonly announcements: AnnouncementsService) {}

@@ -19,7 +19,7 @@ import {
   FinanceCategoryUpdateDto,
 } from '../../common/finance.dto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { accountBalances, ensureFinanceDefaults, lockedThrough } from './finance.ledger';
 
@@ -167,6 +167,7 @@ function toCategoryDto(c: {
 @ApiTags('Gelir-gider')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller()
 export class AccountsController {
   constructor(
@@ -174,6 +175,7 @@ export class AccountsController {
     private readonly categories: CategoriesService,
   ) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get('cash-accounts')
   listAccounts(): Promise<CashAccountDto[]> {
     return this.accounts.list();
@@ -192,6 +194,7 @@ export class AccountsController {
     return this.accounts.update(id, body);
   }
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get('finance-categories')
   listCategories(): Promise<FinanceCategoryDto[]> {
     return this.categories.list();

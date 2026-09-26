@@ -45,6 +45,7 @@ import {
   useVendors,
   useWorks,
 } from '@/lib/queries';
+import { useRole } from '@/lib/session';
 import { blockScopeLabel } from '@/lib/unit-label';
 import { FilePicker } from './attachments';
 import { uploadAll } from './files';
@@ -173,7 +174,8 @@ export function TransactionDialog({
   const categories = useFinanceCategories();
   const vendors = useVendors();
   const works = useWorks();
-  const employees = useEmployees();
+  const blockOnly = useRole() === 'BLOCK_MANAGER';
+  const employees = useEmployees(!blockOnly);
   const scopeBlocks = useScopeBlocks();
   const scopeLabel = useScopeLabel();
   const reflectDefaults = useReflectDefaults();
@@ -196,7 +198,7 @@ export function TransactionDialog({
     vendorId: '',
     workId: workId ?? '',
     employeeId: employeeId ?? '',
-    blockId: workId ? blockOfWork(workId) : '',
+    blockId: workId ? blockOfWork(workId) : blockOnly ? (scopeBlocks[0]?.id ?? '') : '',
     amount: '',
     date: todayIso(),
     description: '',
@@ -398,7 +400,7 @@ export function TransactionDialog({
               />
             </Field>
           )}
-          {type === 'EXPENSE' && scopeBlocks.length > 1 && (
+          {type === 'EXPENSE' && (scopeBlocks.length > 1 || blockOnly) && (
             <Field
               label="Kapsam"
               htmlFor="tx-block"
@@ -410,7 +412,7 @@ export function TransactionDialog({
                 id="tx-block"
                 options={scopeBlocks.map((b) => ({ value: b.id, label: blockScopeLabel(b.name) }))}
                 placeholder="Kapsam seçin"
-                noneLabel="Site geneli"
+                noneLabel={blockOnly ? undefined : 'Site geneli'}
                 disabled={Boolean(workBlock)}
               />
             </Field>

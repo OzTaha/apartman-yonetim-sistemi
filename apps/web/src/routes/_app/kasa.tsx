@@ -31,6 +31,7 @@ import { TransactionDetailsDialog } from '@/features/finance/transaction-details
 import { formatDate, todayIso } from '@/lib/format';
 import { useCashAccounts, useScopeBlocks, useTransactions } from '@/lib/queries';
 import { useSelection } from '@/lib/selection';
+import { canManage, useRole } from '@/lib/session';
 import { blockScopeLabel } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
@@ -47,7 +48,7 @@ export const Route = createFileRoute('/_app/kasa')({
     bit: typeof s['bit'] === 'string' ? s['bit'] : undefined,
   }),
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER', 'AUDITOR']}>
       <CashPage />
     </ManagerOnly>
   ),
@@ -106,6 +107,8 @@ function Marks({ t }: { t: TransactionDto }) {
 }
 
 function CashPage() {
+  const role = useRole();
+  const full = canManage(role);
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const today = todayIso();
@@ -173,23 +176,29 @@ function CashPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        title="Kasa"
+        title={role === 'BLOCK_MANAGER' ? 'Blok giderleri' : 'Kasa'}
         description={accounts.data ? `Toplam bakiye ${formatKurus(total)}` : undefined}
         actions={
-          <>
-            <Button onClick={() => setCreating('EXPENSE')}>
-              <Minus />
-              Gider ekle
-            </Button>
-            <Button variant="outline" onClick={() => setCreating('INCOME')}>
-              <Plus />
-              Gelir ekle
-            </Button>
-            <Button variant="outline" onClick={() => setCreating('TRANSFER')}>
-              <ArrowLeftRight />
-              Transfer
-            </Button>
-          </>
+          role !== 'AUDITOR' && (
+            <>
+              <Button onClick={() => setCreating('EXPENSE')}>
+                <Minus />
+                Gider ekle
+              </Button>
+              {full && (
+                <>
+                  <Button variant="outline" onClick={() => setCreating('INCOME')}>
+                    <Plus />
+                    Gelir ekle
+                  </Button>
+                  <Button variant="outline" onClick={() => setCreating('TRANSFER')}>
+                    <ArrowLeftRight />
+                    Transfer
+                  </Button>
+                </>
+              )}
+            </>
+          )
         }
       />
 
@@ -342,12 +351,16 @@ function CashPage() {
           data={transactions.data}
           getRowId={(t) => t.id}
           onRowClick={(t) => setSelectedId(t.id)}
-          selection={{
-            selected: selection.selected,
-            onChange: selection.setSelected,
-            canSelect: (t) => !t.cancelledAt && !t.paymentId && !t.locked,
-            label: (t) => transactionTitle(t),
-          }}
+          selection={
+            role !== 'AUDITOR'
+              ? {
+                  selected: selection.selected,
+                  onChange: selection.setSelected,
+                  canSelect: (t) => !t.cancelledAt && !t.paymentId && !t.locked,
+                  label: (t) => transactionTitle(t),
+                }
+              : undefined
+          }
           mobileCard={(t) => (
             <div className="flex items-start justify-between gap-2">
               <div className="grid min-w-0 gap-0.5">

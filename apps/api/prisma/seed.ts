@@ -700,6 +700,28 @@ async function main() {
         await tx.siteMembership.create({
           data: { siteId: apartment.id, userId: resident.id, role: 'RESIDENT' },
         });
+
+        const blockA = await tx.block.findUniqueOrThrow({
+          where: { siteId_name: { siteId: site.id, name: 'A' } },
+        });
+        for (const [firstName, lastName, phone, role] of [
+          ['Mehmet', 'Kaya', '+905321000011', 'BLOCK_MANAGER'],
+          ['Elif', 'Arslan', '+905321000012', 'AUDITOR'],
+        ] as const) {
+          const officer = await tx.user.create({
+            data: { firstName, lastName, phone, passwordHash },
+          });
+          await tx.occupancy.updateMany({
+            where: { siteId: site.id, phone },
+            data: { userId: officer.id },
+          });
+          await tx.siteMembership.create({ data: { siteId: site.id, userId: officer.id, role } });
+          if (role === 'BLOCK_MANAGER') {
+            await tx.blockManager.create({
+              data: { siteId: site.id, blockId: blockA.id, userId: officer.id },
+            });
+          }
+        }
       },
       { timeout: 60_000 },
     );

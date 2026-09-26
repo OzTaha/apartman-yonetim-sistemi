@@ -51,7 +51,10 @@ export class RecipientsService {
           archivedAt: null,
           ...(query.filter === 'BLOCKS' ? { blockId: { in: query.blockIds } } : {}),
           ...(query.filter === 'UNITS' ? { id: { in: query.unitIds } } : {}),
-          ...(query.onlyUnitIds ? { AND: [{ id: { in: query.onlyUnitIds } }] } : {}),
+          AND: [
+            query.onlyUnitIds ? { id: { in: query.onlyUnitIds } } : {},
+            this.tenant.unitScope(),
+          ],
         },
         include: {
           block: { select: { name: true } },
@@ -105,11 +108,16 @@ export class RecipientsService {
 
   private async assertTargets(query: RecipientQuery) {
     if (query.filter === 'BLOCKS') {
-      const count = await this.tenant.db.block.count({ where: { id: { in: query.blockIds } } });
+      const scope = this.tenant.blockScope;
+      const count = await this.tenant.db.block.count({
+        where: { AND: [{ id: { in: query.blockIds } }, scope ? { id: { in: scope } } : {}] },
+      });
       if (count !== new Set(query.blockIds).size) throw new BadRequestException('Blok bulunamadı');
     }
     if (query.filter === 'UNITS') {
-      const count = await this.tenant.db.unit.count({ where: { id: { in: query.unitIds } } });
+      const count = await this.tenant.db.unit.count({
+        where: { id: { in: query.unitIds }, ...this.tenant.unitScope() },
+      });
       if (count !== new Set(query.unitIds).size) throw new BadRequestException('Daire bulunamadı');
     }
   }

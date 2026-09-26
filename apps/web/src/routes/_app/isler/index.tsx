@@ -9,17 +9,19 @@ import { WorkDialog } from '@/features/finance/work-dialogs';
 import { WorkProgress, WorkStatusBadge } from '@/features/finance/work-parts';
 import { formatDate } from '@/lib/format';
 import { useWorks } from '@/lib/queries';
+import { useRole } from '@/lib/session';
 import { blockScopeLabel } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/isler/')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['AUDITOR']}>
       <WorksPage />
     </ManagerOnly>
   ),
 });
 
 function WorksPage() {
+  const auditor = useRole() === 'AUDITOR';
   const works = useWorks();
   const [creating, setCreating] = useState(false);
 
@@ -29,10 +31,12 @@ function WorksPage() {
         title="Yapılan işler"
         description="Boya, onarım, bakım gibi işler; firma, anlaşılan tutar, ödemeler ve faturalar."
         actions={
-          <Button onClick={() => setCreating(true)}>
-            <Plus />
-            İş ekle
-          </Button>
+          !auditor && (
+            <Button onClick={() => setCreating(true)}>
+              <Plus />
+              İş ekle
+            </Button>
+          )
         }
       />
       {works.isPending ? (
@@ -44,10 +48,12 @@ function WorksPage() {
           title="Henüz iş kaydı yok"
           description="Apartman için yaptırılan işleri kaydederek ödemeleri ve faturaları sakinlerle paylaşabilirsiniz."
           action={
-            <Button onClick={() => setCreating(true)}>
-              <Plus />
-              İş ekle
-            </Button>
+            !auditor && (
+              <Button onClick={() => setCreating(true)}>
+                <Plus />
+                İş ekle
+              </Button>
+            )
           }
         />
       ) : (

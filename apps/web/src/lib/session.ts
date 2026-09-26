@@ -101,3 +101,7 @@ export function activeRole(s: SessionState): ActiveRole {
 export function canManage(role: ActiveRole): boolean {
   return role === 'SITE_MANAGER' || role === 'PLATFORM_ADMIN';
 }
+
+export function useRole(): ActiveRole {
+  return activeRole(useSession());
+}

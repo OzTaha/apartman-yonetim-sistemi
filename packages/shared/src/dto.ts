@@ -1,6 +1,13 @@
 import type { OccupancyType } from './schemas';
 
-export type SiteRole = 'SITE_MANAGER' | 'RESIDENT';
+export type SiteRole = 'SITE_MANAGER' | 'BLOCK_MANAGER' | 'AUDITOR' | 'RESIDENT';
+
+export const siteRoleLabels: Record<SiteRole, string> = {
+  SITE_MANAGER: 'Site yöneticisi',
+  BLOCK_MANAGER: 'Blok yöneticisi',
+  AUDITOR: 'Denetçi',
+  RESIDENT: 'Sakin',
+};
 
 export type SiteKind = 'APARTMENT' | 'SITE';
 

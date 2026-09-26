@@ -26,6 +26,7 @@ import { StatusLegend } from '@/features/dues/status';
 import { toneClasses, toneLabels, toneOf } from '@/features/dues/tones';
 import { todayIso } from '@/lib/format';
 import { useBlocks, useMatrix } from '@/lib/queries';
+import { useRole } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import { labelUnit, useIsApartment } from '@/lib/unit-label';
 
@@ -35,7 +36,7 @@ export const Route = createFileRoute('/_app/aidat')({
     blok: typeof search['blok'] === 'string' ? search['blok'] : undefined,
   }),
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER', 'AUDITOR']}>
       <DuesMatrixPage />
     </ManagerOnly>
   ),
@@ -103,6 +104,7 @@ function Summary({ matrix }: { matrix: MatrixDto }) {
 }
 
 function DuesMatrixPage() {
+  const auditor = useRole() === 'AUDITOR';
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const isApartment = useIsApartment();
@@ -119,10 +121,12 @@ function DuesMatrixPage() {
         title="Aidat tablosu"
         description="Her dairenin her ayki durumu. Bir satıra tıklayarak dairenin hesabını açın."
         actions={
-          <Button onClick={() => setPaying(true)}>
-            <HandCoins />
-            Ödeme al
-          </Button>
+          !auditor && (
+            <Button onClick={() => setPaying(true)}>
+              <HandCoins />
+              Ödeme al
+            </Button>
+          )
         }
       />
 

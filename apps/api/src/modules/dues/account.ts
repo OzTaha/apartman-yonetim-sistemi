@@ -29,7 +29,7 @@ import type { Response } from 'express';
 import { activeOn, dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
 import { formatDateTr, PDF, sendFile, XLSX } from '../../common/http';
 import { MatrixQueryDto, PaymentReportQueryDto, StatementQueryDto } from '../../common/dues.dto';
-import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { compareUnits } from '../residents/occupancy.mapper';
 import { UnitAccessGuard } from '../units/units';
 import { DocumentsService } from './documents.service';
@@ -214,11 +214,14 @@ export class AccountService {
     const today = todayInIstanbul();
     const [units, charges] = await Promise.all([
       this.tenant.db.unit.findMany({
-        where: blockId ? { blockId } : {},
+        where: { ...(blockId ? { blockId } : {}), AND: [this.tenant.unitScope()] },
         include: { block: { select: { name: true } } },
       }),
       this.tenant.db.charge.findMany({
-        where: { cancelledAt: null, ...(blockId ? { unit: { blockId } } : {}) },
+        where: {
+          cancelledAt: null,
+          AND: [blockId ? { unit: { blockId } } : {}, { unit: this.tenant.unitScope() }],
+        },
         select: {
           unitId: true,
           period: true,
@@ -283,6 +286,7 @@ export class AccountService {
     const today = todayInIstanbul();
     const [units, charges, lastPayments] = await Promise.all([
       this.tenant.db.unit.findMany({
+        where: this.tenant.unitScope(),
         include: {
           block: { select: { name: true } },
           occupancies: {
@@ -292,7 +296,7 @@ export class AccountService {
         },
       }),
       this.tenant.db.charge.findMany({
-        where: { cancelledAt: null },
+        where: { cancelledAt: null, unit: this.tenant.unitScope() },
         select: {
           unitId: true,
           period: true,
@@ -430,18 +434,19 @@ export class AccountService {
 @ApiTags('Aidat ve borçlar')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller()
 export class AccountController {
   constructor(private readonly account: AccountService) {}
 
-  @SiteRoles('SITE_MANAGER', 'RESIDENT')
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'RESIDENT')
   @UseGuards(UnitAccessGuard)
   @Get('units/:id/account')
   unitAccount(@Param('id', ParseUUIDPipe) id: string): Promise<UnitAccountDto> {
     return this.account.account(id);
   }
 
-  @SiteRoles('SITE_MANAGER', 'RESIDENT')
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'RESIDENT')
   @UseGuards(UnitAccessGuard)
   @Get('units/:id/statement')
   statement(
@@ -451,7 +456,7 @@ export class AccountController {
     return this.account.statement(id, query.from, query.to);
   }
 
-  @SiteRoles('SITE_MANAGER', 'RESIDENT')
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'RESIDENT')
   @UseGuards(UnitAccessGuard)
   @Get('units/:id/statement.pdf')
   async statementPdf(
@@ -463,11 +468,13 @@ export class AccountController {
     return sendFile(res, name, PDF, file);
   }
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get('dues/matrix')
   matrix(@Query() query: MatrixQueryDto): Promise<MatrixDto> {
     return this.account.matrix(query.year, query.blockId);
   }
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get('reports/debts')
   debts(): Promise<DebtReportRowDto[]> {
     return this.account.debtReport();

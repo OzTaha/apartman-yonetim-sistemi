@@ -16,7 +16,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { BlockDto as BlockResponse } from '@apartman/shared';
 import { BlockDto } from '../../common/dto';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 
 function isDeletable(block: {
@@ -38,7 +38,9 @@ export class BlocksService {
   ) {}
 
   async list(): Promise<BlockResponse[]> {
+    const scope = this.tenant.blockScope;
     const blocks = await this.tenant.db.block.findMany({
+      where: scope ? { id: { in: scope } } : {},
       include: {
         units: { select: { _count: { select: { payments: true, occupancies: true } } } },
         _count: { select: { transactions: true, works: true } },
@@ -140,10 +142,12 @@ export class BlocksService {
 @ApiTags('Bloklar')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('blocks')
 export class BlocksController {
   constructor(private readonly blocks: BlocksService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get()
   list(): Promise<BlockResponse[]> {
     return this.blocks.list();

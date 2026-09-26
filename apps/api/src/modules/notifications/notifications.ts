@@ -162,7 +162,7 @@ export class NotificationsService {
       where: { AND: [activeOn(), { OR: contact }], unit: { archivedAt: null } },
       include: {
         site: { select: { name: true, kind: true } },
-        unit: { select: { number: true, block: { select: { name: true } } } },
+        unit: { select: { number: true, blockId: true, block: { select: { name: true } } } },
       },
     });
     const isManager =
@@ -211,6 +211,13 @@ export class NotificationsService {
         },
         select: { siteId: true, userId: true },
       });
+      const blockManagers = await this.prisma.blockManager.findMany({
+        where: {
+          blockId: { in: occupancies.map((o) => o.unit.blockId) },
+          user: { isActive: true, memberships: { some: { role: 'BLOCK_MANAGER' } } },
+        },
+        select: { blockId: true, userId: true },
+      });
       for (const o of occupancies) {
         const name = `${o.firstName} ${o.lastName}`;
         const hasAccount = Boolean(
@@ -236,6 +243,7 @@ export class NotificationsService {
           },
           recipients: others([
             ...managers.filter((m) => m.siteId === o.siteId).map((m) => m.userId),
+            ...blockManagers.filter((m) => m.blockId === o.unit.blockId).map((m) => m.userId),
             ...admins,
           ]),
         });

@@ -131,6 +131,7 @@ export class CampaignsService {
 
   async list(): Promise<CampaignDto[]> {
     const campaigns = await this.tenant.db.messageCampaign.findMany({
+      where: this.ownOnly(),
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
@@ -183,6 +184,10 @@ export class CampaignsService {
     return this.one(id);
   }
 
+  private ownOnly() {
+    return this.tenant.blockScope ? { createdById: this.tenant.userId } : {};
+  }
+
   private query(input: CampaignRequest) {
     return {
       filter: input.filter,
@@ -193,7 +198,9 @@ export class CampaignsService {
   }
 
   private async one(id: string): Promise<CampaignDto> {
-    const campaign = await this.tenant.db.messageCampaign.findUnique({ where: { id } });
+    const campaign = await this.tenant.db.messageCampaign.findUnique({
+      where: { id, ...this.ownOnly() },
+    });
     if (!campaign) throw new NotFoundException('Gönderim bulunamadı');
     const [dto] = await this.toDtos([campaign]);
     return dto!;
@@ -245,7 +252,7 @@ export class CampaignsService {
 
 @ApiTags('İletişim')
 @ApiBearerAuth()
-@SiteScoped('SITE_MANAGER')
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER')
 @Controller('messages')
 export class CampaignsController {
   constructor(private readonly campaigns: CampaignsService) {}

@@ -15,6 +15,8 @@ enum SiteKind {
 
 enum SiteRole {
   SITE_MANAGER
+  BLOCK_MANAGER
+  AUDITOR
   RESIDENT
 }
 
@@ -152,6 +154,7 @@ model User {
   paymentIntents    PaymentIntent[]
   passwordResets    PasswordReset[]
   notifications     Notification[]
+  managedBlocks     BlockManager[]
 
   @@map("users")
 }
@@ -197,6 +200,7 @@ model Site {
   deliveries        MessageDelivery[]
   paymentIntents    PaymentIntent[]
   notifications     Notification[]
+  blockManagers     BlockManager[]
 
   @@map("sites")
 }
@@ -223,14 +227,31 @@ model Block {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site         Site           @relation(fields: [siteId], references: [id], onDelete: Cascade)
   units        Unit[]
   transactions Transaction[]
   works        Work[]
+  managers     BlockManager[]
 
   @@unique([siteId, name])
   @@unique([id, siteId])
   @@map("blocks")
+}
+
+model BlockManager {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  siteId    String   @db.Uuid
+  blockId   String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  site  Site  @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  block Block @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([blockId, userId])
+  @@index([siteId, userId])
+  @@map("block_managers")
 }
 
 model Unit {

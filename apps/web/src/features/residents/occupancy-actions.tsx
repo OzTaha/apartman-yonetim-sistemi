@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { apiFetch } from '@/lib/api';
 import { fullName, isActiveOccupancy } from '@/lib/format';
+import { useRole } from '@/lib/session';
 import { InvitationDialog, MoveOutDialog, OccupancyFormDialog } from './resident-dialogs';
 
 export function OccupancyTypeBadge({ type }: { type: OccupancyDto['type'] }) {
@@ -24,9 +25,11 @@ export function OccupancyTypeBadge({ type }: { type: OccupancyDto['type'] }) {
 
 export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
   const [dialog, setDialog] = useState<'edit' | 'invite' | 'reset' | 'move-out' | null>(null);
+  const auditor = useRole() === 'AUDITOR';
   const active = isActiveOccupancy(occupancy);
   const canInvite = active && !occupancy.hasAccount && Boolean(occupancy.phone || occupancy.email);
 
+  if (auditor) return null;
   return (
     <div className="inline-flex" onClick={(e) => e.stopPropagation()}>
       <DropdownMenu>

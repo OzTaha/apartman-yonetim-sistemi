@@ -30,7 +30,7 @@ export const Route = createFileRoute('/_app/sakinler')({
     blok: typeof search['blok'] === 'string' ? search['blok'] : undefined,
   }),
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER']}>
       <ResidentsPage />
     </ManagerOnly>
   ),

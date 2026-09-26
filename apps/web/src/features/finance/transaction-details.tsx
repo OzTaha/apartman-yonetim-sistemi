@@ -39,6 +39,7 @@ import {
   useVendors,
   useWorks,
 } from '@/lib/queries';
+import { useRole } from '@/lib/session';
 import { blockScopeLabel } from '@/lib/unit-label';
 import { AttachmentList, AttachmentUploadButton } from './attachments';
 import { transactionTitle } from './files';
@@ -252,6 +253,7 @@ export function TransactionDetailsDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const scopeBlocks = useScopeBlocks();
+  const auditor = useRole() === 'AUDITOR';
   const [editing, setEditing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [reflecting, setReflecting] = useState(false);
@@ -265,7 +267,7 @@ export function TransactionDetailsDialog({
   );
   if (!t) return null;
 
-  const readOnly = t.locked || Boolean(t.cancelledAt) || Boolean(t.paymentId);
+  const readOnly = auditor || t.locked || Boolean(t.cancelledAt) || Boolean(t.paymentId);
   const rows: [string, string | null][] = [
     ['Tarih', formatDate(t.date)],
     ['Tutar', formatKurus(t.amountKurus)],
@@ -288,7 +290,8 @@ export function TransactionDetailsDialog({
         : null,
     ],
   ];
-  const canReflect = t.type === 'EXPENSE' && !t.cancelledAt && !t.reflection && !editing;
+  const canReflect =
+    !auditor && t.type === 'EXPENSE' && !t.cancelledAt && !t.reflection && !editing;
 
   return (
     <Dialog
@@ -346,12 +349,12 @@ export function TransactionDetailsDialog({
         <div className="grid min-w-0 grid-cols-1 gap-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium">Belgeler</p>
-            {!t.cancelledAt && t.type !== 'TRANSFER' && (
+            {!auditor && !t.cancelledAt && t.type !== 'TRANSFER' && (
               <AttachmentUploadButton target="transaction" targetId={t.id} />
             )}
           </div>
           {t.attachments.length > 0 ? (
-            <AttachmentList attachments={t.attachments} deletable={!t.locked} />
+            <AttachmentList attachments={t.attachments} deletable={!auditor && !t.locked} />
           ) : (
             <p className="text-sm text-muted-foreground">Belge eklenmemiş.</p>
           )}

@@ -14,17 +14,19 @@ import { WorkProgress, WorkStatusBadge } from '@/features/finance/work-parts';
 import { apiFetch } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { useApiMutation, useWork } from '@/lib/queries';
+import { useRole } from '@/lib/session';
 import { blockScopeLabel } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/isler/$workId')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['AUDITOR']}>
       <WorkDetailPage />
     </ManagerOnly>
   ),
 });
 
 function WorkDetailPage() {
+  const auditor = useRole() === 'AUDITOR';
   const { workId } = Route.useParams();
   const navigate = useNavigate();
   const work = useWork(workId);
@@ -71,30 +73,32 @@ function WorkDetailPage() {
         title={w.title}
         description={<WorkStatusBadge status={w.status} />}
         actions={
-          <>
-            <Button onClick={() => setDialog('pay')}>
-              <Minus />
-              Ödeme ekle
-            </Button>
-            <Button variant="outline" onClick={() => setDialog('edit')}>
-              <Pencil />
-              Düzenle
-            </Button>
-            {w.payments.length === 0 && (
-              <Button
-                variant="outline"
-                className="text-destructive"
-                disabled={remove.isPending}
-                onClick={() => {
-                  if (window.confirm(`"${w.title}" ve belgeleri silinsin mi?`))
-                    remove.mutate(undefined);
-                }}
-              >
-                <Trash2 />
-                Sil
+          !auditor && (
+            <>
+              <Button onClick={() => setDialog('pay')}>
+                <Minus />
+                Ödeme ekle
               </Button>
-            )}
-          </>
+              <Button variant="outline" onClick={() => setDialog('edit')}>
+                <Pencil />
+                Düzenle
+              </Button>
+              {w.payments.length === 0 && (
+                <Button
+                  variant="outline"
+                  className="text-destructive"
+                  disabled={remove.isPending}
+                  onClick={() => {
+                    if (window.confirm(`"${w.title}" ve belgeleri silinsin mi?`))
+                      remove.mutate(undefined);
+                  }}
+                >
+                  <Trash2 />
+                  Sil
+                </Button>
+              )}
+            </>
+          )
         }
       />
 
@@ -163,11 +167,11 @@ function WorkDetailPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle>Sözleşme, fatura ve fotoğraflar</CardTitle>
-          <AttachmentUploadButton target="work" targetId={w.id} />
+          {!auditor && <AttachmentUploadButton target="work" targetId={w.id} />}
         </CardHeader>
         <CardContent>
           {w.attachments.length > 0 ? (
-            <AttachmentList attachments={w.attachments} deletable />
+            <AttachmentList attachments={w.attachments} deletable={!auditor} />
           ) : (
             <p className="text-sm text-muted-foreground">
               İşe ait sözleşme, teklif veya öncesi/sonrası fotoğraflarını ekleyebilirsiniz. Ödeme

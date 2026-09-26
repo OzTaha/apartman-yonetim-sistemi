@@ -14,11 +14,13 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 
 ## Roller
 
-| Rol               | Neler yapabilir                                                                         |
-| ----------------- | --------------------------------------------------------------------------------------- |
-| Sistem yöneticisi | Apartman ve siteleri oluşturur, yöneticileri atar, uygulama adını ve logoyu değiştirir  |
-| Site yöneticisi   | Daireler, sakinler, aidat, tahsilat, kasa, çalışanlar, duyurular ve mesajları yönetir   |
-| Sakin             | Kendi borçlarını, ödemelerini, makbuzlarını, duyuruları ve giderleri görür; online öder |
+| Rol               | Neler yapabilir                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| Sistem yöneticisi | Apartman ve siteleri oluşturur, yöneticileri atar, uygulama adını ve logoyu değiştirir       |
+| Site yöneticisi   | Daireler, sakinler, aidat, tahsilat, kasa, çalışanlar, duyurular ve mesajları yönetir        |
+| Blok yöneticisi   | Kendi bloğunun sakinlerini, borç ve tahsilatlarını, blok giderlerini ve duyurularını yönetir |
+| Denetçi           | Kasa, gelir-gider, borç ve tahsilatları görür; hiçbir kaydı değiştiremez                     |
+| Sakin             | Kendi borçlarını, ödemelerini, makbuzlarını, duyuruları ve giderleri görür; online öder      |
 
 ## İlk adımlar
 
@@ -28,11 +30,15 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
    şifresini belirleyerek portala girer.
 4. **Aidat:** Aidat ayarlarından aylık tutarı ve son ödeme gününü girin. Aidat her ayın 1'inde kendiliğinden yazılır.
 5. **Kasa:** Kasa ayarlarından hesaplarınızın açılış bakiyelerini girin.
+6. **Yetkililer (isteğe bağlı):** "Yetkililer" sayfasından blok yöneticisi ve denetçi atayın. Kişinin önce sakin olarak
+   eklenmiş ve davet bağlantısıyla hesabını açmış olması gerekir.
 
 ## Günlük işler
 
 - **Tahsilat:** Panelde "Ödeme al" ile elden veya havale ödemeleri kaydedilir; makbuz kendiliğinden oluşur.
-- **Gider:** Kasa sayfasında "Gider ekle"; faturayı veya fotoğrafını ekleyebilirsiniz.
+- **Gider:** Kasa sayfasında "Gider ekle"; faturayı veya fotoğrafını ekleyebilirsiniz. Sitelerde giderin "Site geneli"
+  mi yoksa bir bloğa mı ait olduğunu seçin; blok giderini yalnızca o bloğun sakinleri görür. "Dairelere borç olarak
+  yansıt" ile gider ilgili dairelere borç olarak paylaştırılır.
 - **Duyuru:** Duyurular sayfasından tüm sakinlere, bloklara veya seçili dairelere duyuru yayınlanır; kimin okuduğu
   görülür.
 - **Mesaj:** Mesajlar sayfasından borç hatırlatması, acil durum veya genel bilgi SMS/WhatsApp ile gönderilir.
@@ -53,7 +59,7 @@ Uygulama internet bağlantısı olmadan açıldığında bağlantı olmadığın
 
 - **Sakin:** Sakin giriş ekranında "Şifremi unuttum"a basıp telefonunu veya e-postasını yazar; talep yöneticilerin
   bildirimlerine anında düşer (üst çubuktaki zil). Bildirimden ya da Sakinler sayfasındaki menüden "Şifre yenileme
-  bağlantısı" oluşturup kopyalayabilir veya SMS/WhatsApp ile gönderebilirsiniz. Bir yönetici gönderdiğinde talep
+  bağlantısı" oluşturup kopyalayabilir veya SMS/WhatsApp ile gönderebilirsiniz. Talep sakinin blok yöneticisine de düşer. Bir yönetici gönderdiğinde talep
   herkeste "Tamamlandı" olur. Hesabı henüz olmayan sakinin talebi "Hesap açma talebi" olarak gelir; davet bağlantısı
   gönderilir.
 - **Site yöneticisi:** Sistem yöneticisi "Apartman ve siteler" sayfasından bağlantı oluşturur.

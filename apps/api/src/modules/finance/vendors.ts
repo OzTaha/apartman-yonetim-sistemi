@@ -12,7 +12,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { VendorDto } from '@apartman/shared';
 import { VendorCreateDto, VendorUpdateDto } from '../../common/finance.dto';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -101,10 +101,12 @@ export class VendorsService {
 @ApiTags('Gelir-gider')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('vendors')
 export class VendorsController {
   constructor(private readonly vendors: VendorsService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get()
   list(): Promise<VendorDto[]> {
     return this.vendors.list();

@@ -44,7 +44,7 @@ import {
 import { formatDateTr, PDF, sendFile } from '../../common/http';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import {
   assertDateOpen,
@@ -70,6 +70,7 @@ export class PaymentsService {
 
   async list(query: PaymentListQueryDto): Promise<PaymentDto[]> {
     const where: Prisma.PaymentWhereInput = {
+      unit: this.tenant.unitScope(),
       ...(query.unitId ? { unitId: query.unitId } : {}),
       ...(query.method ? { method: query.method } : {}),
       ...(query.from || query.to
@@ -94,6 +95,7 @@ export class PaymentsService {
       throw new BadRequestException('Ödeme tarihi ileri bir tarih olamaz');
     }
     const siteId = this.tenant.siteId;
+    await this.tenant.assertUnitInScope(input.unitId);
     await assertDateOpen(this.prisma, siteId, input.paidAt);
     const accountId = await this.accountFor(input.accountId, input.method);
     const categoryId = await duesIncomeCategoryId(this.prisma, siteId);
@@ -270,6 +272,7 @@ export class PaymentsService {
       },
     });
     if (!payment) throw new NotFoundException('Ödeme bulunamadı');
+    await this.tenant.assertUnitInScope(payment.unitId);
     if (this.tenant.isResident) {
       const count = await this.tenant.db.occupancy.count({
         where: { unitId: payment.unitId, userId: this.tenant.userId, ...activeOn() },
@@ -463,21 +466,24 @@ export class PaymentsService {
 @ApiTags('Aidat ve borçlar')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get()
   list(@Query() query: PaymentListQueryDto): Promise<PaymentDto[]> {
     return this.payments.list(query);
   }
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Post()
   create(@Body() body: PaymentCreateDto): Promise<PaymentDto> {
     return this.payments.create(body);
   }
 
-  @SiteRoles('SITE_MANAGER', 'RESIDENT')
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'RESIDENT')
   @Get(':id/receipt.pdf')
   async receipt(
     @Param('id', ParseUUIDPipe) id: string,

@@ -24,7 +24,7 @@ import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/raporlar')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['AUDITOR']}>
       <ReportsPage />
     </ManagerOnly>
   ),

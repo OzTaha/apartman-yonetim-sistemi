@@ -25,7 +25,7 @@ import {
 } from '../../common/communication.dto';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { readSiteSettings } from '../dues/site-settings';
 
@@ -153,6 +153,7 @@ export class TemplatesService {
 export class TemplatesController {
   constructor(private readonly templates: TemplatesService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get()
   list(): Promise<MessageTemplateDto[]> {
     return this.templates.list();

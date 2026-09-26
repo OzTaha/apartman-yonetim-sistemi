@@ -16,7 +16,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { WorkDetailDto, WorkDto } from '@apartman/shared';
 import { WorkCreateDto, WorkUpdateDto } from '../../common/finance.dto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { lockedThrough } from './finance.ledger';
 import {
@@ -42,14 +42,16 @@ export class WorksService {
   async list(residentView?: { blockIds: string[] | null }): Promise<WorkDto[]> {
     const [works, paid] = await Promise.all([
       this.tenant.db.work.findMany({
-        where: residentView
-          ? {
-              visibleToResidents: true,
-              ...(residentView.blockIds
-                ? { OR: [{ blockId: null }, { blockId: { in: residentView.blockIds } }] }
-                : {}),
-            }
-          : {},
+        where: this.tenant.blockScope
+          ? { blockId: { in: this.tenant.blockScope } }
+          : residentView
+            ? {
+                visibleToResidents: true,
+                ...(residentView.blockIds
+                  ? { OR: [{ blockId: null }, { blockId: { in: residentView.blockIds } }] }
+                  : {}),
+              }
+            : {},
         include: workInclude,
         orderBy: [{ createdAt: 'desc' }],
       }),
@@ -74,6 +76,10 @@ export class WorksService {
       lockedThrough(this.prisma, this.tenant.siteId),
     ]);
     if (!work) throw new NotFoundException('İş bulunamadı');
+    const scope = this.tenant.blockScope;
+    if (scope && (!work.blockId || !scope.includes(work.blockId))) {
+      throw new NotFoundException('İş bulunamadı');
+    }
     const paid = payments
       .filter((p) => p.type === 'EXPENSE')
       .reduce((sum, p) => sum + p.amountKurus, 0);
@@ -190,15 +196,18 @@ export class WorksService {
 @ApiTags('Gelir-gider')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('works')
 export class WorksController {
   constructor(private readonly works: WorksService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get()
   list(): Promise<WorkDto[]> {
     return this.works.list();
   }
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get(':id')
   get(@Param('id', ParseUUIDPipe) id: string): Promise<WorkDetailDto> {
     return this.works.get(id);

@@ -35,6 +35,7 @@ import { uploadAll } from '@/features/finance/files';
 import { apiFetch, errorMessage } from '@/lib/api';
 import { todayIso } from '@/lib/format';
 import { useMessageTemplates, useRefreshSiteData } from '@/lib/queries';
+import { useRole } from '@/lib/session';
 import { SmsCounter } from './parts';
 import { TargetPicker, type TargetValue } from './target-picker';
 
@@ -60,10 +61,13 @@ export function AnnouncementDialog({
 }) {
   const templates = useMessageTemplates();
   const refresh = useRefreshSiteData();
+  const blockManager = useRole() === 'BLOCK_MANAGER';
+  const initialTarget = blockManager ? 'BLOCKS' : 'ALL';
+  const options = blockManager ? audienceOptions.filter((o) => o.value !== 'ALL') : audienceOptions;
   const [title, setTitle] = useState(announcement?.title ?? '');
   const [body, setBody] = useState(announcement?.body ?? '');
   const [target, setTarget] = useState<TargetValue>({
-    target: announcement?.audience ?? 'ALL',
+    target: announcement?.audience ?? initialTarget,
     blockIds: announcement?.blockIds ?? [],
     unitIds: announcement?.unitIds ?? [],
   });
@@ -87,7 +91,7 @@ export function AnnouncementDialog({
     if (!announcement) {
       setTitle('');
       setBody('');
-      setTarget({ target: 'ALL', blockIds: [], unitIds: [] });
+      setTarget({ target: initialTarget, blockIds: [], unitIds: [] });
       setPinned(false);
       setExpiresAt('');
     }
@@ -188,7 +192,7 @@ export function AnnouncementDialog({
           <TargetPicker
             idPrefix="ann"
             label="Kimler görsün"
-            options={audienceOptions}
+            options={options}
             value={target}
             onChange={setTarget}
             error={errors['blockIds'] ?? errors['unitIds']}

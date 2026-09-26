@@ -30,7 +30,7 @@ import type { Request } from 'express';
 import { activeOn } from '../../common/dates';
 import { BulkUnitsDto, UnitCreateDto, UnitListQueryDto, UnitUpdateDto } from '../../common/dto';
 import type { Prisma } from '../../generated/prisma/client';
-import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { activeDuesMethods, assertUnitData, requiredUnitFields } from '../dues/site-settings';
@@ -41,8 +41,12 @@ export class UnitAccessGuard implements CanActivate {
   constructor(private readonly tenant: TenantContext) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (!this.tenant.isResident) return true;
     const unitId = String(context.switchToHttp().getRequest<Request>().params['id']);
+    if (this.tenant.blockScope) {
+      await this.tenant.assertUnitInScope(unitId);
+      return true;
+    }
+    if (!this.tenant.isResident) return true;
     const count = await this.tenant.db.occupancy.count({
       where: { unitId, userId: this.tenant.userId, ...activeOn() },
     });
@@ -95,6 +99,7 @@ export class UnitsService {
           ? { archivedAt: { not: null } }
           : { archivedAt: null }),
       ...(query.blockId ? { blockId: query.blockId } : {}),
+      AND: [this.tenant.unitScope()],
       ...(search
         ? {
             OR: [
@@ -342,10 +347,12 @@ export class UnitsService {
 @ApiTags('Daireler')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('units')
 export class UnitsController {
   constructor(private readonly units: UnitsService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get()
   list(@Query() query: UnitListQueryDto): Promise<UnitDto[]> {
     return this.units.list(query);
@@ -361,7 +368,7 @@ export class UnitsController {
     return this.units.bulkCreate(body);
   }
 
-  @SiteRoles('SITE_MANAGER', 'RESIDENT')
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'RESIDENT')
   @UseGuards(UnitAccessGuard)
   @Get(':id')
   get(@Param('id', ParseUUIDPipe) id: string): Promise<UnitDetailDto> {

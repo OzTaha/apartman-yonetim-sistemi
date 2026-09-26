@@ -28,6 +28,7 @@ import { MonthChart } from '@/features/finance/month-chart';
 import { apiFetch, downloadFile, errorMessage } from '@/lib/api';
 import { formatDate, todayIso } from '@/lib/format';
 import { useApiMutation, useClosings, useFinanceSummary } from '@/lib/queries';
+import { useRole } from '@/lib/session';
 import { blockScopeLabel } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +38,7 @@ export const Route = createFileRoute('/_app/gelir-gider')({
     bit: typeof s['bit'] === 'string' ? s['bit'] : undefined,
   }),
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['AUDITOR']}>
       <FinanceReportPage />
     </ManagerOnly>
   ),
@@ -111,6 +112,7 @@ function ClosingRow({ closing }: { closing: MonthClosingDto }) {
 }
 
 function ClosingsCard() {
+  const auditor = useRole() === 'AUDITOR';
   const closings = useClosings();
   const current = periodOfDate(todayIso());
   const locked = closings.data?.lockedThrough ?? null;
@@ -152,7 +154,7 @@ function ClosingsCard() {
                 {locked ? `${periodLabel(locked)} ve öncesi kapalı.` : 'Henüz kapatılmış ay yok.'}
               </AlertDescription>
             </Alert>
-            {candidates.length > 0 && (
+            {!auditor && candidates.length > 0 && (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                 <div className="grid gap-1">
                   <Label htmlFor="close-period" className="text-xs text-muted-foreground">
@@ -191,22 +193,24 @@ function ClosingsCard() {
               <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium">Kapanışlar</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={reopen.isPending}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          `${periodLabel(closings.data.lockedThrough!)} kapanışı geri alınsın mı? Bu ayın kayıtları yeniden değiştirilebilir olur.`,
+                  {!auditor && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={reopen.isPending}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `${periodLabel(closings.data.lockedThrough!)} kapanışı geri alınsın mı? Bu ayın kayıtları yeniden değiştirilebilir olur.`,
+                          )
                         )
-                      )
-                        reopen.mutate(undefined);
-                    }}
-                  >
-                    <LockOpen />
-                    Son kapanışı geri al
-                  </Button>
+                          reopen.mutate(undefined);
+                      }}
+                    >
+                      <LockOpen />
+                      Son kapanışı geri al
+                    </Button>
+                  )}
                 </div>
                 <ul className="divide-y rounded-md border">
                   {closings.data.closings.map((c) => (

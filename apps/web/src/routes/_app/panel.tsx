@@ -12,12 +12,13 @@ import { MonthChart } from '@/features/finance/month-chart';
 import { TransactionDialog } from '@/features/finance/transaction-dialog';
 import { formatDate } from '@/lib/format';
 import { useDashboard } from '@/lib/queries';
+import { canManage, useRole } from '@/lib/session';
 import { labelUnit } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/panel')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['AUDITOR']}>
       <DashboardPage />
     </ManagerOnly>
   ),
@@ -116,6 +117,7 @@ function TransactionLine({ t }: { t: TransactionDto }) {
 }
 
 function DashboardPage() {
+  const full = canManage(useRole());
   const dashboard = useDashboard();
   const [dialog, setDialog] = useState<'pay' | 'expense' | null>(null);
   const d = dashboard.data;
@@ -126,16 +128,18 @@ function DashboardPage() {
         title="Panel"
         description={d ? `${periodLabel(d.period)} özeti` : undefined}
         actions={
-          <>
-            <Button onClick={() => setDialog('pay')}>
-              <HandCoins />
-              Ödeme al
-            </Button>
-            <Button variant="outline" onClick={() => setDialog('expense')}>
-              <Minus />
-              Gider ekle
-            </Button>
-          </>
+          full && (
+            <>
+              <Button onClick={() => setDialog('pay')}>
+                <HandCoins />
+                Ödeme al
+              </Button>
+              <Button variant="outline" onClick={() => setDialog('expense')}>
+                <Minus />
+                Gider ekle
+              </Button>
+            </>
+          )
         }
       />
 

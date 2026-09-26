@@ -58,9 +58,11 @@ Tüm hesapların şifresi `Deneme123!`.
 | Sistem yöneticisi | `admin@ornek.com`    |
 | Site yöneticisi   | `yonetici@ornek.com` |
 | Sakin (Daire 1)   | `05321000000`        |
+| Blok yöneticisi   | `05321000011`        |
+| Denetçi           | `05321000012`        |
 
 Seed iki örnek yer oluşturur: 5 daireli "Örnek Apartmanı" ve 2 bloklu, 4 daireli "Örnek Sitesi".
-Yönetici hesabı ikisini de yönetir. Son 3 ayın aidatı ve ödemeleri yüklenir. Apartmanın 3 numaralı
+Yönetici hesabı ikisini de yönetir. Sitede A Blok'un yöneticisi (A-1 sakini) ve bir denetçi (A-2 sakini) tanımlıdır. Son 3 ayın aidatı ve ödemeleri yüklenir. Apartmanın 3 numaralı
 dairesi iki ay borçlu, arada bir ay ödenmiş örneğini gösterir. Her yerde iki örnek çalışan, geçen ve bu haftanın vardiyaları,
 açık, gecikmiş ve tamamlanmış görevler ile bir tekrarlayan görev, iki duyuru ve varsayılan mesaj şablonları bulunur. Seed yalnızca boş veritabanında çalışır.
 
@@ -88,7 +90,14 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 
 ## Yetki ve site izolasyonu
 
-- **Roller:** sistem yöneticisi (tüm siteler), site yöneticisi, sakin.
+- **Roller:** sistem yöneticisi (tüm siteler), site yöneticisi, blok yöneticisi, denetçi, sakin.
+- Blok yöneticisi ve denetçiyi site yöneticisi veya sistem yöneticisi "Yetkililer" sayfasından, sitede oturan ve hesabı
+  olan sakinler arasından atar. Kişi kendi dairesini görmeye devam eder; yetki kaldırılınca yeniden sakin olur.
+- Blok yöneticisi yalnızca kendi bloklarının dairelerini, sakinlerini, borç ve tahsilatlarını görür; sakin ekler ve
+  düzenler, davet ve şifre bağlantısı gönderir, tahsilat alır, blok gideri girip dairelere yansıtır, bloğuna duyuru ve
+  mesaj gönderir. Kısıt API'de uygulanır (`TenantContext.blockScope`).
+- Denetçi panel, aidat tablosu, borç, tahsilat, kasa, yapılan işler, firmalar ve raporları görür; hiçbir kaydı
+  değiştiremez. Sakin listesi, çalışanlar ve iletişim ekranları denetçiye kapalıdır.
 - Siteye bağlı her istek `X-Site-Id` başlığı taşır. API kullanıcının o sitedeki üyeliğini doğrular.
 - Siteye bağlı tablolara yapılan her sorguya aktif site filtresi otomatik eklenir (`apps/api/src/tenancy`).
   Ayrıca blok, daire ve sakin kayıtları veritabanında birleşik yabancı anahtarla aynı siteye bağlanır.
@@ -98,9 +107,9 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   yöneticinin şifresini yenileyemez. Sistem yöneticisi için bağlantı sunucuda `node dist/cli/reset-password.js` ile
   üretilir. Yeni şifre belirlenince kullanıcının tüm oturumları kapatılır.
 - Şifremi unuttum: giriş ekranında telefon veya e-posta yazılır. Kayıtlı değilse bu söylenir; kayıtlıysa talep sakinin
-  sitesinin yöneticilerine ve sistem yöneticisine (site yöneticisinin talebi yalnızca sistem yöneticisine) bildirim olarak
+  sitesinin yöneticilerine, bloğunun yöneticisine ve sistem yöneticisine (site yöneticisinin talebi yalnızca sistem yöneticisine) bildirim olarak
   düşer. Aynı kişi için bir saat içinde tek talep oluşur; form IP başına dakikada 5 istekle sınırlıdır.
-- Bildirimler: yöneticilerde üst çubukta zil ve "Bildirimler" sayfası. Yeni bildirimler açık sekmeye anında gelir
+- Bildirimler: yöneticilerde üst çubukta zil ve sol menüde okunmamış sayısıyla "Bildirimler" sayfası. Yeni bildirimler açık sekmeye anında gelir
   (Server-Sent Events, `/api/notifications/stream`).
 - Oturum: 15 dakikalık erişim token'ı (yalnızca bellekte) ve 30 günlük refresh token (httpOnly cookie).
   Refresh token her kullanımda yenilenir. Eski bir token tekrar kullanılırsa kullanıcının tüm oturumları kapatılır.
@@ -113,7 +122,14 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Apartman siteye çevrilebilir. Site, en fazla bir bloğu varsa apartmana çevrilebilir.
 - Ödeme ve sakin geçmişi olmayan daire, ödenmemiş aidatlarıyla birlikte silinir. Geçmişi olan daire silinmez, arşivlenir:
   listelerden, aylık aidattan ve toplu borçtan çıkar, geçmişi raporlarda kalır.
-- Blok, içindeki tüm daireler silinebiliyorsa daireleriyle birlikte silinir.
+- Blok, içindeki tüm daireler silinebiliyorsa ve bloğa kayıtlı gider veya iş yoksa daireleriyle birlikte silinir.
+- Sitede gider ve yapılan iş "Site geneli" veya bir bloğa ait girilir. Kanundaki kurala uygun olarak blok giderini o
+  bloğun daireleri öder; sakinler ortak giderleri ve yalnızca kendi bloklarının giderlerini görür.
+- Gider girilirken veya sonradan "Dairelere yansıt" ile blok gideri o bloğun, site geneli gider tüm dairelerin
+  arasında (eşit, m² veya arsa payı) borç olarak paylaştırılır. Yansıtılan borçlara ödeme yapılmamışsa gider iptal
+  edildiğinde borçlar da iptal olur; ödeme yapılmışsa gider iptal edilemez.
+- Toplu borç yazarken "Seçili bloklar" seçilebilir. Gelir-gider raporu bloklara göre gideri ve dairelere yansıtılan
+  tutarı gösterir.
 
 ## Aidat ve borç kuralları
 

@@ -15,15 +15,17 @@ import { useApiMutation } from '@/lib/queries';
 import { ChargeEditDialog } from './charge-dialogs';
 import { CancelDialog } from './small-dialogs';
 import { labelUnit } from '@/lib/unit-label';
+import { canManage, useRole } from '@/lib/session';
 
 export function ChargeActions({ charge }: { charge: ChargeDto }) {
+  const full = canManage(useRole());
   const [dialog, setDialog] = useState<'edit' | 'cancel' | null>(null);
   const cancel = useApiMutation(
     (reason: string) =>
       apiFetch<ChargeDto>(`/charges/${charge.id}/cancel`, { method: 'POST', body: { reason } }),
     { success: 'Borç iptal edildi', onSuccess: () => setDialog(null) },
   );
-  if (charge.cancelledAt) return null;
+  if (charge.cancelledAt || !full) return null;
   return (
     <div className="inline-flex" onClick={(e) => e.stopPropagation()}>
       <DropdownMenu>
@@ -67,6 +69,7 @@ export function ChargeActions({ charge }: { charge: ChargeDto }) {
 }
 
 export function PaymentActions({ payment }: { payment: PaymentDto }) {
+  const full = canManage(useRole());
   const [open, setOpen] = useState(false);
   const cancel = useApiMutation(
     (reason: string) =>
@@ -101,7 +104,7 @@ export function PaymentActions({ payment }: { payment: PaymentDto }) {
             <FileDown />
             Makbuz indir
           </DropdownMenuItem>
-          {!payment.cancelledAt && (
+          {full && !payment.cancelledAt && (
             <DropdownMenuItem variant="destructive" onSelect={() => setOpen(true)}>
               <Ban />
               {payment.online ? 'İade et' : 'Ödemeyi iptal et'}

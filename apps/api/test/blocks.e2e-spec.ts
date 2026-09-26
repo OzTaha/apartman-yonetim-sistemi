@@ -339,3 +339,256 @@ describe('Blok bazında borç ve rapor', () => {
     await http().delete(`/api/blocks/${block.body.id}`).set(M()).expect(409);
   });
 });
+
+describe('Blok yöneticisi ve denetçi', () => {
+  const BM = () => as(tokens.residentA);
+  const AU = () => as(tokens.residentB);
+  const userIds = {} as Record<'residentA' | 'residentB' | 'manager', string>;
+
+  it('site yöneticisi sakinlerden blok yöneticisi ve denetçi atar', async () => {
+    for (const [key, email] of [
+      ['residentA', 'a@blok.test'],
+      ['residentB', 'b@blok.test'],
+      ['manager', 'yonetici@blok.test'],
+    ] as const) {
+      userIds[key] = (await prisma.user.findUniqueOrThrow({ where: { email } })).id;
+    }
+    const candidates = await http().get('/api/officers/candidates').set(M()).expect(200);
+    expect(candidates.body.map((c: { userId: string }) => c.userId).sort()).toEqual(
+      [userIds.residentA, userIds.residentB].sort(),
+    );
+
+    const bm = await http()
+      .put('/api/officers')
+      .set(M())
+      .send({ userId: userIds.residentA, role: 'BLOCK_MANAGER', blockIds: [blocks.A] })
+      .expect(200);
+    expect(bm.body).toMatchObject({ role: 'BLOCK_MANAGER', blocks: [{ name: 'A' }] });
+    await http()
+      .put('/api/officers')
+      .set(M())
+      .send({ userId: userIds.residentB, role: 'AUDITOR' })
+      .expect(200);
+    await http()
+      .put('/api/officers')
+      .set(M())
+      .send({ userId: userIds.manager, role: 'AUDITOR' })
+      .expect(400);
+    await http()
+      .put('/api/officers')
+      .set(M())
+      .send({ userId: userIds.residentB, role: 'BLOCK_MANAGER', blockIds: [] })
+      .expect(400);
+    await http().get('/api/officers').set(BM()).expect(403);
+
+    const list = await http().get('/api/officers').set(M()).expect(200);
+    expect(list.body).toHaveLength(2);
+  });
+
+  it('blok yöneticisi yalnızca kendi bloğunun daire, sakin, borç ve tahsilatlarını görür', async () => {
+    const unitsRes = await http().get('/api/units').set(BM()).expect(200);
+    expect(unitsRes.body.map((u: { id: string }) => u.id).sort()).toEqual(
+      [units.A1, units.A2].sort(),
+    );
+    await http().get(`/api/units/${units.B1}`).set(BM()).expect(404);
+    await http().get(`/api/units/${units.A2}/account`).set(BM()).expect(200);
+    await http().get(`/api/units/${units.B1}/account`).set(BM()).expect(404);
+
+    const blocksRes = await http().get('/api/blocks').set(BM()).expect(200);
+    expect(blocksRes.body.map((b: { name: string }) => b.name)).toEqual(['A']);
+
+    const residents = await http().get('/api/residents').set(BM()).expect(200);
+    expect(residents.body.every((r: { blockName: string }) => r.blockName === 'A')).toBe(true);
+
+    const charges = await http().get('/api/charges').set(BM()).expect(200);
+    expect(charges.body.length).toBeGreaterThan(0);
+    expect(charges.body.every((c: { blockName: string }) => c.blockName === 'A')).toBe(true);
+
+    const matrix = await http()
+      .get('/api/dues/matrix')
+      .query({ year: Number(today.slice(0, 4)) })
+      .set(BM())
+      .expect(200);
+    expect(matrix.body.rows.every((r: { blockName: string }) => r.blockName === 'A')).toBe(true);
+  });
+
+  it('blok yöneticisi kendi bloğunda sakin ekler ve tahsilat alır, başka blokta alamaz', async () => {
+    const person = { firstName: 'Yeni', lastName: 'Kiracı', type: 'TENANT', startDate: today };
+    await http()
+      .post('/api/residents')
+      .set(BM())
+      .send({ ...person, unitId: units.A2, phone: '0555 999 00 01' })
+      .expect(201);
+    await http()
+      .post('/api/residents')
+      .set(BM())
+      .send({ ...person, unitId: units.B2 })
+      .expect(404);
+
+    await http()
+      .post('/api/payments')
+      .set(BM())
+      .send({ unitId: units.A2, amountKurus: 1_000, method: 'CASH', paidAt: today })
+      .expect(201);
+    await http()
+      .post('/api/payments')
+      .set(BM())
+      .send({ unitId: units.B2, amountKurus: 1_000, method: 'CASH', paidAt: today })
+      .expect(404);
+    const payments = await http().get('/api/payments').set(BM()).expect(200);
+    expect(payments.body.every((p: { blockName: string }) => p.blockName === 'A')).toBe(true);
+
+    await http()
+      .post('/api/charges')
+      .set(BM())
+      .send({
+        chargeTypeId,
+        scope: 'ALL',
+        amountMode: 'PER_UNIT',
+        amountKurus: 100,
+        issueDate: today,
+        dueDate: today,
+      })
+      .expect(403);
+    await http()
+      .get('/api/finance/summary')
+      .query({ from: today, to: today })
+      .set(BM())
+      .expect(403);
+  });
+
+  it('blok yöneticisi yalnızca kendi bloğuna gider girer ve yansıtır', async () => {
+    const asBm = (body: Record<string, unknown>) =>
+      http()
+        .post('/api/transactions')
+        .set(BM())
+        .send({
+          type: 'EXPENSE',
+          accountId: cashId,
+          categoryId,
+          amountKurus: 2_000,
+          date: today,
+          ...body,
+        });
+    await asBm({}).expect(403);
+    await asBm({ blockId: blocks.B }).expect(403);
+    const created = await asBm({
+      blockId: blocks.A,
+      description: 'Kapı otomatiği',
+      reflect,
+    }).expect(201);
+    expect(created.body.reflection.chargeCount).toBe(2);
+
+    const list = await http().get('/api/transactions').set(BM()).expect(200);
+    expect(list.body.every((t: { blockId: string }) => t.blockId === blocks.A)).toBe(true);
+    await http().get(`/api/transactions/${ids.site}`).set(BM()).expect(404);
+    await http()
+      .post(`/api/transactions/${ids.site}/cancel`)
+      .set(BM())
+      .send({ reason: 'Deneme' })
+      .expect(404);
+    await http()
+      .patch(`/api/transactions/${created.body.id}`)
+      .set(BM())
+      .send({ description: 'Kapı otomatiği bakımı' })
+      .expect(200);
+  });
+
+  it('blok yöneticisi yalnızca kendi bloğuna duyuru ve mesaj gönderir', async () => {
+    const announcement = { title: 'Su kesintisi', body: 'Yarın 10:00-12:00 arası su yok.' };
+    await http()
+      .post('/api/announcements')
+      .set(BM())
+      .send({ ...announcement, audience: 'ALL' })
+      .expect(403);
+    await http()
+      .post('/api/announcements')
+      .set(BM())
+      .send({ ...announcement, audience: 'BLOCKS', blockIds: [blocks.B] })
+      .expect(400);
+    await http()
+      .post('/api/announcements')
+      .set(BM())
+      .send({ ...announcement, audience: 'BLOCKS', blockIds: [blocks.A] })
+      .expect(201);
+    await http()
+      .post('/api/announcements')
+      .set(M())
+      .send({ ...announcement, title: 'Genel duyuru', audience: 'ALL' })
+      .expect(201);
+    const own = await http().get('/api/announcements').set(BM()).expect(200);
+    expect(own.body.map((a: { title: string }) => a.title)).toEqual(['Su kesintisi']);
+
+    const message = { kind: 'INFO', channel: 'SMS', filter: 'ALL', body: 'Merhaba {ad}' };
+    const scoped = await http().post('/api/messages/preview').set(BM()).send(message).expect(200);
+    const all = await http().post('/api/messages/preview').set(M()).send(message).expect(200);
+    const size = (p: { recipients: number; skippedNoConsent: number; skippedNoPhone: number }) =>
+      p.recipients + p.skippedNoConsent + p.skippedNoPhone;
+    expect(size(scoped.body)).toBeLessThan(size(all.body));
+
+    const mine = await http().get('/api/announcements/mine').set(BM()).expect(200);
+    expect(mine.body.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('sakinin şifre talebi kendi bloğunun yöneticisine de düşer', async () => {
+    const before = await http().get('/api/notifications/count').set(BM()).expect(200);
+    await http()
+      .post('/api/auth/password-reset-requests')
+      .set('X-Forwarded-For', '10.9.9.1')
+      .send({ identifier: '05559990001' })
+      .expect(200);
+    const after = await http().get('/api/notifications/count').set(BM()).expect(200);
+    expect(after.body.unread).toBe(before.body.unread + 1);
+    const auditor = await http().get('/api/notifications/count').set(AU()).expect(200);
+    expect(auditor.body.unread).toBe(0);
+  });
+
+  it('denetçi finansı görür ama hiçbir şeyi değiştiremez', async () => {
+    for (const path of [
+      '/api/transactions',
+      '/api/charges',
+      '/api/payments',
+      '/api/cash-accounts',
+    ]) {
+      await http().get(path).set(AU()).expect(200);
+    }
+    await http()
+      .get('/api/finance/summary')
+      .query({ from: today, to: today })
+      .set(AU())
+      .expect(200);
+    await http().get('/api/dashboard').set(AU()).expect(200);
+    await http().get(`/api/units/${units.A1}/account`).set(AU()).expect(200);
+
+    await http()
+      .post('/api/transactions')
+      .set(AU())
+      .send({ type: 'EXPENSE', accountId: cashId, categoryId, amountKurus: 100, date: today })
+      .expect(403);
+    await http()
+      .post('/api/payments')
+      .set(AU())
+      .send({ unitId: units.A2, amountKurus: 100, method: 'CASH', paidAt: today })
+      .expect(403);
+    await http()
+      .post(`/api/transactions/${ids.blockA}/cancel`)
+      .set(AU())
+      .send({ reason: 'Deneme' })
+      .expect(403);
+    await http().get('/api/residents').set(AU()).expect(403);
+    await http().get('/api/announcements').set(AU()).expect(403);
+
+    await http().get('/api/announcements/mine').set(AU()).expect(200);
+  });
+
+  it('yetki kaldırılınca kişi yeniden sakin olur', async () => {
+    await http().delete(`/api/officers/${userIds.residentA}`).set(M()).expect(204);
+    await http().get('/api/units').set(BM()).expect(403);
+    await http().get(`/api/units/${units.A1}`).set(BM()).expect(200);
+    const membership = await prisma.siteMembership.findFirstOrThrow({
+      where: { userId: userIds.residentA },
+    });
+    expect(membership.role).toBe('RESIDENT');
+    expect(await prisma.blockManager.count({ where: { userId: userIds.residentA } })).toBe(0);
+  });
+});

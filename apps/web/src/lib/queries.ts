@@ -1,4 +1,6 @@
 import type {
+  OfficerCandidateDto,
+  OfficerDto,
   OnlinePaymentSettingsDto,
   OnlinePaymentStatusDto,
   PaymentIntentDto,
@@ -155,6 +157,10 @@ function useSiteQuery<T>(key: string, path: string, extra: unknown = null, enabl
   });
 }
 
+export const useOfficers = () => useSiteQuery<OfficerDto[]>('officers', '/officers');
+export const useOfficerCandidates = (enabled: boolean) =>
+  useSiteQuery<OfficerCandidateDto[]>('officer-candidates', '/officers/candidates', null, enabled);
+
 export const useChargeTypes = () => useSiteQuery<ChargeTypeDto[]>('charge-types', '/charge-types');
 export const useDuesPlans = () => useSiteQuery<DuesPlanDto[]>('dues-plans', '/dues/plans');
 export const useDuesSettings = () =>
@@ -220,7 +226,8 @@ export const useClosings = () => useSiteQuery<ClosingsDto>('closings', '/finance
 export const useTransparency = (year: number) =>
   useSiteQuery<TransparencyDto>('transparency', `/transparency?year=${year}`, year);
 
-export const useEmployees = () => useSiteQuery<EmployeeDto[]>('employees', '/employees');
+export const useEmployees = (enabled = true) =>
+  useSiteQuery<EmployeeDto[]>('employees', '/employees', null, enabled);
 export const useEmployee = (id: string) =>
   useSiteQuery<EmployeeDetailDto>('employee', `/employees/${id}`, id);
 export const useShifts = (from: string, to: string) =>

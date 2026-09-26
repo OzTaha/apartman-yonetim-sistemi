@@ -1,9 +1,16 @@
 import { Navigate } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { activeRole, canManage, useSession } from '@/lib/session';
+import { activeRole, canManage, useSession, type ActiveRole } from '@/lib/session';
 
-export function ManagerOnly({ children }: { children: ReactNode }) {
+export function ManagerOnly({
+  children,
+  allow = [],
+}: {
+  children: ReactNode;
+  allow?: ActiveRole[];
+}) {
   const s = useSession();
-  if (!canManage(activeRole(s)) || !s.siteId) return <Navigate to="/" replace />;
+  const role = activeRole(s);
+  if (!(canManage(role) || allow.includes(role)) || !s.siteId) return <Navigate to="/" replace />;
   return <>{children}</>;
 }

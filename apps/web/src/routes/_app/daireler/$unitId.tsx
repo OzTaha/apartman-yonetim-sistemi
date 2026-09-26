@@ -14,17 +14,21 @@ import { UnitFormDialog } from '@/features/units/unit-dialogs';
 import { apiFetch } from '@/lib/api';
 import { formatDate, fullName, isActiveOccupancy } from '@/lib/format';
 import { useApiMutation, useProportionalDues, useUnit } from '@/lib/queries';
+import { canManage, useRole } from '@/lib/session';
 import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/daireler/$unitId')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER', 'AUDITOR']}>
       <UnitDetailPage />
     </ManagerOnly>
   ),
 });
 
 function UnitDetailPage() {
+  const role = useRole();
+  const full = canManage(role);
+  const auditor = role === 'AUDITOR';
   const { unitId } = Route.useParams();
   const navigate = useNavigate();
   const unit = useUnit(unitId);
@@ -68,27 +72,29 @@ function UnitDetailPage() {
         <PageHeader
           title={title}
           actions={
-            <>
-              <Button variant="outline" onClick={() => setDialog('edit')}>
-                <Pencil />
-                Düzenle
-              </Button>
-              {archived ? (
-                <Button
-                  variant="outline"
-                  onClick={() => unarchive.mutate(undefined)}
-                  disabled={unarchive.isPending}
-                >
-                  <ArchiveRestore />
-                  Arşivden çıkar
+            full && (
+              <>
+                <Button variant="outline" onClick={() => setDialog('edit')}>
+                  <Pencil />
+                  Düzenle
                 </Button>
-              ) : (
-                <Button variant="outline" onClick={() => setDialog('delete')}>
-                  <Trash2 />
-                  Sil
-                </Button>
-              )}
-            </>
+                {archived ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => unarchive.mutate(undefined)}
+                    disabled={unarchive.isPending}
+                  >
+                    <ArchiveRestore />
+                    Arşivden çıkar
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={() => setDialog('delete')}>
+                    <Trash2 />
+                    Sil
+                  </Button>
+                )}
+              </>
+            )
           }
         />
       </div>
@@ -135,10 +141,12 @@ function UnitDetailPage() {
       <section className="grid gap-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">Mevcut sakinler</h2>
-          <Button size="sm" onClick={() => setDialog('add-resident')} disabled={archived}>
-            <UserPlus />
-            Sakin ekle
-          </Button>
+          {!auditor && (
+            <Button size="sm" onClick={() => setDialog('add-resident')} disabled={archived}>
+              <UserPlus />
+              Sakin ekle
+            </Button>
+          )}
         </div>
         {current.length === 0 ? (
           <EmptyState

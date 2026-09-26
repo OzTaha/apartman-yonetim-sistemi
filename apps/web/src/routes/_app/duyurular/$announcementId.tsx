@@ -25,7 +25,7 @@ import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/duyurular/$announcementId')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER']}>
       <AnnouncementDetailPage />
     </ManagerOnly>
   ),

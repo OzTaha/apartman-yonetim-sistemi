@@ -20,7 +20,7 @@ import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/mesajlar/$campaignId')({
   component: () => (
-    <ManagerOnly>
+    <ManagerOnly allow={['BLOCK_MANAGER']}>
       <CampaignDetailPage />
     </ManagerOnly>
   ),

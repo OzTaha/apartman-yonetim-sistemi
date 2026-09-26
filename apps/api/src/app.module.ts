@@ -17,6 +17,7 @@ import { DuesModule } from './modules/dues/dues.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { OnlinePaymentsModule } from './modules/online-payments/online-payments.module';
 import { NotificationsModule } from './modules/notifications/notifications';
+import { OfficersModule } from './modules/officers/officers';
 import { PasswordResetModule } from './modules/password-reset/password-reset';
 import { ResidentsModule } from './modules/residents/residents';
 import { SitesModule } from './modules/sites/sites.module';
@@ -48,6 +49,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     BlocksModule,
     UnitsModule,
     ResidentsModule,
+    OfficersModule,
     DuesModule,
     FinanceModule,
     StaffModule,

@@ -14,7 +14,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { ChargeTypeDto } from '@apartman/shared';
 import { ChargeTypeDto as ChargeTypeBody, ChargeTypeUpdateDto } from '../../common/dues.dto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 import { DEFAULT_CHARGE_TYPES, DUES_CODE } from './ledger.mapper';
 
@@ -85,10 +85,12 @@ export class ChargeTypesService {
 @ApiTags('Aidat ve borçlar')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
+@AuditorReadable()
 @Controller('charge-types')
 export class ChargeTypesController {
   constructor(private readonly types: ChargeTypesService) {}
 
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER')
   @Get()
   list(): Promise<ChargeTypeDto[]> {
     return this.types.list();

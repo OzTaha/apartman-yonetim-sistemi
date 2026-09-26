@@ -9,6 +9,7 @@ import { useUnitAccount } from '@/lib/queries';
 import { cn } from '@/lib/utils';
 import { ChargeCreateDialog } from './charge-dialogs';
 import { PaymentDialog } from './payment-dialog';
+import { canManage, useRole } from '@/lib/session';
 import { ChargeActions, PaymentActions } from './row-actions';
 import { StatementDialog } from './small-dialogs';
 import { ChargeStatusBadge } from './status';
@@ -45,6 +46,7 @@ function ChargeRow({ charge }: { charge: ChargeDto }) {
 
 export function UnitAccountSection({ unitId, unitLabel }: { unitId: string; unitLabel: string }) {
   const account = useUnitAccount(unitId);
+  const role = useRole();
   const [dialog, setDialog] = useState<'pay' | 'charge' | 'statement' | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -56,14 +58,18 @@ export function UnitAccountSection({ unitId, unitLabel }: { unitId: string; unit
           <FileDown />
           Ekstre
         </Button>
-        <Button size="sm" variant="outline" onClick={() => setDialog('charge')}>
-          <Plus />
-          Borç ekle
-        </Button>
-        <Button size="sm" onClick={() => setDialog('pay')}>
-          <HandCoins />
-          Ödeme al
-        </Button>
+        {canManage(role) && (
+          <Button size="sm" variant="outline" onClick={() => setDialog('charge')}>
+            <Plus />
+            Borç ekle
+          </Button>
+        )}
+        {role !== 'AUDITOR' && (
+          <Button size="sm" onClick={() => setDialog('pay')}>
+            <HandCoins />
+            Ödeme al
+          </Button>
+        )}
       </div>
     </div>
   );

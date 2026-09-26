@@ -166,11 +166,14 @@ export class SitesService {
       });
     }
 
-    await this.prisma.siteMembership.upsert({
-      where: { siteId_userId: { siteId, userId: user.id } },
-      create: { siteId, userId: user.id, role: 'SITE_MANAGER' },
-      update: { role: 'SITE_MANAGER' },
-    });
+    await this.prisma.$transaction([
+      this.prisma.siteMembership.upsert({
+        where: { siteId_userId: { siteId, userId: user.id } },
+        create: { siteId, userId: user.id, role: 'SITE_MANAGER' },
+        update: { role: 'SITE_MANAGER' },
+      }),
+      this.prisma.blockManager.deleteMany({ where: { siteId, userId: user.id } }),
+    ]);
     await this.audit.record({
       action: 'MANAGER_ASSIGNED',
       entityType: 'Site',
