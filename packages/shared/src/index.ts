@@ -13,3 +13,4 @@ export * from './staff';
 export * from './communication';
 export * from './online';
 export * from './branding';
+export * from './password-reset';

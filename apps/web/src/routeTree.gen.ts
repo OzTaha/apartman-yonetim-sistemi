@@ -33,6 +33,7 @@ import { Route as AppTahsilatlarRouteImport } from './routes/_app/tahsilatlar'
 import { Route as AppTekrarlayanGorevlerRouteImport } from './routes/_app/tekrarlayan-gorevler'
 import { Route as AppVardiyalarRouteImport } from './routes/_app/vardiyalar'
 import { Route as DavetTokenRouteImport } from './routes/davet.$token'
+import { Route as SifreYenileTokenRouteImport } from './routes/sifre-yenile.$token'
 import { Route as AppCalisanlarIndexRouteImport } from './routes/_app/calisanlar/index'
 import { Route as AppCalisanlarEmployeeIdRouteImport } from './routes/_app/calisanlar/$employeeId'
 import { Route as AppDairelerIndexRouteImport } from './routes/_app/daireler/index'
@@ -167,6 +168,11 @@ const DavetTokenRoute = DavetTokenRouteImport.update({
   path: '/davet/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SifreYenileTokenRoute = SifreYenileTokenRouteImport.update({
+  id: '/sifre-yenile/$token',
+  path: '/sifre-yenile/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppCalisanlarIndexRoute = AppCalisanlarIndexRouteImport.update({
   id: '/calisanlar/',
   path: '/calisanlar/',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
   '/vardiyalar': typeof AppVardiyalarRoute
   '/davet/$token': typeof DavetTokenRoute
+  '/sifre-yenile/$token': typeof SifreYenileTokenRoute
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
   '/duyurular/$announcementId': typeof AppDuyurularAnnouncementIdRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
   '/vardiyalar': typeof AppVardiyalarRoute
   '/davet/$token': typeof DavetTokenRoute
+  '/sifre-yenile/$token': typeof SifreYenileTokenRoute
   '/': typeof AppIndexRoute
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/_app/tekrarlayan-gorevler': typeof AppTekrarlayanGorevlerRoute
   '/_app/vardiyalar': typeof AppVardiyalarRoute
   '/davet/$token': typeof DavetTokenRoute
+  '/sifre-yenile/$token': typeof SifreYenileTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/_app/daireler/$unitId': typeof AppDairelerUnitIdRoute
@@ -384,6 +393,7 @@ export interface FileRouteTypes {
     | '/tekrarlayan-gorevler'
     | '/vardiyalar'
     | '/davet/$token'
+    | '/sifre-yenile/$token'
     | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
     | '/duyurular/$announcementId'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/tekrarlayan-gorevler'
     | '/vardiyalar'
     | '/davet/$token'
+    | '/sifre-yenile/$token'
     | '/'
     | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
@@ -462,6 +473,7 @@ export interface FileRouteTypes {
     | '/_app/tekrarlayan-gorevler'
     | '/_app/vardiyalar'
     | '/davet/$token'
+    | '/sifre-yenile/$token'
     | '/_app/'
     | '/_app/calisanlar/$employeeId'
     | '/_app/daireler/$unitId'
@@ -483,6 +495,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   GirisRoute: typeof GirisRoute
   DavetTokenRoute: typeof DavetTokenRoute
+  SifreYenileTokenRoute: typeof SifreYenileTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -653,6 +666,13 @@ declare module '@tanstack/react-router' {
       path: '/davet/$token'
       fullPath: '/davet/$token'
       preLoaderRoute: typeof DavetTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sifre-yenile/$token': {
+      id: '/sifre-yenile/$token'
+      path: '/sifre-yenile/$token'
+      fullPath: '/sifre-yenile/$token'
+      preLoaderRoute: typeof SifreYenileTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/calisanlar/': {
@@ -838,6 +858,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   GirisRoute: GirisRoute,
   DavetTokenRoute: DavetTokenRoute,
+  SifreYenileTokenRoute: SifreYenileTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

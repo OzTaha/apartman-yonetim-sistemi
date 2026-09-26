@@ -28,6 +28,7 @@ function LoginPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [forgot, setForgot] = useState(false);
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { identifier: '', password: '' },
@@ -91,6 +92,23 @@ function LoginPage() {
               {form.formState.isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'}
             </Button>
           </form>
+          <Button
+            type="button"
+            variant="link"
+            className="mt-2 h-auto w-full p-0 text-sm"
+            aria-expanded={forgot}
+            onClick={() => setForgot((v) => !v)}
+          >
+            Şifremi unuttum
+          </Button>
+          {forgot && (
+            <Alert className="mt-2">
+              <AlertDescription>
+                Site yönetiminizden şifre yenileme bağlantısı isteyin; bağlantı telefonunuza
+                gönderilebilir. Site yöneticileri bağlantıyı sistem yöneticisinden ister.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
       <p className="text-center text-xs text-muted-foreground">

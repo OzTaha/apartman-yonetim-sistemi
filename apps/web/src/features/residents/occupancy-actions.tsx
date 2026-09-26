@@ -1,6 +1,7 @@
-import type { OccupancyDto } from '@apartman/shared';
-import { DoorOpen, Link2, MoreHorizontal, Pencil } from 'lucide-react';
+import type { OccupancyDto, PasswordResetLinkDto } from '@apartman/shared';
+import { DoorOpen, KeyRound, Link2, MoreHorizontal, Pencil } from 'lucide-react';
 import { useState } from 'react';
+import { PasswordResetDialog } from '@/components/password-reset-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { apiFetch } from '@/lib/api';
 import { fullName, isActiveOccupancy } from '@/lib/format';
 import { InvitationDialog, MoveOutDialog, OccupancyFormDialog } from './resident-dialogs';
 
@@ -21,7 +23,7 @@ export function OccupancyTypeBadge({ type }: { type: OccupancyDto['type'] }) {
 }
 
 export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
-  const [dialog, setDialog] = useState<'edit' | 'invite' | 'move-out' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'invite' | 'reset' | 'move-out' | null>(null);
   const active = isActiveOccupancy(occupancy);
   const canInvite = active && !occupancy.hasAccount && Boolean(occupancy.phone || occupancy.email);
 
@@ -44,6 +46,12 @@ export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
               Davet bağlantısı oluştur
             </DropdownMenuItem>
           )}
+          {active && occupancy.hasAccount && (
+            <DropdownMenuItem onSelect={() => setDialog('reset')}>
+              <KeyRound />
+              Şifre yenileme bağlantısı
+            </DropdownMenuItem>
+          )}
           {active && (
             <DropdownMenuItem variant="destructive" onSelect={() => setDialog('move-out')}>
               <DoorOpen />
@@ -62,6 +70,18 @@ export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
         open={dialog === 'invite'}
         onOpenChange={(o) => setDialog(o ? 'invite' : null)}
         occupancy={occupancy}
+      />
+      <PasswordResetDialog
+        open={dialog === 'reset'}
+        onOpenChange={(o) => setDialog(o ? 'reset' : null)}
+        personName={fullName(occupancy)}
+        phone={occupancy.phone}
+        request={(send) =>
+          apiFetch<PasswordResetLinkDto>(`/residents/${occupancy.id}/password-reset`, {
+            method: 'POST',
+            body: { send },
+          })
+        }
       />
       <MoveOutDialog
         open={dialog === 'move-out'}

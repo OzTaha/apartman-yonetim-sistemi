@@ -49,6 +49,16 @@ Kayıtlar silinmez, iptal edilir. İptal edilen kayıtlar nedeniyle birlikte sak
 
 Uygulama internet bağlantısı olmadan açıldığında bağlantı olmadığını bildirir; bağlantı gelince devam eder.
 
+## Şifresini unutanlar
+
+- **Sakin:** Sakinler sayfasında sakinin yanındaki menüden "Şifre yenileme bağlantısı"nı seçin. Bağlantıyı
+  kopyalayıp iletebilir ya da SMS/WhatsApp ile gönderebilirsiniz.
+- **Site yöneticisi:** Sistem yöneticisi "Apartman ve siteler" sayfasından bağlantı oluşturur.
+- **Sistem yöneticisi:** Bağlantı sunucuda oluşturulur; teknik destek alın.
+
+Bağlantı tek kullanımlıktır ve 24 saat geçerlidir. Yeni şifre belirlenince kişinin diğer cihazlardaki oturumları
+kapatılır.
+
 ## Yedekler
 
 Sistem her gece kendiliğinden yedek alır ve son 14 günü saklar. Dış depo tanımlıysa yedekler oraya da kopyalanır.

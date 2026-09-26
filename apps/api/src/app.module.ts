@@ -16,6 +16,7 @@ import { BrandingModule } from './modules/branding/branding';
 import { DuesModule } from './modules/dues/dues.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { OnlinePaymentsModule } from './modules/online-payments/online-payments.module';
+import { PasswordResetModule } from './modules/password-reset/password-reset';
 import { ResidentsModule } from './modules/residents/residents';
 import { SitesModule } from './modules/sites/sites.module';
 import { StaffModule } from './modules/staff/staff.module';
@@ -52,6 +53,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     CommunicationModule,
     OnlinePaymentsModule,
     BrandingModule,
+    PasswordResetModule,
   ],
   controllers: [HealthController],
   providers: [

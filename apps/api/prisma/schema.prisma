@@ -150,6 +150,7 @@ model User {
   refreshTokens     RefreshToken[]
   announcementReads AnnouncementRead[]
   paymentIntents    PaymentIntent[]
+  passwordResets    PasswordReset[]
 
   @@map("users")
 }
@@ -882,4 +883,19 @@ model Branding {
   updatedAt DateTime @updatedAt
 
   @@map("branding")
+}
+
+model PasswordReset {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  userId      String    @db.Uuid
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_resets")
 }

@@ -1,8 +1,9 @@
-import { siteKindLabels, type SiteDto } from '@apartman/shared';
+import { siteKindLabels, type PasswordResetLinkDto, type SiteDto } from '@apartman/shared';
 import { Navigate, createFileRoute, useNavigate } from '@tanstack/react-router';
-import { ArrowRight, MoreHorizontal, Pencil, Plus, UserCog, X } from 'lucide-react';
+import { ArrowRight, KeyRound, MoreHorizontal, Pencil, Plus, UserCog, X } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
+import { PasswordResetDialog } from '@/components/password-reset-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ function SitesPageGuard() {
 
 function ManagerChip({ site, manager }: { site: SiteDto; manager: SiteDto['managers'][number] }) {
   const [confirming, setConfirming] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const remove = useApiMutation(
     () => apiFetch<void>(`/sites/${site.id}/managers/${manager.id}`, { method: 'DELETE' }),
     { success: 'Yönetici kaldırıldı', onSuccess: () => setConfirming(false) },
@@ -51,12 +53,29 @@ function ManagerChip({ site, manager }: { site: SiteDto; manager: SiteDto['manag
         <button
           type="button"
           className="rounded-sm p-0.5 hover:bg-muted-foreground/20"
+          aria-label={`${fullName(manager)} için şifre yenileme bağlantısı`}
+          title="Şifre yenileme bağlantısı"
+          onClick={() => setResetting(true)}
+        >
+          <KeyRound className="size-3" />
+        </button>
+        <button
+          type="button"
+          className="rounded-sm p-0.5 hover:bg-muted-foreground/20"
           aria-label={`${fullName(manager)} yöneticiliğini kaldır`}
           onClick={() => setConfirming(true)}
         >
           <X className="size-3" />
         </button>
       </Badge>
+      <PasswordResetDialog
+        open={resetting}
+        onOpenChange={setResetting}
+        personName={fullName(manager)}
+        request={() =>
+          apiFetch<PasswordResetLinkDto>(`/users/${manager.id}/password-reset`, { method: 'POST' })
+        }
+      />
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>

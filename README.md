@@ -93,6 +93,10 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Siteye bağlı tablolara yapılan her sorguya aktif site filtresi otomatik eklenir (`apps/api/src/tenancy`).
   Ayrıca blok, daire ve sakin kayıtları veritabanında birleşik yabancı anahtarla aynı siteye bağlanır.
 - Sakin yalnızca halen oturduğu daireyi ve kendi kaydını görebilir.
+- Şifre yenileme: sakin için site yöneticisi veya sistem yöneticisi, site yöneticisi için sistem yöneticisi tek
+  kullanımlık, 24 saat geçerli bağlantı oluşturur (kopyalanır ya da SMS/WhatsApp ile gönderilir). Site yöneticisi başka bir
+  yöneticinin şifresini yenileyemez. Sistem yöneticisi için bağlantı sunucuda `node dist/cli/reset-password.js` ile
+  üretilir. Yeni şifre belirlenince kullanıcının tüm oturumları kapatılır.
 - Oturum: 15 dakikalık erişim token'ı (yalnızca bellekte) ve 30 günlük refresh token (httpOnly cookie).
   Refresh token her kullanımda yenilenir. Eski bir token tekrar kullanılırsa kullanıcının tüm oturumları kapatılır.
 - Önemli değişiklikler `audit_logs` tablosuna kim/ne zaman/önce/sonra bilgisiyle yazılır.

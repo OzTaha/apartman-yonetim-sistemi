@@ -120,7 +120,23 @@ Kurulumda online ödeme kapalıdır (`PAYMENT_PROVIDER=none`) ve mesajlar gerçe
 sağlayıcısıyla sözleşme yaptığında hesap müşteri adına açılır, o sağlayıcı için bağlantı sınıfı yazılır ve
 anahtarları `deploy/.env` dosyasına girilir. Test ödeme sağlayıcısı (`mock`) canlı ortamda çalışmaz.
 
-## 7. Sorun giderme
+## 7. Şifresini unutan kullanıcılar
+
+- **Sakin:** Site yöneticisi veya sistem yöneticisi, Sakinler sayfasındaki işlem menüsünden "Şifre yenileme
+  bağlantısı" oluşturur; bağlantı kopyalanır ya da SMS/WhatsApp ile gönderilir.
+- **Site yöneticisi:** Sistem yöneticisi "Apartman ve siteler" sayfasında yöneticinin adının yanındaki anahtar
+  simgesiyle bağlantı oluşturur. Site yöneticileri başka bir yöneticinin şifresini yenileyemez.
+- **Sistem yöneticisi:** Sunucuda aşağıdaki komut, e-posta veya telefon numarasıyla bağlantı üretir:
+
+```sh
+cd /opt/apartman/deploy
+sudo docker compose exec api node dist/cli/reset-password.js yonetici@ornekapartman.com
+```
+
+Bağlantılar tek kullanımlıktır ve 24 saat geçerlidir; yenisi üretilince eskisi geçersiz olur. Yeni şifre
+belirlenince kullanıcının tüm açık oturumları kapatılır.
+
+## 8. Sorun giderme
 
 | Belirti                              | Kontrol                                                                                    |
 | ------------------------------------ | ------------------------------------------------------------------------------------------ |
@@ -129,7 +145,7 @@ anahtarları `deploy/.env` dosyasına girilir. Test ödeme sağlayıcısı (`moc
 | API başlamıyor                       | `sudo docker compose logs api` ilk satırları; eksik ortam değişkeni varsa adıyla yazılır   |
 | Disk doluyor                         | `du -sh /var/backups/apartman`; `BACKUP_KEEP_DAYS` düşürülebilir                           |
 
-## 8. Teslim kontrol listesi
+## 9. Teslim kontrol listesi
 
 - [ ] Sunucu, alan adı, yedek deposu ve varsa ödeme/SMS hesapları müşteri adına ve müşterinin erişiminde.
 - [ ] `deploy/.env` dosyasının bir kopyası müşterinin şifre kasasına kaydedildi.
