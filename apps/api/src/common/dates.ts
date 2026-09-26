@@ -18,5 +18,5 @@ export function toDateString(value: Date): string {
 }
 
 export function activeOn(today = todayInIstanbul()) {
-  return { OR: [{ endDate: null }, { endDate: { gte: dateOnly(today) } }] };
+  return { OR: [{ endDate: null }, { endDate: { gt: dateOnly(today) } }] };
 }

@@ -18,7 +18,7 @@ import {
 import { OccupancyActions, OccupancyTypeBadge } from '@/features/residents/occupancy-actions';
 import { OccupancyFormDialog } from '@/features/residents/resident-dialogs';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { formatDate, formatPhone, fullName } from '@/lib/format';
+import { formatDate, formatPhone, fullName, isActiveOccupancy } from '@/lib/format';
 import { type ResidentFilters, useBlocks, useResidents } from '@/lib/queries';
 import { labelUnit, useIsApartment } from '@/lib/unit-label';
 
@@ -53,8 +53,15 @@ const columns: ColumnDef<OccupancyDto>[] = [
       <div className="grid">
         <span className="font-medium">{fullName(row.original)}</span>
         {row.original.endDate && (
-          <span className="text-xs text-muted-foreground">
-            Taşındı: {formatDate(row.original.endDate)}
+          <span
+            className={
+              isActiveOccupancy(row.original)
+                ? 'text-xs text-muted-foreground'
+                : 'text-xs font-medium text-red-700 dark:text-red-400'
+            }
+          >
+            {isActiveOccupancy(row.original) ? 'Taşınacak' : 'Taşındı'}:{' '}
+            {formatDate(row.original.endDate)}
           </span>
         )}
       </div>
@@ -116,8 +123,15 @@ function ResidentCard({ occupancy }: { occupancy: OccupancyDto }) {
           {occupancy.phone ? ` · ${formatPhone(occupancy.phone)}` : ''}
         </span>
         {occupancy.endDate && (
-          <span className="text-xs text-muted-foreground">
-            Taşındı: {formatDate(occupancy.endDate)}
+          <span
+            className={
+              isActiveOccupancy(occupancy)
+                ? 'text-xs text-muted-foreground'
+                : 'text-xs font-medium text-red-700 dark:text-red-400'
+            }
+          >
+            {isActiveOccupancy(occupancy) ? 'Taşınacak' : 'Taşındı'}:{' '}
+            {formatDate(occupancy.endDate)}
           </span>
         )}
       </div>
@@ -233,6 +247,11 @@ function ResidentsPage() {
             void navigate({ to: '/daireler/$unitId', params: { unitId: o.unitId } })
           }
           mobileCard={(o) => <ResidentCard occupancy={o} />}
+          rowClassName={(o) =>
+            isActiveOccupancy(o)
+              ? undefined
+              : 'bg-red-50 hover:bg-red-100/70 dark:bg-red-950/30 dark:hover:bg-red-950/50'
+          }
           empty={
             <EmptyState
               title="Kayıt bulunamadı"

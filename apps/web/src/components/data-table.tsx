@@ -45,6 +45,7 @@ interface DataTableProps<T> {
   mobileCard?: (row: T) => ReactNode;
   empty?: ReactNode;
   selection?: RowSelection<T>;
+  rowClassName?: (row: T) => string | undefined;
 }
 
 const PAGE_SIZES = [15, 20, 25, 30, 40] as const;
@@ -172,6 +173,7 @@ export function DataTable<T>({
   mobileCard,
   empty,
   selection,
+  rowClassName,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState<PaginationState>(() => ({
@@ -281,7 +283,10 @@ export function DataTable<T>({
                 <div
                   role="link"
                   tabIndex={0}
-                  className="min-w-0 flex-1 cursor-pointer rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className={cn(
+                    'min-w-0 flex-1 cursor-pointer rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                    rowClassName?.(row.original),
+                  )}
                   onClick={() => onRowClick(row.original)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') onRowClick(row.original);
@@ -290,7 +295,12 @@ export function DataTable<T>({
                   {mobileCard(row.original)}
                 </div>
               ) : (
-                <div className="min-w-0 flex-1 rounded-lg border bg-card p-3">
+                <div
+                  className={cn(
+                    'min-w-0 flex-1 rounded-lg border bg-card p-3',
+                    rowClassName?.(row.original),
+                  )}
+                >
                   {mobileCard(row.original)}
                 </div>
               );
@@ -350,7 +360,7 @@ export function DataTable<T>({
               <TableRow
                 key={row.id}
                 data-state={selection?.selected.has(row.id) ? 'selected' : undefined}
-                className={onRowClick ? 'cursor-pointer' : undefined}
+                className={cn(onRowClick && 'cursor-pointer', rowClassName?.(row.original))}
                 onClick={onRowClick ? () => onRowClick(row.original) : undefined}
               >
                 {selection && (

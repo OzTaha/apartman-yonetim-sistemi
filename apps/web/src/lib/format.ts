@@ -23,7 +23,7 @@ export function safeRedirect(target: string | undefined): string {
 }
 
 export function isActiveOccupancy(o: { endDate: string | null }): boolean {
-  return o.endDate === null || o.endDate >= todayIso();
+  return o.endDate === null || o.endDate > todayIso();
 }
 
 export function toNumberOrNull(value: unknown): number | null {

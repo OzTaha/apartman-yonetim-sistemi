@@ -730,6 +730,8 @@ async function main() {
     console.log(`  Sistem yöneticisi: admin@ornek.com / ${SEED_PASSWORD}`);
     console.log(`  Yönetici:          yonetici@ornek.com / ${SEED_PASSWORD}`);
     console.log(`  Sakin (Daire 1):   05321000000 / ${SEED_PASSWORD}`);
+    console.log(`  Blok yöneticisi:   05321000011 / ${SEED_PASSWORD}`);
+    console.log(`  Denetçi:           05321000012 / ${SEED_PASSWORD}`);
   } finally {
     await prisma.$disconnect();
   }

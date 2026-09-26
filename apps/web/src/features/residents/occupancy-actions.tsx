@@ -1,5 +1,5 @@
 import type { OccupancyDto, PasswordResetLinkDto } from '@apartman/shared';
-import { DoorOpen, KeyRound, Link2, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { DoorOpen, KeyRound, Link2, MoreHorizontal, Pencil, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { PasswordResetDialog } from '@/components/password-reset-dialog';
 import {
@@ -43,6 +43,10 @@ export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
     () => apiFetch<void>(`/residents/${occupancy.id}`, { method: 'DELETE' }),
     { success: 'Sakin kaydı silindi', onSuccess: () => setDialog(null) },
   );
+  const undoMoveOut = useApiMutation(
+    () => apiFetch<OccupancyDto>(`/residents/${occupancy.id}/undo-move-out`, { method: 'POST' }),
+    { success: 'Taşındı işareti kaldırıldı' },
+  );
   const active = isActiveOccupancy(occupancy);
   const canInvite = active && !occupancy.hasAccount && Boolean(occupancy.phone || occupancy.email);
 
@@ -76,6 +80,12 @@ export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
             <DropdownMenuItem variant="destructive" onSelect={() => setDialog('move-out')}>
               <DoorOpen />
               Taşındı olarak işaretle
+            </DropdownMenuItem>
+          )}
+          {occupancy.endDate && (
+            <DropdownMenuItem onSelect={() => undoMoveOut.mutate(undefined)}>
+              <Undo2 />
+              Taşındı işaretini kaldır
             </DropdownMenuItem>
           )}
           <DropdownMenuItem variant="destructive" onSelect={() => setDialog('delete')}>

@@ -54,7 +54,7 @@ export class ResidentsService {
       query.status === 'active'
         ? activeOn(today)
         : query.status === 'past'
-          ? { endDate: { lt: dateOnly(today) } }
+          ? { endDate: { lte: dateOnly(today) } }
           : {};
     const search = query.search?.trim();
 
@@ -189,6 +189,31 @@ export class ResidentsService {
     return toOccupancyDto(occupancy);
   }
 
+  async undoMoveOut(id: string): Promise<OccupancyDto> {
+    const before = await this.findOrThrow(id);
+    if (!before.endDate) throw new BadRequestException('Bu sakin için taşınma kaydı yok');
+    const unit = await this.tenant.db.unit.findUnique({
+      where: { id: before.unitId },
+      select: { archivedAt: true },
+    });
+    if (unit?.archivedAt) {
+      throw new BadRequestException('Daire arşivde. Önce daireyi arşivden çıkarın.');
+    }
+    const occupancy = await this.tenant.db.occupancy.update({
+      where: { id },
+      data: { endDate: null },
+      include: occupancyInclude,
+    });
+    await this.audit.record({
+      action: 'UNDO_MOVE_OUT',
+      entityType: 'Occupancy',
+      entityId: id,
+      before: { endDate: toDateString(before.endDate) },
+      after: { endDate: null },
+    });
+    return toOccupancyDto(occupancy);
+  }
+
   async createInvitation(id: string): Promise<InvitationDto> {
     const occupancy = await this.findOrThrow(id);
     if (occupancy.endDate && toDateString(occupancy.endDate) < todayInIstanbul()) {
@@ -302,6 +327,12 @@ export class ResidentsController {
   @HttpCode(200)
   moveOut(@Param('id', ParseUUIDPipe) id: string, @Body() body: MoveOutDto): Promise<OccupancyDto> {
     return this.residents.moveOut(id, body);
+  }
+
+  @Post(':id/undo-move-out')
+  @HttpCode(200)
+  undoMoveOut(@Param('id', ParseUUIDPipe) id: string): Promise<OccupancyDto> {
+    return this.residents.undoMoveOut(id);
   }
 
   @Post(':id/invitations')

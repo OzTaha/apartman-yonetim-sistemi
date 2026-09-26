@@ -646,3 +646,38 @@ describe('Yanlış girilen sakin kaydını silme', () => {
     await http().get('/api/transparency').set(as(tokens.residentB)).expect(403);
   });
 });
+
+describe('Taşınma', () => {
+  it('bugün taşınan sakin taşınanlarda görünür; taşındı işareti geri alınır', async () => {
+    const created = await http()
+      .post('/api/residents')
+      .set(M())
+      .send({
+        unitId: units.B2,
+        firstName: 'Taşınan',
+        lastName: 'Sakin',
+        type: 'TENANT',
+        startDate: today,
+      })
+      .expect(201);
+    const id = created.body.id as string;
+    const ids = async (status: string) =>
+      (await http().get('/api/residents').query({ status }).set(M()).expect(200)).body.map(
+        (o: { id: string }) => o.id,
+      );
+
+    await http().post(`/api/residents/${id}/undo-move-out`).set(M()).expect(400);
+    await http()
+      .post(`/api/residents/${id}/move-out`)
+      .set(M())
+      .send({ endDate: today })
+      .expect(200);
+    expect(await ids('past')).toContain(id);
+    expect(await ids('active')).not.toContain(id);
+
+    const undone = await http().post(`/api/residents/${id}/undo-move-out`).set(M()).expect(200);
+    expect(undone.body.endDate).toBeNull();
+    expect(await ids('active')).toContain(id);
+    expect(await ids('past')).not.toContain(id);
+  });
+});

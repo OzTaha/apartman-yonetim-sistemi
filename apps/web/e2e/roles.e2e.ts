@@ -93,11 +93,30 @@ test('yanlış eklenen sakin silinir, yetkili blokları güncellenince liste yen
   await form.getByRole('button', { name: 'Kaydet' }).click();
   await expect(page.getByText(`Yanlış Kayıt${suffix}`)).toBeVisible();
 
-  await page.getByRole('button', { name: `Yanlış Kayıt${suffix} için işlemler` }).click();
+  const actions = () =>
+    page.getByRole('button', { name: `Yanlış Kayıt${suffix} için işlemler` }).click();
+  await actions();
+  await page.getByRole('menuitem', { name: 'Taşındı olarak işaretle' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Taşındı olarak kaydet' }).click();
+  await page.goto('/sakinler?durum=past');
+  await expect(page.getByText(`Yanlış Kayıt${suffix}`).filter({ visible: true })).toBeVisible();
+  await expect(
+    page
+      .getByText(/^Taşındı: /)
+      .filter({ visible: true })
+      .first(),
+  ).toBeVisible();
+  await actions();
+  await page.getByRole('menuitem', { name: 'Taşındı işaretini kaldır' }).click();
+  await expect(page.getByText('Taşındı işareti kaldırıldı')).toBeVisible();
+  await page.goto('/sakinler');
+  await expect(page.getByText(`Yanlış Kayıt${suffix}`).filter({ visible: true })).toBeVisible();
+
+  await actions();
   await page.getByRole('menuitem', { name: 'Kaydı sil' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Kaydı sil' }).click();
   await expect(page.getByText('Sakin kaydı silindi')).toBeVisible();
-  await expect(page.getByText(`Yanlış Kayıt${suffix}`)).toHaveCount(0);
+  await expect(page.getByText(`Yanlış Kayıt${suffix}`).filter({ visible: true })).toHaveCount(0);
 
   await page.goto('/yetkililer');
   const mehmet = page.locator('[data-slot="card"]', { hasText: 'Mehmet Kaya' });
