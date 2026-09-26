@@ -113,7 +113,9 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   (Server-Sent Events, `/api/notifications/stream`).
 - Oturum: 15 dakikalık erişim token'ı (yalnızca bellekte) ve 30 günlük refresh token (httpOnly cookie).
   Refresh token her kullanımda yenilenir. Eski bir token tekrar kullanılırsa kullanıcının tüm oturumları kapatılır.
-- Önemli değişiklikler `audit_logs` tablosuna kim/ne zaman/önce/sonra bilgisiyle yazılır.
+- Önemli değişiklikler `audit_logs` tablosuna kim/ne zaman/önce/sonra bilgisiyle yazılır. Site yöneticisi, sistem
+  yöneticisi ve denetçi bunları "İşlem geçmişi" sayfasında tarih, kayıt türü, işlem ve kişiye göre süzerek görür;
+  şifre ve anahtar alanları gösterilmez.
 
 ## Apartman ve site
 
@@ -145,6 +147,11 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Borçtan fazla ödeme kabul edilmez. Ödeme varsayılan olarak en eski borçtan başlanarak dağıtılır; istenirse ödenen aylar elle seçilir.
 - Ödemesi olan borç iptal edilemez; önce ödeme iptal edilir. Kayıtlar silinmez, iptal nedeniyle birlikte saklanır.
 - Borç durumu (ödendi / eksik / gecikmiş) ödemelerden hesaplanır, ayrıca saklanmaz.
+- Daire hesabında "Borç durum yazısı" sıra numaralı (yıl/sıra) PDF üretir: borç yoksa "borcu yoktur", varsa borç
+  dökümüyle "borç durum yazısı". Site yöneticisi ve kendi bloğu için blok yöneticisi düzenler.
+- "Banka hareketleri": bankadan indirilen Excel (.xlsx) veya CSV yüklenir, tarih/açıklama/tutar sütunları seçilir
+  (seçim hatırlanır). Yalnızca gelen tutarlar alınır; açıklamadaki daire numarası ve sakin adına göre daire önerilir,
+  yönetici onaylayınca havale tahsilatı ve makbuz oluşur. Aynı hareket ikinci kez aktarılmaz; istenmeyenler yoksayılır.
 
 ## Panel ve sakin portalı
 

@@ -8,9 +8,11 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { PrismaExceptionFilter, ZodValidationExceptionFilter } from './common/exception.filters';
 import { validateEnv } from './config/env';
 import { HealthController } from './health/health.controller';
+import { AuditLogModule } from './modules/audit/audit-log';
 import { AuditModule } from './modules/audit/audit.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { CommunicationModule } from './modules/communication/communication.module';
+import { BankImportModule } from './modules/finance/bank-import';
 import { BlocksModule } from './modules/blocks/blocks';
 import { BrandingModule } from './modules/branding/branding';
 import { DuesModule } from './modules/dues/dues.module';
@@ -44,6 +46,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     RedisModule,
     TenancyModule,
     AuditModule,
+    AuditLogModule,
     AuthModule,
     SitesModule,
     BlocksModule,
@@ -52,6 +55,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     OfficersModule,
     DuesModule,
     FinanceModule,
+    BankImportModule,
     StaffModule,
     CommunicationModule,
     OnlinePaymentsModule,

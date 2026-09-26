@@ -3,6 +3,7 @@ import { UnitAccessGuard } from '../units/units';
 import { AccountController, AccountService } from './account';
 import { ChargeTypesController, ChargeTypesService } from './charge-types';
 import { ChargesController, ChargesService } from './charges';
+import { ClearanceController, ClearanceService } from './clearance';
 import { DocumentsService } from './documents.service';
 import { DuesController, DuesService } from './dues';
 import { PaymentsController, PaymentsService } from './payments';
@@ -14,6 +15,7 @@ import { PaymentsController, PaymentsService } from './payments';
     ChargesController,
     PaymentsController,
     AccountController,
+    ClearanceController,
   ],
   providers: [
     ChargeTypesService,
@@ -21,6 +23,7 @@ import { PaymentsController, PaymentsService } from './payments';
     ChargesService,
     PaymentsService,
     AccountService,
+    ClearanceService,
     DocumentsService,
     UnitAccessGuard,
   ],

@@ -1,9 +1,11 @@
 import { formatKurus, paymentMethodLabels, type ChargeDto } from '@apartman/shared';
-import { FileDown, HandCoins, Plus } from 'lucide-react';
+import { FileCheck, FileDown, HandCoins, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { ErrorState, LoadingRows } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { downloadFile, errorMessage } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { useUnitAccount } from '@/lib/queries';
 import { cn } from '@/lib/utils';
@@ -58,6 +60,21 @@ export function UnitAccountSection({ unitId, unitLabel }: { unitId: string; unit
           <FileDown />
           Ekstre
         </Button>
+        {role !== 'AUDITOR' && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              void downloadFile(
+                `/units/${unitId}/clearance.pdf`,
+                `borc-durum-${unitLabel}.pdf`,
+              ).catch((e: unknown) => toast.error(errorMessage(e)))
+            }
+          >
+            <FileCheck />
+            Borç durum yazısı
+          </Button>
+        )}
         {canManage(role) && (
           <Button size="sm" variant="outline" onClick={() => setDialog('charge')}>
             <Plus />

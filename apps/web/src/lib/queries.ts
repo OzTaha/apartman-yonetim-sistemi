@@ -1,4 +1,6 @@
 import type {
+  AuditLogListDto,
+  AuditQueryInput,
   OfficerCandidateDto,
   OfficerDto,
   OnlinePaymentSettingsDto,
@@ -157,6 +159,9 @@ function useSiteQuery<T>(key: string, path: string, extra: unknown = null, enabl
   });
 }
 
+export const useAuditLogs = (filters: AuditQueryInput) =>
+  useSiteQuery<AuditLogListDto>('audit-logs', `/audit-logs${toQuery({ ...filters })}`, filters);
+
 export const useOfficers = () => useSiteQuery<OfficerDto[]>('officers', '/officers');
 export const useOfficerCandidates = (enabled: boolean) =>
   useSiteQuery<OfficerCandidateDto[]>('officer-candidates', '/officers/candidates', null, enabled);
@@ -288,6 +293,7 @@ const SITE_SCOPED = new Set([
   'payment-intent',
   'officers',
   'officer-candidates',
+  'audit-logs',
 ]);
 
 const isSiteData = (q: { queryKey: readonly unknown[] }) =>

@@ -16,3 +16,5 @@ export * from './branding';
 export * from './password-reset';
 export * from './notifications';
 export * from './officers';
+export * from './audit';
+export * from './bank';

@@ -36,6 +36,11 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 ## Günlük işler
 
 - **Tahsilat:** Panelde "Ödeme al" ile elden veya havale ödemeleri kaydedilir; makbuz kendiliğinden oluşur.
+- **Banka hareketleri:** İnternet bankacılığından indirdiğiniz hesap hareketlerini (Excel veya CSV) "Banka hareketleri"
+  sayfasına yükleyin. Gelen havaleler dairelere önerilir; kontrol edip onayladığınızda tahsilat olarak kaydedilir.
+- **Borç durum yazısı:** Daire satılırken veya kiracı taşınırken istenen "borcu yoktur" yazısını daire sayfasındaki
+  "Borç durum yazısı" ile alın; borç varsa yazı borç dökümünü içerir.
+- **İşlem geçmişi:** Kimin hangi kaydı ne zaman değiştirdiğini "İşlem geçmişi" sayfasında görebilirsiniz.
 - **Gider:** Kasa sayfasında "Gider ekle"; faturayı veya fotoğrafını ekleyebilirsiniz. Sitelerde giderin "Site geneli"
   mi yoksa bir bloğa mı ait olduğunu seçin; blok giderini yalnızca o bloğun sakinleri görür. "Dairelere borç olarak
   yansıt" ile gider ilgili dairelere borç olarak paylaştırılır.

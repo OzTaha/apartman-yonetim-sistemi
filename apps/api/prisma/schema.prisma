@@ -201,6 +201,7 @@ model Site {
   paymentIntents    PaymentIntent[]
   notifications     Notification[]
   blockManagers     BlockManager[]
+  bankLines         BankImportLine[]
 
   @@map("sites")
 }
@@ -451,6 +452,7 @@ model Payment {
   transaction Transaction?
   attachments Attachment[]
   intent      PaymentIntent?
+  bankLine    BankImportLine?
 
   @@unique([id, siteId])
   @@unique([siteId, receiptNo])
@@ -934,6 +936,11 @@ model PasswordReset {
   @@map("password_resets")
 }
 
+enum BankLineStatus {
+  IMPORTED
+  IGNORED
+}
+
 enum NotificationType {
   PASSWORD_RESET_REQUEST
 }
@@ -958,4 +965,24 @@ model Notification {
   @@index([userId, createdAt])
   @@index([subjectKey, resolvedAt])
   @@map("notifications")
+}
+
+model BankImportLine {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  siteId      String         @db.Uuid
+  fingerprint String
+  date        DateTime       @db.Date
+  amountKurus Int
+  description String
+  status      BankLineStatus
+  paymentId   String?        @db.Uuid
+  createdById String?        @db.Uuid
+  createdAt   DateTime       @default(now())
+
+  site    Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
+
+  @@unique([siteId, fingerprint])
+  @@unique([paymentId, siteId])
+  @@map("bank_import_lines")
 }

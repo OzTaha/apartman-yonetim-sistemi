@@ -154,6 +154,10 @@ export class TenantContext {
     return this.cls.get('userId');
   }
 
+  get role(): AppClsStore['siteRole'] {
+    return this.cls.get('siteRole');
+  }
+
   get isResident(): boolean {
     return this.cls.get('siteRole') === 'RESIDENT';
   }

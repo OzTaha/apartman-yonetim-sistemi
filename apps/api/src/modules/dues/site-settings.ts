@@ -10,6 +10,7 @@ export interface SiteSettings {
   duesDueDay?: number;
   proportionalDues?: boolean;
   onlinePayment?: { enabled: boolean; accountId: string | null };
+  bankImport?: { date: string; description: string; amount: string };
 }
 
 type UnitDataField = 'areaM2' | 'landShare';

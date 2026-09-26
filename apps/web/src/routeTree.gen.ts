@@ -14,6 +14,7 @@ import { Route as GirisRouteImport } from './routes/giris'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAidatRouteImport } from './routes/_app/aidat'
 import { Route as AppAidatAyarlariRouteImport } from './routes/_app/aidat-ayarlari'
+import { Route as AppBankaHareketleriRouteImport } from './routes/_app/banka-hareketleri'
 import { Route as AppBildirimlerRouteImport } from './routes/_app/bildirimler'
 import { Route as AppBorclarRouteImport } from './routes/_app/borclar'
 import { Route as AppCalisanRaporuRouteImport } from './routes/_app/calisan-raporu'
@@ -21,6 +22,7 @@ import { Route as AppDairemRouteImport } from './routes/_app/dairem'
 import { Route as AppFirmalarRouteImport } from './routes/_app/firmalar'
 import { Route as AppGelirGiderRouteImport } from './routes/_app/gelir-gider'
 import { Route as AppGiderlerRouteImport } from './routes/_app/giderler'
+import { Route as AppIslemGecmisiRouteImport } from './routes/_app/islem-gecmisi'
 import { Route as AppKasaRouteImport } from './routes/_app/kasa'
 import { Route as AppKasaAyarlariRouteImport } from './routes/_app/kasa-ayarlari'
 import { Route as AppMarkaRouteImport } from './routes/_app/marka'
@@ -75,6 +77,11 @@ const AppAidatAyarlariRoute = AppAidatAyarlariRouteImport.update({
   path: '/aidat-ayarlari',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBankaHareketleriRoute = AppBankaHareketleriRouteImport.update({
+  id: '/banka-hareketleri',
+  path: '/banka-hareketleri',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBildirimlerRoute = AppBildirimlerRouteImport.update({
   id: '/bildirimler',
   path: '/bildirimler',
@@ -108,6 +115,11 @@ const AppGelirGiderRoute = AppGelirGiderRouteImport.update({
 const AppGiderlerRoute = AppGiderlerRouteImport.update({
   id: '/giderler',
   path: '/giderler',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIslemGecmisiRoute = AppIslemGecmisiRouteImport.update({
+  id: '/islem-gecmisi',
+  path: '/islem-gecmisi',
   getParentRoute: () => AppRoute,
 } as any)
 const AppKasaRoute = AppKasaRouteImport.update({
@@ -262,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/giris': typeof GirisRoute
   '/aidat': typeof AppAidatRoute
   '/aidat-ayarlari': typeof AppAidatAyarlariRoute
+  '/banka-hareketleri': typeof AppBankaHareketleriRoute
   '/bildirimler': typeof AppBildirimlerRoute
   '/borclar': typeof AppBorclarRoute
   '/calisan-raporu': typeof AppCalisanRaporuRoute
@@ -269,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/firmalar': typeof AppFirmalarRoute
   '/gelir-gider': typeof AppGelirGiderRoute
   '/giderler': typeof AppGiderlerRoute
+  '/islem-gecmisi': typeof AppIslemGecmisiRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/marka': typeof AppMarkaRoute
@@ -303,6 +317,7 @@ export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
   '/aidat': typeof AppAidatRoute
   '/aidat-ayarlari': typeof AppAidatAyarlariRoute
+  '/banka-hareketleri': typeof AppBankaHareketleriRoute
   '/bildirimler': typeof AppBildirimlerRoute
   '/borclar': typeof AppBorclarRoute
   '/calisan-raporu': typeof AppCalisanRaporuRoute
@@ -310,6 +325,7 @@ export interface FileRoutesByTo {
   '/firmalar': typeof AppFirmalarRoute
   '/gelir-gider': typeof AppGelirGiderRoute
   '/giderler': typeof AppGiderlerRoute
+  '/islem-gecmisi': typeof AppIslemGecmisiRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/marka': typeof AppMarkaRoute
@@ -347,6 +363,7 @@ export interface FileRoutesById {
   '/giris': typeof GirisRoute
   '/_app/aidat': typeof AppAidatRoute
   '/_app/aidat-ayarlari': typeof AppAidatAyarlariRoute
+  '/_app/banka-hareketleri': typeof AppBankaHareketleriRoute
   '/_app/bildirimler': typeof AppBildirimlerRoute
   '/_app/borclar': typeof AppBorclarRoute
   '/_app/calisan-raporu': typeof AppCalisanRaporuRoute
@@ -354,6 +371,7 @@ export interface FileRoutesById {
   '/_app/firmalar': typeof AppFirmalarRoute
   '/_app/gelir-gider': typeof AppGelirGiderRoute
   '/_app/giderler': typeof AppGiderlerRoute
+  '/_app/islem-gecmisi': typeof AppIslemGecmisiRoute
   '/_app/kasa': typeof AppKasaRoute
   '/_app/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/_app/marka': typeof AppMarkaRoute
@@ -392,6 +410,7 @@ export interface FileRouteTypes {
     | '/giris'
     | '/aidat'
     | '/aidat-ayarlari'
+    | '/banka-hareketleri'
     | '/bildirimler'
     | '/borclar'
     | '/calisan-raporu'
@@ -399,6 +418,7 @@ export interface FileRouteTypes {
     | '/firmalar'
     | '/gelir-gider'
     | '/giderler'
+    | '/islem-gecmisi'
     | '/kasa'
     | '/kasa-ayarlari'
     | '/marka'
@@ -433,6 +453,7 @@ export interface FileRouteTypes {
     | '/giris'
     | '/aidat'
     | '/aidat-ayarlari'
+    | '/banka-hareketleri'
     | '/bildirimler'
     | '/borclar'
     | '/calisan-raporu'
@@ -440,6 +461,7 @@ export interface FileRouteTypes {
     | '/firmalar'
     | '/gelir-gider'
     | '/giderler'
+    | '/islem-gecmisi'
     | '/kasa'
     | '/kasa-ayarlari'
     | '/marka'
@@ -476,6 +498,7 @@ export interface FileRouteTypes {
     | '/giris'
     | '/_app/aidat'
     | '/_app/aidat-ayarlari'
+    | '/_app/banka-hareketleri'
     | '/_app/bildirimler'
     | '/_app/borclar'
     | '/_app/calisan-raporu'
@@ -483,6 +506,7 @@ export interface FileRouteTypes {
     | '/_app/firmalar'
     | '/_app/gelir-gider'
     | '/_app/giderler'
+    | '/_app/islem-gecmisi'
     | '/_app/kasa'
     | '/_app/kasa-ayarlari'
     | '/_app/marka'
@@ -559,6 +583,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAidatAyarlariRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/banka-hareketleri': {
+      id: '/_app/banka-hareketleri'
+      path: '/banka-hareketleri'
+      fullPath: '/banka-hareketleri'
+      preLoaderRoute: typeof AppBankaHareketleriRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/bildirimler': {
       id: '/_app/bildirimler'
       path: '/bildirimler'
@@ -606,6 +637,13 @@ declare module '@tanstack/react-router' {
       path: '/giderler'
       fullPath: '/giderler'
       preLoaderRoute: typeof AppGiderlerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/islem-gecmisi': {
+      id: '/_app/islem-gecmisi'
+      path: '/islem-gecmisi'
+      fullPath: '/islem-gecmisi'
+      preLoaderRoute: typeof AppIslemGecmisiRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/kasa': {
@@ -817,6 +855,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAidatRoute: typeof AppAidatRoute
   AppAidatAyarlariRoute: typeof AppAidatAyarlariRoute
+  AppBankaHareketleriRoute: typeof AppBankaHareketleriRoute
   AppBildirimlerRoute: typeof AppBildirimlerRoute
   AppBorclarRoute: typeof AppBorclarRoute
   AppCalisanRaporuRoute: typeof AppCalisanRaporuRoute
@@ -824,6 +863,7 @@ interface AppRouteChildren {
   AppFirmalarRoute: typeof AppFirmalarRoute
   AppGelirGiderRoute: typeof AppGelirGiderRoute
   AppGiderlerRoute: typeof AppGiderlerRoute
+  AppIslemGecmisiRoute: typeof AppIslemGecmisiRoute
   AppKasaRoute: typeof AppKasaRoute
   AppKasaAyarlariRoute: typeof AppKasaAyarlariRoute
   AppMarkaRoute: typeof AppMarkaRoute
@@ -857,6 +897,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAidatRoute: AppAidatRoute,
   AppAidatAyarlariRoute: AppAidatAyarlariRoute,
+  AppBankaHareketleriRoute: AppBankaHareketleriRoute,
   AppBildirimlerRoute: AppBildirimlerRoute,
   AppBorclarRoute: AppBorclarRoute,
   AppCalisanRaporuRoute: AppCalisanRaporuRoute,
@@ -864,6 +905,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFirmalarRoute: AppFirmalarRoute,
   AppGelirGiderRoute: AppGelirGiderRoute,
   AppGiderlerRoute: AppGiderlerRoute,
+  AppIslemGecmisiRoute: AppIslemGecmisiRoute,
   AppKasaRoute: AppKasaRoute,
   AppKasaAyarlariRoute: AppKasaAyarlariRoute,
   AppMarkaRoute: AppMarkaRoute,

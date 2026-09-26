@@ -1,6 +1,8 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   Bell,
+  History,
+  Landmark,
   Building,
   ShieldCheck,
   CalendarClock,
@@ -89,7 +91,9 @@ interface NavItem {
     | '/mesaj-ayarlari'
     | '/marka'
     | '/bildirimler'
-    | '/yetkililer';
+    | '/yetkililer'
+    | '/islem-gecmisi'
+    | '/banka-hareketleri';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -218,6 +222,9 @@ export function AppSidebar() {
     items.push({ to: '/sakinler', label: 'Sakinler', icon: Users });
   }
   if (manager) items.push({ to: '/yetkililer', label: 'Yetkililer', icon: ShieldCheck });
+  if (manager || auditor) {
+    items.push({ to: '/islem-gecmisi', label: 'İşlem geçmişi', icon: History });
+  }
   if (notifications) items.push({ to: '/bildirimler', label: 'Bildirimler', icon: Bell });
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
@@ -239,6 +246,9 @@ export function AppSidebar() {
           { to: '/borclar', label: 'Borçlar', icon: ReceiptText },
           { to: '/tahsilatlar', label: 'Tahsilatlar', icon: HandCoins },
         ] as NavItem[])
+      : []),
+    ...(manager
+      ? ([{ to: '/banka-hareketleri', label: 'Banka hareketleri', icon: Landmark }] as NavItem[])
       : []),
     ...(manager || auditor
       ? ([{ to: '/raporlar', label: 'Raporlar', icon: FileBarChart }] as NavItem[])
