@@ -286,6 +286,8 @@ const SITE_SCOPED = new Set([
   'online-status',
   'online-settings',
   'payment-intent',
+  'officers',
+  'officer-candidates',
 ]);
 
 const isSiteData = (q: { queryKey: readonly unknown[] }) =>

@@ -3,6 +3,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Injectable,
@@ -227,6 +228,41 @@ export class ResidentsService {
     return { url: `${webOrigin}/davet/${token}`, expiresAt: expiresAt.toISOString() };
   }
 
+  async remove(id: string): Promise<void> {
+    const occupancy = await this.findOrThrow(id);
+    const siteId = this.tenant.siteId;
+    const userId = occupancy.userId;
+    let dropMembership = false;
+    if (userId) {
+      const membership = await this.tenant.db.siteMembership.findUnique({
+        where: { siteId_userId: { siteId, userId } },
+      });
+      if (membership && membership.role !== 'RESIDENT') {
+        throw new ConflictException(
+          'Bu kişi sitede yetkili. Kaydı silmeden önce Yetkililer sayfasından yetkisini kaldırın.',
+        );
+      }
+      const others = await this.tenant.db.occupancy.count({
+        where: { userId, id: { not: id }, ...activeOn() },
+      });
+      dropMembership = Boolean(membership) && others === 0;
+    }
+
+    await this.tenant.db.$transaction(async (tx) => {
+      await tx.occupancy.delete({ where: { id } });
+      if (dropMembership) {
+        await tx.siteMembership.deleteMany({ where: { siteId, userId: userId! } });
+      }
+    });
+    await this.audit.record({
+      action: 'DELETE',
+      entityType: 'Occupancy',
+      entityId: id,
+      before: { ...toOccupancyDto(occupancy), membershipRemoved: dropMembership },
+    });
+    await this.notifications.resolve(resetSubject.occupancy(id), this.tenant.userId ?? null);
+  }
+
   private async findOrThrow(id: string) {
     const occupancy = await this.tenant.db.occupancy.findUnique({
       where: { id, unit: this.tenant.unitScope() },
@@ -271,6 +307,12 @@ export class ResidentsController {
   @Post(':id/invitations')
   createInvitation(@Param('id', ParseUUIDPipe) id: string): Promise<InvitationDto> {
     return this.residents.createInvitation(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.residents.remove(id);
   }
 }
 

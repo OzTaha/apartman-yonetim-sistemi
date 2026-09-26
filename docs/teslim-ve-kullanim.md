@@ -46,7 +46,9 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 - **Çalışanlar:** Vardiya planı, görevler ve tekrarlayan görevler "Çalışan ve görev" menüsündedir.
 - **Ay kapanışı:** Gelir-gider raporu sayfasında geçmiş ayı kapatın; kapanan ayın kayıtları değiştirilemez.
 
-Kayıtlar silinmez, iptal edilir. İptal edilen kayıtlar nedeniyle birlikte saklanır.
+Parasal kayıtlar silinmez, iptal edilir. İptal edilen kayıtlar nedeniyle birlikte saklanır; bakiyelerden ve
+toplamlardan düşer. Yanlış girilen sakin kaydı ise sakinin menüsündeki "Kaydı sil" ile silinebilir; daireden taşınan
+sakin için "Taşındı olarak işaretle" kullanılır.
 
 ## Telefona uygulama olarak ekleme
 

@@ -592,3 +592,57 @@ describe('Blok yöneticisi ve denetçi', () => {
     expect(await prisma.blockManager.count({ where: { userId: userIds.residentA } })).toBe(0);
   });
 });
+
+describe('Yanlış girilen sakin kaydını silme', () => {
+  const findUser = (email: string) => prisma.user.findUniqueOrThrow({ where: { email } });
+
+  it('hesabı olmayan kayıt davetleriyle birlikte silinir', async () => {
+    const created = await http()
+      .post('/api/residents')
+      .set(M())
+      .send({
+        unitId: units.B2,
+        firstName: 'Yanlış',
+        lastName: 'Kayıt',
+        type: 'OWNER',
+        startDate: today,
+        phone: '0555 999 00 02',
+      })
+      .expect(201);
+    await http().post(`/api/residents/${created.body.id}/invitations`).set(M()).expect(201);
+
+    await http().delete(`/api/residents/${created.body.id}`).set(M()).expect(204);
+    expect(await prisma.occupancy.count({ where: { id: created.body.id } })).toBe(0);
+    expect(await prisma.invitation.count({ where: { occupancyId: created.body.id } })).toBe(0);
+    await http().delete(`/api/residents/${created.body.id}`).set(M()).expect(404);
+  });
+
+  it('blok yöneticisi yalnızca kendi bloğundaki kaydı siler', async () => {
+    const a = await findUser('a@blok.test');
+    await http()
+      .put('/api/officers')
+      .set(M())
+      .send({ userId: a.id, role: 'BLOCK_MANAGER', blockIds: [blocks.A] })
+      .expect(200);
+    const [inA] = await prisma.occupancy.findMany({ where: { unitId: units.A2, userId: null } });
+    const [inB] = await prisma.occupancy.findMany({ where: { unitId: units.B1 } });
+
+    await http().delete(`/api/residents/${inB!.id}`).set(as(tokens.residentA)).expect(404);
+    await http().delete(`/api/residents/${inA!.id}`).set(as(tokens.residentA)).expect(204);
+    await http().delete(`/api/residents/${inA!.id}`).set(as(tokens.residentB)).expect(403);
+    await http().delete(`/api/officers/${a.id}`).set(M()).expect(204);
+  });
+
+  it('hesabı olan kişinin kaydı silinince siteye erişimi kalkar; yetkiliyse önce yetki kaldırılır', async () => {
+    const b = await findUser('b@blok.test');
+    const [occupancy] = await prisma.occupancy.findMany({ where: { userId: b.id } });
+
+    await http().delete(`/api/residents/${occupancy!.id}`).set(M()).expect(409);
+    await http().delete(`/api/officers/${b.id}`).set(M()).expect(204);
+    await http().get('/api/transparency').set(as(tokens.residentB)).expect(200);
+
+    await http().delete(`/api/residents/${occupancy!.id}`).set(M()).expect(204);
+    expect(await prisma.siteMembership.count({ where: { userId: b.id, siteId } })).toBe(0);
+    await http().get('/api/transparency').set(as(tokens.residentB)).expect(403);
+  });
+});

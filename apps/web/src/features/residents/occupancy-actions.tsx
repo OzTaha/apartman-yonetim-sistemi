@@ -1,7 +1,17 @@
 import type { OccupancyDto, PasswordResetLinkDto } from '@apartman/shared';
-import { DoorOpen, KeyRound, Link2, MoreHorizontal, Pencil } from 'lucide-react';
+import { DoorOpen, KeyRound, Link2, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { PasswordResetDialog } from '@/components/password-reset-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { apiFetch } from '@/lib/api';
 import { fullName, isActiveOccupancy } from '@/lib/format';
+import { useApiMutation } from '@/lib/queries';
 import { useRole } from '@/lib/session';
 import { InvitationDialog, MoveOutDialog, OccupancyFormDialog } from './resident-dialogs';
 
@@ -24,8 +35,14 @@ export function OccupancyTypeBadge({ type }: { type: OccupancyDto['type'] }) {
 }
 
 export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
-  const [dialog, setDialog] = useState<'edit' | 'invite' | 'reset' | 'move-out' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'invite' | 'reset' | 'move-out' | 'delete' | null>(
+    null,
+  );
   const auditor = useRole() === 'AUDITOR';
+  const remove = useApiMutation(
+    () => apiFetch<void>(`/residents/${occupancy.id}`, { method: 'DELETE' }),
+    { success: 'Sakin kaydı silindi', onSuccess: () => setDialog(null) },
+  );
   const active = isActiveOccupancy(occupancy);
   const canInvite = active && !occupancy.hasAccount && Boolean(occupancy.phone || occupancy.email);
 
@@ -61,6 +78,10 @@ export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
               Taşındı olarak işaretle
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem variant="destructive" onSelect={() => setDialog('delete')}>
+            <Trash2 />
+            Kaydı sil
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -91,6 +112,31 @@ export function OccupancyActions({ occupancy }: { occupancy: OccupancyDto }) {
         onOpenChange={(o) => setDialog(o ? 'move-out' : null)}
         occupancy={occupancy}
       />
+      <AlertDialog open={dialog === 'delete'} onOpenChange={(o) => setDialog(o ? 'delete' : null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{fullName(occupancy)} kaydı silinsin mi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Yanlış girilen kayıtlar içindir; kayıt taşınma geçmişinde de görünmez. Daireden
+              taşınan sakin için "Taşındı olarak işaretle"yi kullanın.
+              {occupancy.hasAccount &&
+                ' Sakinin hesabı açılmış; bu sitede başka dairesi yoksa siteye erişimi de kaldırılır.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={remove.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                remove.mutate(undefined);
+              }}
+            >
+              Kaydı sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

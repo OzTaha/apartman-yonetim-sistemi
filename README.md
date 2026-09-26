@@ -122,6 +122,8 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Apartman siteye çevrilebilir. Site, en fazla bir bloğu varsa apartmana çevrilebilir.
 - Ödeme ve sakin geçmişi olmayan daire, ödenmemiş aidatlarıyla birlikte silinir. Geçmişi olan daire silinmez, arşivlenir:
   listelerden, aylık aidattan ve toplu borçtan çıkar, geçmişi raporlarda kalır.
+- Yanlış girilen sakin kaydı "Kaydı sil" ile silinir (davetleriyle birlikte). Kişinin hesabı varsa ve sitede başka
+  dairesi yoksa siteye erişimi de kalkar; yetkiliyse önce yetkisi kaldırılır. Taşınan sakin silinmez, "taşındı" olarak kapatılır.
 - Blok, içindeki tüm daireler silinebiliyorsa ve bloğa kayıtlı gider veya iş yoksa daireleriyle birlikte silinir.
 - Sitede gider ve yapılan iş "Site geneli" veya bir bloğa ait girilir. Kanundaki kurala uygun olarak blok giderini o
   bloğun daireleri öder; sakinler ortak giderleri ve yalnızca kendi bloklarının giderlerini görür.

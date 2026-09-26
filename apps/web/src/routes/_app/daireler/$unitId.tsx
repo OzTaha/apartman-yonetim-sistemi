@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UnitAccountSection } from '@/features/dues/unit-account';
+import { OccupancyActions } from '@/features/residents/occupancy-actions';
 import { OccupancyCard } from '@/features/residents/occupancy-card';
 import { OccupancyFormDialog } from '@/features/residents/resident-dialogs';
 import { RemoveUnitDialog } from '@/features/units/remove-unit-dialog';
@@ -173,8 +174,9 @@ function UnitDetailPage() {
                       ({o.type === 'OWNER' ? 'Malik' : 'Kiracı'})
                     </span>
                   </span>
-                  <span className="text-muted-foreground">
+                  <span className="flex items-center gap-1 text-muted-foreground">
                     {formatDate(o.startDate)} – {formatDate(o.endDate)}
+                    <OccupancyActions occupancy={o} />
                   </span>
                 </li>
               ))}
