@@ -14,6 +14,7 @@ import { MonthChart } from '@/features/finance/month-chart';
 import { WorkProgress, WorkStatusBadge } from '@/features/finance/work-parts';
 import { formatDate, todayIso } from '@/lib/format';
 import { useTransparency } from '@/lib/queries';
+import { blockScopeLabel } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/giderler')({
   validateSearch: (s: Record<string, unknown>): { yil?: number } => ({
@@ -108,6 +109,7 @@ function TransparencyPage() {
                           <span className="font-medium">{w.title}</span>
                           <span className="text-xs text-muted-foreground">
                             {[
+                              w.blockName && blockScopeLabel(w.blockName),
                               w.vendorName,
                               w.startDate &&
                                 `${formatDate(w.startDate)}${w.endDate ? ` – ${formatDate(w.endDate)}` : ''}`,
@@ -151,7 +153,13 @@ function TransparencyPage() {
                         <span className="grid min-w-0">
                           <span className="font-medium">{e.description || e.categoryName}</span>
                           <span className="text-xs text-muted-foreground">
-                            {[formatDate(e.date), e.categoryName, e.vendorName, e.workTitle]
+                            {[
+                              formatDate(e.date),
+                              e.blockName && blockScopeLabel(e.blockName),
+                              e.categoryName,
+                              e.vendorName,
+                              e.workTitle,
+                            ]
                               .filter(Boolean)
                               .join(' · ')}
                           </span>

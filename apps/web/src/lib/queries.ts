@@ -46,6 +46,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiFetch, errorMessage } from './api';
 import { useSession } from './session';
+import { useSiteKind } from './unit-label';
 
 export interface UnitFilters {
   blockId?: string;
@@ -106,6 +107,12 @@ export function useBlocks() {
     queryFn: () => apiFetch<BlockDto[]>('/blocks'),
     enabled: Boolean(siteId),
   });
+}
+
+export function useScopeBlocks(): BlockDto[] {
+  const kind = useSiteKind();
+  const blocks = useBlocks();
+  return kind === 'SITE' ? (blocks.data ?? []) : [];
 }
 
 export function useUnits(filters: UnitFilters) {
@@ -183,6 +190,7 @@ export const useDashboard = () => useSiteQuery<DashboardDto>('dashboard', '/dash
 
 export interface TransactionFilters {
   accountId?: string;
+  block?: string;
   type?: TransactionType;
   categoryId?: string;
   from?: string;

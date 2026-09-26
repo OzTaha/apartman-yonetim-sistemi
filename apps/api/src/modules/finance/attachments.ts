@@ -133,8 +133,10 @@ export class AttachmentsService {
     const attachment = await this.tenant.db.attachment.findUnique({
       where: { id },
       include: {
-        transaction: { select: { type: true, visibleToResidents: true, cancelledAt: true } },
-        work: { select: { visibleToResidents: true } },
+        transaction: {
+          select: { type: true, visibleToResidents: true, cancelledAt: true, blockId: true },
+        },
+        work: { select: { visibleToResidents: true, blockId: true } },
         payment: { select: { unitId: true } },
       },
     });
@@ -177,18 +179,26 @@ export class AttachmentsService {
 
   private async residentCanSee(a: {
     announcementId: string | null;
-    transaction: { type: string; visibleToResidents: boolean; cancelledAt: Date | null } | null;
-    work: { visibleToResidents: boolean } | null;
+    transaction: {
+      type: string;
+      visibleToResidents: boolean;
+      cancelledAt: Date | null;
+      blockId: string | null;
+    } | null;
+    work: { visibleToResidents: boolean; blockId: string | null } | null;
     payment: { unitId: string } | null;
   }): Promise<boolean> {
+    const inResidentBlock = async (blockId: string | null) =>
+      !blockId || (await this.tenant.residentBlockIds()).includes(blockId);
     if (a.transaction) {
       return (
         a.transaction.type === 'EXPENSE' &&
         a.transaction.visibleToResidents &&
-        !a.transaction.cancelledAt
+        !a.transaction.cancelledAt &&
+        (await inResidentBlock(a.transaction.blockId))
       );
     }
-    if (a.work) return a.work.visibleToResidents;
+    if (a.work) return a.work.visibleToResidents && (await inResidentBlock(a.work.blockId));
     if (a.payment) {
       const count = await this.tenant.db.occupancy.count({
         where: { unitId: a.payment.unitId, userId: this.tenant.userId, ...activeOn() },

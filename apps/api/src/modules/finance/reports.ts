@@ -20,6 +20,7 @@ import {
   periodOfDate,
   periodRange,
   transactionTypeLabels,
+  type BlockExpenseTotalDto,
   type ClosingsDto,
   type FinanceSummaryDto,
   type MonthClosingDto,
@@ -73,7 +74,7 @@ export class FinanceReportsService {
       type: { not: 'TRANSFER' },
       date: { gte: dateOnly(from), lte: dateOnly(to) },
     };
-    const [grouped, categories, accounts, opening, closing, months] = await Promise.all([
+    const [grouped, categories, accounts, opening, closing, months, byBlock] = await Promise.all([
       this.tenant.db.transaction.groupBy({
         by: ['categoryId', 'type'],
         where,
@@ -86,6 +87,7 @@ export class FinanceReportsService {
       accountBalances(this.prisma, siteId, dayBefore(from)),
       accountBalances(this.prisma, siteId, to),
       monthlyTotals(this.prisma, siteId, from, to),
+      this.blockTotals(from, to),
     ]);
     const categoryById = new Map(categories.map((c) => [c.id, c]));
     const byCategory = grouped
@@ -117,6 +119,7 @@ export class FinanceReportsService {
       byMonth: periodRange(periodOfDate(from), periodOfDate(to)).map(
         (period) => months.get(period) ?? { period, incomeKurus: 0, expenseKurus: 0 },
       ),
+      byBlock,
       accounts: accounts
         .map((a) => ({
           accountId: a.id,
@@ -126,6 +129,39 @@ export class FinanceReportsService {
         }))
         .filter((a, i) => accounts[i]!.isActive || a.openingKurus !== 0 || a.closingKurus !== 0),
     };
+  }
+
+  private async blockTotals(from: string, to: string): Promise<BlockExpenseTotalDto[]> {
+    if ((await this.tenant.siteKind()) !== 'SITE') return [];
+    const range = { gte: dateOnly(from), lte: dateOnly(to) };
+    const [blocks, expenses, reflected] = await Promise.all([
+      this.tenant.db.block.findMany({ select: { id: true, name: true } }),
+      this.tenant.db.transaction.groupBy({
+        by: ['blockId'],
+        where: { type: 'EXPENSE', cancelledAt: null, date: range },
+        _sum: { amountKurus: true },
+      }),
+      this.tenant.db.charge.findMany({
+        where: { cancelledAt: null, transaction: { cancelledAt: null, date: range } },
+        select: { amountKurus: true, transaction: { select: { blockId: true } } },
+      }),
+    ]);
+    const reflectedBy = new Map<string | null, number>();
+    for (const c of reflected) {
+      const key = c.transaction!.blockId;
+      reflectedBy.set(key, (reflectedBy.get(key) ?? 0) + c.amountKurus);
+    }
+    const expenseBy = new Map(expenses.map((e) => [e.blockId, e._sum.amountKurus ?? 0]));
+    const scopes: { id: string | null; name: string }[] = [
+      { id: null, name: 'Site geneli' },
+      ...blocks.sort((a, b) => a.name.localeCompare(b.name, 'tr', { numeric: true })),
+    ];
+    return scopes.map((b) => ({
+      blockId: b.id,
+      name: b.name,
+      expenseKurus: expenseBy.get(b.id) ?? 0,
+      reflectedKurus: reflectedBy.get(b.id) ?? 0,
+    }));
   }
 
   async report(from: string, to: string, format: 'pdf' | 'xlsx') {
@@ -143,7 +179,9 @@ export class FinanceReportsService {
     const detail = (t: TransactionDto) =>
       t.type === 'TRANSFER'
         ? `${t.accountName} → ${t.toAccountName}`
-        : [t.categoryName, t.vendorName ?? t.employeeName, t.workTitle].filter(Boolean).join(' · ');
+        : [t.blockName, t.categoryName, t.vendorName ?? t.employeeName, t.workTitle]
+            .filter(Boolean)
+            .join(' · ');
     const describe = (t: TransactionDto) =>
       t.paymentId
         ? `Makbuz ${t.receiptNo ?? ''} · ${t.unitBlockName}-${t.unitNumber}`
@@ -238,6 +276,29 @@ export class FinanceReportsService {
         },
         layout: 'lightHorizontalLines',
       },
+      ...(summary.byBlock.length > 0
+        ? ([
+            { text: 'Bloklara göre giderler', bold: true, fontSize: 11, margin: [0, 16, 0, 6] },
+            {
+              table: {
+                widths: ['*', 'auto', 'auto'],
+                body: [
+                  [
+                    { text: 'Kapsam', style: 'th' },
+                    { text: 'Gider', style: 'th', ...right },
+                    { text: 'Dairelere yansıtılan', style: 'th', ...right },
+                  ],
+                  ...summary.byBlock.map((b) => [
+                    b.name,
+                    { text: formatKurusTl(b.expenseKurus), ...right },
+                    { text: formatKurusTl(b.reflectedKurus), ...right },
+                  ]),
+                ],
+              },
+              layout: 'lightHorizontalLines',
+            },
+          ] as Content[])
+        : []),
       { text: 'Hareketler', bold: true, fontSize: 11, margin: [0, 16, 0, 6] },
       {
         table: {

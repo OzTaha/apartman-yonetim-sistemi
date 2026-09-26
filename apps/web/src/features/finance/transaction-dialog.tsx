@@ -9,7 +9,7 @@ import {
 } from '@apartman/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { Controller, useForm, type Control } from 'react-hook-form';
+import { Controller, useForm, useWatch, type Control } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Field } from '@/components/form-field';
@@ -41,11 +41,20 @@ import {
   useEmployees,
   useFinanceCategories,
   useRefreshSiteData,
+  useScopeBlocks,
   useVendors,
   useWorks,
 } from '@/lib/queries';
+import { blockScopeLabel } from '@/lib/unit-label';
 import { FilePicker } from './attachments';
 import { uploadAll } from './files';
+import { ReflectFields } from './reflect';
+import {
+  reflectError,
+  useReflectDefaults,
+  useScopeLabel,
+  type ReflectValue,
+} from './reflect-value';
 
 const NONE = 'none';
 
@@ -71,6 +80,7 @@ function schemaFor(type: TransactionType) {
       vendorId: z.string(),
       workId: z.string(),
       employeeId: z.string(),
+      blockId: z.string(),
       amount: tlAmountSchema,
       date: dateSchema,
       description: optionalText(200),
@@ -106,7 +116,8 @@ function OptionSelect({
   onSelect,
 }: {
   control: Control<FormInput, unknown, FormOutput>;
-  name: 'accountId' | 'toAccountId' | 'categoryId' | 'vendorId' | 'workId' | 'employeeId';
+  name:
+    'accountId' | 'toAccountId' | 'categoryId' | 'vendorId' | 'workId' | 'employeeId' | 'blockId';
   id: string;
   options: { value: string; label: string }[];
   placeholder: string;
@@ -163,9 +174,16 @@ export function TransactionDialog({
   const vendors = useVendors();
   const works = useWorks();
   const employees = useEmployees();
+  const scopeBlocks = useScopeBlocks();
+  const scopeLabel = useScopeLabel();
+  const reflectDefaults = useReflectDefaults();
   const refresh = useRefreshSiteData();
   const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
+  const [reflectOn, setReflectOn] = useState(false);
+  const [reflectValue, setReflectValue] = useState<ReflectValue | null>(null);
+  const reflect = reflectValue ?? reflectDefaults;
+  const blockOfWork = (id: string) => (works.data ?? []).find((w) => w.id === id)?.blockId ?? '';
 
   const activeAccounts = (accounts.data ?? []).filter((a) => a.isActive);
   const activeEmployees = (employees.data ?? []).filter((e) => e.isActive || e.id === employeeId);
@@ -178,6 +196,7 @@ export function TransactionDialog({
     vendorId: '',
     workId: workId ?? '',
     employeeId: employeeId ?? '',
+    blockId: workId ? blockOfWork(workId) : '',
     amount: '',
     date: todayIso(),
     description: '',
@@ -190,14 +209,29 @@ export function TransactionDialog({
     resetOptions: { keepDirtyValues: true },
   });
   const errors = form.formState.errors;
+  const watchedBlockId = useWatch({ control: form.control, name: 'blockId' });
+  const watchedWorkId = useWatch({ control: form.control, name: 'workId' });
+  const watchedAmount = tlAmountSchema.safeParse(
+    useWatch({ control: form.control, name: 'amount' }),
+  );
+  const workBlock = watchedWorkId ? blockOfWork(watchedWorkId) : '';
+  const blockName = scopeBlocks.find((b) => b.id === watchedBlockId)?.name ?? null;
 
   function close() {
     form.reset(defaults);
     setFiles([]);
+    setReflectOn(false);
+    setReflectValue(null);
     onOpenChange(false);
   }
 
   async function submit(v: FormOutput) {
+    const withReflect = type === 'EXPENSE' && reflectOn;
+    const invalid = withReflect ? reflectError(reflect) : null;
+    if (invalid) {
+      toast.error(invalid);
+      return;
+    }
     setSaving(true);
     try {
       const created = await apiFetch<TransactionDto>('/transactions', {
@@ -210,6 +244,8 @@ export function TransactionDialog({
           vendorId: type === 'TRANSFER' ? undefined : v.vendorId || undefined,
           workId: type === 'EXPENSE' ? v.workId || undefined : undefined,
           employeeId: type === 'EXPENSE' ? v.employeeId || undefined : undefined,
+          blockId: type === 'EXPENSE' ? v.blockId || undefined : undefined,
+          reflect: withReflect ? reflect : undefined,
           amountKurus: v.amount,
           date: v.date,
           description: v.description,
@@ -219,8 +255,11 @@ export function TransactionDialog({
       });
       if (files.length > 0) await uploadAll('transaction', created.id, files);
       await refresh();
+      const reflected = created.reflection
+        ? ` · ${created.reflection.chargeCount} daireye borç yazıldı`
+        : '';
       toast.success(
-        `${titles[type].replace(' ekle', '')} kaydedildi · ${formatKurus(created.amountKurus)}`,
+        `${titles[type].replace(' ekle', '')} kaydedildi · ${formatKurus(created.amountKurus)}${reflected}`,
       );
       close();
     } catch (error) {
@@ -352,6 +391,27 @@ export function TransactionDialog({
                 placeholder="İş seçin"
                 noneLabel="İşe bağlı değil"
                 disabled={Boolean(workId)}
+                onSelect={(value) => {
+                  const block = value ? blockOfWork(value) : '';
+                  if (block) form.setValue('blockId', block);
+                }}
+              />
+            </Field>
+          )}
+          {type === 'EXPENSE' && scopeBlocks.length > 1 && (
+            <Field
+              label="Kapsam"
+              htmlFor="tx-block"
+              hint="Bloğa ait gideri sakinlerden yalnızca o bloktakiler görür."
+            >
+              <OptionSelect
+                control={form.control}
+                name="blockId"
+                id="tx-block"
+                options={scopeBlocks.map((b) => ({ value: b.id, label: blockScopeLabel(b.name) }))}
+                placeholder="Kapsam seçin"
+                noneLabel="Site geneli"
+                disabled={Boolean(workBlock)}
               />
             </Field>
           )}
@@ -394,6 +454,32 @@ export function TransactionDialog({
                 </div>
               )}
             />
+          )}
+          {type === 'EXPENSE' && (
+            <div className="grid gap-3 rounded-md border p-3 sm:col-span-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="tx-reflect"
+                  checked={reflectOn}
+                  onCheckedChange={(v) => setReflectOn(v === true)}
+                />
+                <Label htmlFor="tx-reflect" className="grid gap-0.5 font-normal">
+                  <span className="font-medium">Dairelere borç olarak yansıt</span>
+                  <span className="text-xs text-muted-foreground">
+                    Gider {scopeLabel(blockName)} arasında paylaştırılıp borç olarak yazılır.
+                  </span>
+                </Label>
+              </div>
+              {reflectOn && (
+                <ReflectFields
+                  idPrefix="tx-rf"
+                  value={reflect}
+                  onChange={setReflectValue}
+                  amountKurus={watchedAmount.success ? watchedAmount.data : null}
+                  blockId={watchedBlockId || null}
+                />
+              )}
+            </div>
           )}
         </form>
         <DialogFooter>

@@ -4,7 +4,7 @@ import {
   transactionTypeLabels,
   type TransactionDto,
 } from '@apartman/shared';
-import { Ban, Lock } from 'lucide-react';
+import { Ban, Lock, Split } from 'lucide-react';
 import { useState } from 'react';
 import { Field } from '@/components/form-field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -35,11 +35,14 @@ import {
   useApiMutation,
   useEmployees,
   useFinanceCategories,
+  useScopeBlocks,
   useVendors,
   useWorks,
 } from '@/lib/queries';
+import { blockScopeLabel } from '@/lib/unit-label';
 import { AttachmentList, AttachmentUploadButton } from './attachments';
 import { transactionTitle } from './files';
+import { ReflectDialog } from './reflect';
 
 const NONE = 'none';
 
@@ -48,6 +51,8 @@ function EditForm({ t, onDone }: { t: TransactionDto; onDone: () => void }) {
   const vendors = useVendors();
   const works = useWorks();
   const employees = useEmployees();
+  const scopeBlocks = useScopeBlocks();
+  const [blockId, setBlockId] = useState(t.blockId ?? '');
   const [categoryId, setCategoryId] = useState(t.categoryId ?? '');
   const [vendorId, setVendorId] = useState(t.vendorId ?? '');
   const [workId, setWorkId] = useState(t.workId ?? '');
@@ -72,6 +77,7 @@ function EditForm({ t, onDone }: { t: TransactionDto; onDone: () => void }) {
                       workId: workId || null,
                       employeeId: employeeId || null,
                       visibleToResidents: visible,
+                      ...(t.reflection ? {} : { blockId: blockId || null }),
                     }
                   : {}),
               }),
@@ -171,6 +177,31 @@ function EditForm({ t, onDone }: { t: TransactionDto; onDone: () => void }) {
               </Select>
             </Field>
           )}
+          {t.type === 'EXPENSE' && scopeBlocks.length > 1 && (
+            <Field
+              label="Kapsam"
+              htmlFor="edit-block"
+              hint={t.reflection ? 'Dairelere yansıtılmış giderin kapsamı değişmez.' : undefined}
+            >
+              <Select
+                value={blockId || NONE}
+                onValueChange={(v) => setBlockId(v === NONE ? '' : v)}
+                disabled={Boolean(t.reflection)}
+              >
+                <SelectTrigger id="edit-block" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>Site geneli</SelectItem>
+                  {scopeBlocks.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {blockScopeLabel(b.name)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
           <Field label="Fatura / belge no" htmlFor="edit-doc">
             <Input
               id="edit-doc"
@@ -220,8 +251,10 @@ export function TransactionDetailsDialog({
   transaction: TransactionDto | undefined;
   onOpenChange: (open: boolean) => void;
 }) {
+  const scopeBlocks = useScopeBlocks();
   const [editing, setEditing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [reflecting, setReflecting] = useState(false);
   const cancel = useApiMutation(
     (reason: string) =>
       apiFetch<TransactionDto>(`/transactions/${t?.id}/cancel`, {
@@ -238,6 +271,9 @@ export function TransactionDetailsDialog({
     ['Tutar', formatKurus(t.amountKurus)],
     [t.type === 'TRANSFER' ? 'Çıkan hesap' : 'Hesap', t.accountName],
     ...(t.type === 'TRANSFER' ? [['Giren hesap', t.toAccountName] as [string, string | null]] : []),
+    ...(t.type === 'EXPENSE' && scopeBlocks.length > 1
+      ? [['Kapsam', blockScopeLabel(t.blockName)] as [string, string | null]]
+      : []),
     ['Kategori', t.categoryName],
     ['Firma', t.vendorName],
     ['Çalışan', t.employeeName],
@@ -245,7 +281,14 @@ export function TransactionDetailsDialog({
     ['Makbuz no', t.receiptNo ? String(t.receiptNo) : null],
     ['Belge no', t.documentNo],
     ['Açıklama', t.description],
+    [
+      'Dairelere yansıtıldı',
+      t.reflection
+        ? `${t.reflection.chargeCount} daire · ${formatKurus(t.reflection.totalKurus)} · ${formatKurus(t.reflection.paidKurus)} tahsil edildi`
+        : null,
+    ],
   ];
+  const canReflect = t.type === 'EXPENSE' && !t.cancelledAt && !t.reflection && !editing;
 
   return (
     <Dialog
@@ -314,26 +357,39 @@ export function TransactionDetailsDialog({
           )}
         </div>
 
-        {!readOnly && !editing && (
+        {((!readOnly && !editing) || canReflect) && (
           <DialogFooter className="gap-2 sm:justify-between">
-            <Button
-              variant="outline"
-              className="text-destructive"
-              onClick={() => setCancelling(true)}
-            >
-              <Ban />
-              İptal et
-            </Button>
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              Düzenle
-            </Button>
+            {!readOnly && !editing && (
+              <Button
+                variant="outline"
+                className="text-destructive"
+                onClick={() => setCancelling(true)}
+              >
+                <Ban />
+                İptal et
+              </Button>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              {canReflect && (
+                <Button variant="outline" onClick={() => setReflecting(true)}>
+                  <Split />
+                  Dairelere yansıt
+                </Button>
+              )}
+              {!readOnly && !editing && (
+                <Button variant="outline" onClick={() => setEditing(true)}>
+                  Düzenle
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         )}
+        <ReflectDialog transaction={t} open={reflecting} onOpenChange={setReflecting} />
         <CancelDialog
           open={cancelling}
           onOpenChange={setCancelling}
           title="Kayıt iptal edilsin mi?"
-          description={`${formatDate(t.date)} tarihli ${formatKurus(t.amountKurus)} kayıt iptal edilecek ve bakiyelerden düşülecek. Kayıt silinmez.`}
+          description={`${formatDate(t.date)} tarihli ${formatKurus(t.amountKurus)} kayıt iptal edilecek ve bakiyelerden düşülecek.${t.reflection ? ` Dairelere yansıtılan ${t.reflection.chargeCount} borç da iptal edilir.` : ''} Kayıt silinmez.`}
           pending={cancel.isPending}
           onConfirm={(reason) => cancel.mutate(reason)}
         />

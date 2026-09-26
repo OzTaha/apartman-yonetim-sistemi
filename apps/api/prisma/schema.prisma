@@ -223,8 +223,10 @@ model Block {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  site  Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  units Unit[]
+  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  units        Unit[]
+  transactions Transaction[]
+  works        Work[]
 
   @@unique([siteId, name])
   @@unique([id, siteId])
@@ -378,6 +380,7 @@ model Charge {
   unitId        String    @db.Uuid
   chargeTypeId  String    @db.Uuid
   duesPlanId    String?   @db.Uuid
+  transactionId String?   @db.Uuid
   period        String?
   description   String?
   amountKurus   Int
@@ -395,9 +398,11 @@ model Charge {
   unit        Unit                @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
   chargeType  ChargeType          @relation(fields: [chargeTypeId, siteId], references: [id, siteId], onDelete: Restrict)
   duesPlan    DuesPlan?           @relation(fields: [duesPlanId], references: [id], onDelete: SetNull)
+  transaction Transaction?        @relation(fields: [transactionId, siteId], references: [id, siteId], onDelete: Restrict)
   allocations PaymentAllocation[]
 
   @@unique([id, siteId])
+  @@index([transactionId])
   @@index([siteId, period])
   @@index([unitId, dueDate])
   @@map("charges")
@@ -525,6 +530,7 @@ model Work {
   title              String
   description        String?
   vendorId           String?    @db.Uuid
+  blockId            String?    @db.Uuid
   startDate          DateTime?  @db.Date
   endDate            DateTime?  @db.Date
   agreedKurus        Int?
@@ -536,6 +542,7 @@ model Work {
 
   site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   vendor       Vendor?       @relation(fields: [vendorId, siteId], references: [id, siteId], onDelete: Restrict)
+  block        Block?        @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
   transactions Transaction[]
   attachments  Attachment[]
 
@@ -557,6 +564,7 @@ model Transaction {
   workId             String?         @db.Uuid
   employeeId         String?         @db.Uuid
   paymentId          String?         @db.Uuid
+  blockId            String?         @db.Uuid
   description        String?
   documentNo         String?
   visibleToResidents Boolean         @default(true)
@@ -574,10 +582,13 @@ model Transaction {
   work        Work?            @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
   employee    Employee?        @relation(fields: [employeeId, siteId], references: [id, siteId], onDelete: Restrict)
   payment     Payment?         @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
+  block       Block?           @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
   attachments Attachment[]
+  charges     Charge[]
 
   @@unique([id, siteId])
   @@unique([paymentId, siteId])
+  @@index([blockId])
   @@index([siteId, date])
   @@index([accountId])
   @@index([workId])

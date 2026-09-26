@@ -28,6 +28,7 @@ import { MonthChart } from '@/features/finance/month-chart';
 import { apiFetch, downloadFile, errorMessage } from '@/lib/api';
 import { formatDate, todayIso } from '@/lib/format';
 import { useApiMutation, useClosings, useFinanceSummary } from '@/lib/queries';
+import { blockScopeLabel } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/gelir-gider')({
@@ -348,6 +349,38 @@ function FinanceReportPage() {
               </CardContent>
             </Card>
           </div>
+
+          {s.byBlock.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Bloklara göre giderler</CardTitle>
+                <CardDescription>
+                  Blok giderlerini yalnızca o bloğun daireleri öder. Dairelere yansıtılan tutar,
+                  giderden borç olarak yazılan kısımdır.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="divide-y rounded-md border text-sm">
+                  <li className="grid grid-cols-3 gap-2 px-3 py-2 text-xs text-muted-foreground">
+                    <span>Kapsam</span>
+                    <span className="text-right">Gider</span>
+                    <span className="text-right">Dairelere yansıtılan</span>
+                  </li>
+                  {s.byBlock.map((b) => (
+                    <li key={b.blockId ?? 'site'} className="grid grid-cols-3 gap-2 px-3 py-2">
+                      <span className="font-medium">
+                        {b.blockId ? blockScopeLabel(b.name) : b.name}
+                      </span>
+                      <span className="text-right tabular-nums">{formatKurus(b.expenseKurus)}</span>
+                      <span className="text-right tabular-nums">
+                        {formatKurus(b.reflectedKurus)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

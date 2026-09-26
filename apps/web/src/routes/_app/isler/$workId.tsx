@@ -14,6 +14,7 @@ import { WorkProgress, WorkStatusBadge } from '@/features/finance/work-parts';
 import { apiFetch } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { useApiMutation, useWork } from '@/lib/queries';
+import { blockScopeLabel } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/isler/$workId')({
   component: () => (
@@ -55,6 +56,7 @@ function WorkDetailPage() {
   const w = work.data;
   const selected = w.payments.find((p) => p.id === selectedId);
   const info: [string, string | null][] = [
+    ['Kapsam', w.blockName ? blockScopeLabel(w.blockName) : null],
     ['Firma', w.vendorName],
     ['Başlangıç', w.startDate ? formatDate(w.startDate) : null],
     ['Bitiş', w.endDate ? formatDate(w.endDate) : null],

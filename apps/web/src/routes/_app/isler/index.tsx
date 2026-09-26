@@ -9,6 +9,7 @@ import { WorkDialog } from '@/features/finance/work-dialogs';
 import { WorkProgress, WorkStatusBadge } from '@/features/finance/work-parts';
 import { formatDate } from '@/lib/format';
 import { useWorks } from '@/lib/queries';
+import { blockScopeLabel } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/isler/')({
   component: () => (
@@ -60,6 +61,7 @@ function WorksPage() {
                       <span className="font-medium">{w.title}</span>
                       <span className="text-xs text-muted-foreground">
                         {[
+                          w.blockName && blockScopeLabel(w.blockName),
                           w.vendorName,
                           w.startDate &&
                             `${formatDate(w.startDate)}${w.endDate ? ` – ${formatDate(w.endDate)}` : ''}`,

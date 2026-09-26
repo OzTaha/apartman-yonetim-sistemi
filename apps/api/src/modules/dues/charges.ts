@@ -92,6 +92,7 @@ export class ChargesService {
         where: {
           archivedAt: null,
           ...(input.scope === 'SELECTED' ? { id: { in: input.unitIds } } : {}),
+          ...(input.scope === 'BLOCKS' ? { blockId: { in: input.blockIds } } : {}),
         },
         include: { block: { select: { name: true } } },
       })
@@ -106,6 +107,13 @@ export class ChargesService {
       }))
       .sort(compareUnits);
     if (units.length === 0) throw new BadRequestException('Borç yazılacak daire yok');
+    if (
+      input.scope === 'BLOCKS' &&
+      (await this.tenant.db.block.count({ where: { id: { in: input.blockIds } } })) !==
+        new Set(input.blockIds).size
+    ) {
+      throw new NotFoundException('Seçilen bloklardan bazıları bulunamadı');
+    }
     if (input.scope === 'SELECTED' && units.length !== new Set(input.unitIds).size) {
       throw new NotFoundException('Seçilen dairelerden bazıları bulunamadı');
     }

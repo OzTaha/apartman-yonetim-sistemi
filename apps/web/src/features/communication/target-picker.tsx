@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useBlocks, useUnits } from '@/lib/queries';
-import { labelUnit, useIsApartment } from '@/lib/unit-label';
+import { blockScopeLabel, labelUnit, useIsApartment } from '@/lib/unit-label';
 
 export interface TargetValue {
   target: string;
@@ -17,7 +17,7 @@ export interface TargetValue {
   unitIds: string[];
 }
 
-function CheckList({
+export function CheckList({
   idPrefix,
   items,
   selected,
@@ -92,7 +92,7 @@ export function TargetPicker({
       {value.target === 'BLOCKS' && (
         <CheckList
           idPrefix={`${idPrefix}-block`}
-          items={(blocks.data ?? []).map((b) => ({ id: b.id, label: `${b.name} Blok` }))}
+          items={(blocks.data ?? []).map((b) => ({ id: b.id, label: blockScopeLabel(b.name) }))}
           selected={value.blockIds}
           onChange={(blockIds) => onChange({ ...value, blockIds })}
         />

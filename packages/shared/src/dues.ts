@@ -66,7 +66,8 @@ export const accrueSchema = z.object({ period: periodSchema });
 export const chargeCreateSchema = z
   .object({
     chargeTypeId: idSchema,
-    scope: z.enum(['ALL', 'SELECTED']),
+    scope: z.enum(['ALL', 'BLOCKS', 'SELECTED']),
+    blockIds: z.array(idSchema).max(200).default([]),
     unitIds: z.array(idSchema).max(2000).default([]),
     amountMode: z.enum(['PER_UNIT', 'DISTRIBUTE']),
     method: distributionMethodSchema.default('EQUAL'),
@@ -76,9 +77,13 @@ export const chargeCreateSchema = z
     dueDate: dateSchema,
     description: optionalText(200),
   })
-  .refine((v) => v.scope === 'ALL' || v.unitIds.length > 0, {
+  .refine((v) => v.scope !== 'SELECTED' || v.unitIds.length > 0, {
     message: 'En az bir daire seçin',
     path: ['unitIds'],
+  })
+  .refine((v) => v.scope !== 'BLOCKS' || v.blockIds.length > 0, {
+    message: 'En az bir blok seçin',
+    path: ['blockIds'],
   })
   .refine((v) => v.dueDate >= v.issueDate, {
     message: 'Son ödeme tarihi borç tarihinden önce olamaz',

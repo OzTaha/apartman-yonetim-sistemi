@@ -34,6 +34,11 @@ export const transactionInclude = {
   vendor: { select: { name: true } },
   work: { select: { title: true } },
   employee: { select: { firstName: true, lastName: true } },
+  block: { select: { name: true } },
+  charges: {
+    where: { cancelledAt: null },
+    select: { amountKurus: true, allocations: { select: { amountKurus: true } } },
+  },
   payment: {
     select: {
       receiptNo: true,
@@ -70,6 +75,19 @@ export function toTransactionDto(
     employeeId: t.employeeId,
     employeeName: t.employee ? `${t.employee.firstName} ${t.employee.lastName}` : null,
     paymentId: t.paymentId,
+    blockId: t.blockId,
+    blockName: t.block?.name ?? null,
+    reflection:
+      t.charges.length === 0
+        ? null
+        : {
+            chargeCount: t.charges.length,
+            totalKurus: t.charges.reduce((sum, c) => sum + c.amountKurus, 0),
+            paidKurus: t.charges.reduce(
+              (sum, c) => sum + c.allocations.reduce((s, a) => s + a.amountKurus, 0),
+              0,
+            ),
+          },
     receiptNo: t.payment?.receiptNo ?? null,
     unitBlockName: t.payment?.unit.block.name ?? null,
     unitNumber: t.payment?.unit.number ?? null,
@@ -86,6 +104,7 @@ export function toTransactionDto(
 
 export const workInclude = {
   vendor: { select: { name: true } },
+  block: { select: { name: true } },
   _count: { select: { attachments: true } },
 } satisfies Prisma.WorkInclude;
 
@@ -98,6 +117,8 @@ export function toWorkDto(w: WorkWithRelations, paidKurus: number): WorkDto {
     description: w.description,
     vendorId: w.vendorId,
     vendorName: w.vendor?.name ?? null,
+    blockId: w.blockId,
+    blockName: w.block?.name ?? null,
     startDate: w.startDate ? toDateString(w.startDate) : null,
     endDate: w.endDate ? toDateString(w.endDate) : null,
     agreedKurus: w.agreedKurus,

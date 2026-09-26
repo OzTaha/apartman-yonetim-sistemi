@@ -15,6 +15,7 @@ import type { SiteKind, SiteRole } from '@apartman/shared';
 import { ClsService, type ClsStore } from 'nestjs-cls';
 import { z } from 'zod';
 import type { AuthenticatedRequest } from '../common/auth-user';
+import { activeOn } from '../common/dates';
 import { PrismaService } from '../prisma/prisma.service';
 import { createTenantClient, type TenantClient } from './tenant-extension';
 
@@ -120,5 +121,13 @@ export class TenantContext {
 
   get isResident(): boolean {
     return this.cls.get('siteRole') === 'RESIDENT';
+  }
+
+  async residentBlockIds(): Promise<string[]> {
+    const occupancies = await this.db.occupancy.findMany({
+      where: { userId: this.userId, ...activeOn() },
+      select: { unit: { select: { blockId: true } } },
+    });
+    return [...new Set(occupancies.map((o) => o.unit.blockId))];
   }
 }

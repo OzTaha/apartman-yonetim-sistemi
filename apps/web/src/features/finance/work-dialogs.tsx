@@ -37,7 +37,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api';
-import { useApiMutation, useVendors } from '@/lib/queries';
+import { useApiMutation, useScopeBlocks, useVendors } from '@/lib/queries';
+import { blockScopeLabel } from '@/lib/unit-label';
 
 const NONE = 'none';
 
@@ -59,6 +60,7 @@ const workFormSchema = z
     title: z.string().trim().min(2, 'En az 2 karakter olmalıdır').max(120),
     description: optionalText(2000),
     vendorId: z.string(),
+    blockId: z.string(),
     status: workStatusSchema,
     startDate: z.string(),
     endDate: z.string(),
@@ -80,6 +82,7 @@ type WorkFormOutput = z.output<typeof workFormSchema>;
 
 export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: WorkDto }) {
   const vendors = useVendors();
+  const scopeBlocks = useScopeBlocks();
   const navigate = useNavigate();
   const form = useForm<WorkFormInput, unknown, WorkFormOutput>({
     resolver: zodResolver(workFormSchema),
@@ -87,6 +90,7 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
       title: work?.title ?? '',
       description: work?.description ?? '',
       vendorId: work?.vendorId ?? '',
+      blockId: work?.blockId ?? '',
       status: work?.status ?? 'PLANNED',
       startDate: work?.startDate ?? '',
       endDate: work?.endDate ?? '',
@@ -102,6 +106,7 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
         title: v.title,
         description: v.description,
         vendorId: v.vendorId || null,
+        blockId: v.blockId || null,
         status: v.status,
         startDate: v.startDate || null,
         endDate: v.endDate || null,
@@ -170,6 +175,36 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
               )}
             />
           </Field>
+          {scopeBlocks.length > 1 && (
+            <Field
+              label="Kapsam"
+              htmlFor="work-block"
+              hint="Bloğa ait işi sakinlerden yalnızca o bloktakiler görür."
+            >
+              <Controller
+                control={form.control}
+                name="blockId"
+                render={({ field }) => (
+                  <Select
+                    value={field.value || NONE}
+                    onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                  >
+                    <SelectTrigger id="work-block" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>Site geneli</SelectItem>
+                      {scopeBlocks.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {blockScopeLabel(b.name)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </Field>
+          )}
           <Field label="Durum" htmlFor="work-status" required>
             <Controller
               control={form.control}

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { amountKurusSchema, periodSchema } from './dues';
+import { amountKurusSchema, distributionMethodSchema, periodSchema } from './dues';
 import { periodOfDate } from './ledger';
 import type { Kurus } from './money';
 import { dateSchema, idSchema, optionalPhoneSchema, optionalText } from './schemas';
@@ -94,6 +94,20 @@ export type VendorInput = z.input<typeof vendorCreateSchema>;
 
 export const vendorUpdateSchema = vendorFields.extend({ isActive: z.boolean().optional() });
 
+export const expenseReflectSchema = z
+  .object({
+    chargeTypeId: idSchema,
+    method: distributionMethodSchema.default('EQUAL'),
+    issueDate: dateSchema,
+    dueDate: dateSchema,
+    description: optionalText(200),
+  })
+  .refine((v) => v.dueDate >= v.issueDate, {
+    message: 'Son ödeme tarihi borç tarihinden önce olamaz',
+    path: ['dueDate'],
+  });
+export type ExpenseReflectInput = z.input<typeof expenseReflectSchema>;
+
 export const transactionCreateSchema = z
   .object({
     type: transactionTypeSchema,
@@ -103,11 +117,17 @@ export const transactionCreateSchema = z
     vendorId: idSchema.optional(),
     workId: idSchema.optional(),
     employeeId: idSchema.optional(),
+    blockId: idSchema.optional(),
     amountKurus: amountKurusSchema,
     date: dateSchema,
     description: optionalText(200),
     documentNo: optionalText(50),
     visibleToResidents: z.boolean().optional(),
+    reflect: expenseReflectSchema.optional(),
+  })
+  .refine((v) => v.type === 'EXPENSE' || (!v.blockId && !v.reflect), {
+    message: 'Yalnızca gider bir bloğa ait olabilir ve dairelere yansıtılabilir',
+    path: ['blockId'],
   })
   .refine((v) => v.type !== 'TRANSFER' || Boolean(v.toAccountId), {
     message: 'Hedef hesabı seçin',
@@ -140,14 +160,18 @@ export const transactionUpdateSchema = z.object({
   vendorId: idSchema.nullable().optional(),
   workId: idSchema.nullable().optional(),
   employeeId: idSchema.nullable().optional(),
+  blockId: idSchema.nullable().optional(),
   description: z.string().trim().max(200).nullable().optional(),
   documentNo: z.string().trim().max(50).nullable().optional(),
   visibleToResidents: z.boolean().optional(),
 });
 export type TransactionUpdateInput = z.input<typeof transactionUpdateSchema>;
 
+export const SITE_WIDE = 'site';
+
 export const transactionListQuerySchema = z.object({
   accountId: idSchema.optional(),
+  block: z.union([z.literal(SITE_WIDE), idSchema]).optional(),
   type: transactionTypeSchema.optional(),
   categoryId: idSchema.optional(),
   vendorId: idSchema.optional(),
@@ -162,6 +186,7 @@ const workFields = z.object({
   title: nameField(120),
   description: optionalText(2000),
   vendorId: idSchema.nullable().optional(),
+  blockId: idSchema.nullable().optional(),
   startDate: dateSchema.nullable().optional(),
   endDate: dateSchema.nullable().optional(),
   agreedKurus: amountKurusSchema.nullable().optional(),
@@ -243,6 +268,12 @@ export interface AttachmentDto {
   createdAt: string;
 }
 
+export interface ExpenseReflectionDto {
+  chargeCount: number;
+  totalKurus: Kurus;
+  paidKurus: Kurus;
+}
+
 export interface TransactionDto {
   id: string;
   type: TransactionType;
@@ -261,6 +292,9 @@ export interface TransactionDto {
   employeeId: string | null;
   employeeName: string | null;
   paymentId: string | null;
+  blockId: string | null;
+  blockName: string | null;
+  reflection: ExpenseReflectionDto | null;
   receiptNo: number | null;
   unitBlockName: string | null;
   unitNumber: string | null;
@@ -280,6 +314,8 @@ export interface WorkDto {
   description: string | null;
   vendorId: string | null;
   vendorName: string | null;
+  blockId: string | null;
+  blockName: string | null;
   startDate: string | null;
   endDate: string | null;
   agreedKurus: Kurus | null;
@@ -316,6 +352,13 @@ export interface AccountBalanceDto {
   closingKurus: Kurus;
 }
 
+export interface BlockExpenseTotalDto {
+  blockId: string | null;
+  name: string;
+  expenseKurus: Kurus;
+  reflectedKurus: Kurus;
+}
+
 export interface FinanceSummaryDto {
   from: string;
   to: string;
@@ -324,6 +367,7 @@ export interface FinanceSummaryDto {
   netKurus: Kurus;
   byCategory: FinanceCategoryTotalDto[];
   byMonth: FinanceMonthDto[];
+  byBlock: BlockExpenseTotalDto[];
   accounts: AccountBalanceDto[];
 }
 
@@ -348,6 +392,7 @@ export interface TransparencyExpenseDto {
   amountKurus: Kurus;
   categoryName: string | null;
   vendorName: string | null;
+  blockName: string | null;
   workId: string | null;
   workTitle: string | null;
   description: string | null;

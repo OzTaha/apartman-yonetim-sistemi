@@ -37,8 +37,15 @@ import {
 } from '@/components/ui/select';
 import { apiFetch } from '@/lib/api';
 import { todayIso } from '@/lib/format';
-import { useApiMutation, useChargeTypes, useProportionalDues, useUnits } from '@/lib/queries';
-import { labelUnit } from '@/lib/unit-label';
+import { CheckList } from '@/features/communication/target-picker';
+import {
+  useApiMutation,
+  useChargeTypes,
+  useProportionalDues,
+  useScopeBlocks,
+  useUnits,
+} from '@/lib/queries';
+import { blockScopeLabel, labelUnit } from '@/lib/unit-label';
 
 interface DialogProps {
   open: boolean;
@@ -48,7 +55,8 @@ interface DialogProps {
 const createSchema = z
   .object({
     chargeTypeId: z.uuid('Borç türü seçin'),
-    scope: z.enum(['ALL', 'SELECTED']),
+    scope: z.enum(['ALL', 'BLOCKS', 'SELECTED']),
+    blockIds: z.array(z.string()),
     unitId: z.string().optional(),
     amountMode: z.enum(['PER_UNIT', 'DISTRIBUTE']),
     method: distributionMethodSchema,
@@ -58,9 +66,13 @@ const createSchema = z
     dueDate: dateSchema,
     description: optionalText(200),
   })
-  .refine((v) => v.scope === 'ALL' || Boolean(v.unitId), {
+  .refine((v) => v.scope !== 'SELECTED' || Boolean(v.unitId), {
     message: 'Daire seçin',
     path: ['unitId'],
+  })
+  .refine((v) => v.scope !== 'BLOCKS' || v.blockIds.length > 0, {
+    message: 'En az bir blok seçin',
+    path: ['blockIds'],
   })
   .refine((v) => v.dueDate >= v.issueDate, {
     message: 'Son ödeme tarihi borç tarihinden önce olamaz',
@@ -77,12 +89,14 @@ export function ChargeCreateDialog({
   const types = useChargeTypes();
   const units = useUnits({});
   const proportional = useProportionalDues();
+  const scopeBlocks = useScopeBlocks();
   const activeTypes = (types.data ?? []).filter((t) => t.isActive);
   const defaultType = activeTypes.find((t) => t.code === 'FIXTURE') ?? activeTypes[0];
 
   const defaults: CreateInput = {
     chargeTypeId: defaultType?.id ?? '',
     scope: unitId ? 'SELECTED' : 'ALL',
+    blockIds: [],
     unitId: unitId ?? '',
     amountMode: 'PER_UNIT',
     method: 'EQUAL',
@@ -101,9 +115,13 @@ export function ChargeCreateDialog({
   const parsedAmount = tlAmountSchema.safeParse(w.amount ?? '');
 
   const distribution = useMemo(() => {
-    if (w.scope !== 'ALL' || w.amountMode !== 'DISTRIBUTE' || !parsedAmount.success || !units.data)
+    if (w.scope === 'SELECTED' || w.amountMode !== 'DISTRIBUTE' || !parsedAmount.success)
       return null;
-    const list = units.data.map((u) => ({
+    const inScope = (units.data ?? []).filter(
+      (u) => w.scope === 'ALL' || (w.blockIds ?? []).includes(u.blockId),
+    );
+    if (inScope.length === 0) return null;
+    const list = inScope.map((u) => ({
       id: u.id,
       label: labelUnit(u.blockName, u.number, 'short'),
       areaM2: u.areaM2,
@@ -118,7 +136,15 @@ export function ChargeCreateDialog({
     } catch (e) {
       return { rows: [], error: e instanceof DistributionError ? e.message : 'Dağıtım yapılamadı' };
     }
-  }, [w.scope, w.amountMode, w.method, parsedAmount.success, parsedAmount.data, units.data]);
+  }, [
+    w.scope,
+    w.blockIds,
+    w.amountMode,
+    w.method,
+    parsedAmount.success,
+    parsedAmount.data,
+    units.data,
+  ]);
 
   const mutation = useApiMutation(
     (v: CreateOutput) =>
@@ -127,6 +153,7 @@ export function ChargeCreateDialog({
         body: {
           chargeTypeId: v.chargeTypeId,
           scope: v.scope,
+          blockIds: v.scope === 'BLOCKS' ? v.blockIds : [],
           unitIds: v.scope === 'SELECTED' && v.unitId ? [v.unitId] : [],
           amountMode: v.scope === 'SELECTED' ? 'PER_UNIT' : v.amountMode,
           method: v.method,
@@ -148,7 +175,7 @@ export function ChargeCreateDialog({
 
   const errors = form.formState.errors;
   const perUnitLabel =
-    w.scope === 'ALL' && w.amountMode === 'DISTRIBUTE'
+    w.scope !== 'SELECTED' && w.amountMode === 'DISTRIBUTE'
       ? 'Toplam tutar (TL)'
       : 'Daire başı tutar (TL)';
 
@@ -201,9 +228,35 @@ export function ChargeCreateDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ALL">Tüm daireler</SelectItem>
+                      {scopeBlocks.length > 1 && (
+                        <SelectItem value="BLOCKS">Seçili bloklar</SelectItem>
+                      )}
                       <SelectItem value="SELECTED">Tek daire</SelectItem>
                     </SelectContent>
                   </Select>
+                )}
+              />
+            </Field>
+          )}
+
+          {!unitId && w.scope === 'BLOCKS' && (
+            <Field
+              label="Bloklar"
+              htmlFor="ch-blocks"
+              required
+              error={errors.blockIds?.message}
+              className="sm:col-span-2"
+            >
+              <Controller
+                control={form.control}
+                name="blockIds"
+                render={({ field }) => (
+                  <CheckList
+                    idPrefix="ch-block"
+                    items={scopeBlocks.map((b) => ({ id: b.id, label: blockScopeLabel(b.name) }))}
+                    selected={field.value}
+                    onChange={field.onChange}
+                  />
                 )}
               />
             </Field>
@@ -238,7 +291,7 @@ export function ChargeCreateDialog({
             </Field>
           )}
 
-          {w.scope === 'ALL' && (
+          {w.scope !== 'SELECTED' && (
             <>
               <Field label="Tutar nasıl girilecek" htmlFor="ch-mode">
                 <Controller

@@ -39,10 +39,17 @@ export class WorksService {
     private readonly storage: FileStorage,
   ) {}
 
-  async list(onlyVisible = false): Promise<WorkDto[]> {
+  async list(residentView?: { blockIds: string[] | null }): Promise<WorkDto[]> {
     const [works, paid] = await Promise.all([
       this.tenant.db.work.findMany({
-        where: onlyVisible ? { visibleToResidents: true } : {},
+        where: residentView
+          ? {
+              visibleToResidents: true,
+              ...(residentView.blockIds
+                ? { OR: [{ blockId: null }, { blockId: { in: residentView.blockIds } }] }
+                : {}),
+            }
+          : {},
         include: workInclude,
         orderBy: [{ createdAt: 'desc' }],
       }),
@@ -79,12 +86,14 @@ export class WorksService {
 
   async create(input: WorkCreateDto): Promise<WorkDetailDto> {
     if (input.vendorId) await this.assertVendor(input.vendorId);
+    if (input.blockId) await this.assertBlock(input.blockId);
     const work = await this.tenant.db.work.create({
       data: {
         siteId: this.tenant.siteId,
         title: input.title,
         description: input.description ?? null,
         vendorId: input.vendorId ?? null,
+        blockId: input.blockId ?? null,
         startDate: optionalDate(input.startDate),
         endDate: optionalDate(input.endDate),
         agreedKurus: input.agreedKurus ?? null,
@@ -106,12 +115,14 @@ export class WorksService {
     const before = await this.tenant.db.work.findUnique({ where: { id } });
     if (!before) throw new NotFoundException('İş bulunamadı');
     if (input.vendorId) await this.assertVendor(input.vendorId);
+    if (input.blockId) await this.assertBlock(input.blockId);
     await this.tenant.db.work.update({
       where: { id },
       data: {
         title: input.title,
         description: input.description ?? null,
         vendorId: input.vendorId ?? null,
+        blockId: input.blockId ?? null,
         startDate: optionalDate(input.startDate),
         endDate: optionalDate(input.endDate),
         agreedKurus: input.agreedKurus ?? null,
@@ -168,6 +179,11 @@ export class WorksService {
   private async assertVendor(id: string) {
     const vendor = await this.tenant.db.vendor.findUnique({ where: { id } });
     if (!vendor) throw new NotFoundException('Firma bulunamadı');
+  }
+
+  private async assertBlock(id: string) {
+    const block = await this.tenant.db.block.findUnique({ where: { id } });
+    if (!block) throw new NotFoundException('Blok bulunamadı');
   }
 }
 

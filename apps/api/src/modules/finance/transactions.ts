@@ -14,12 +14,19 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import type { BulkCancelResultDto } from '@apartman/shared';
+import {
+  DistributionError,
+  DUES_INCOME_CODE,
+  SITE_WIDE,
+  splitTotal,
+  type BulkCancelResultDto,
+  type TransactionDto,
+} from '@apartman/shared';
 import { cancelEach } from '../../common/bulk';
-import { DUES_INCOME_CODE, type TransactionDto } from '@apartman/shared';
 import { dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
 import { BulkCancelDto, CancelDto } from '../../common/dues.dto';
 import {
+  ExpenseReflectDto,
   TransactionCreateDto,
   TransactionListQueryDto,
   TransactionUpdateDto,
@@ -28,6 +35,8 @@ import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
+import { assertMethodAllowed, loadSiteSettings } from '../dues/site-settings';
+import { compareUnits } from '../residents/occupancy.mapper';
 import { assertDateOpen, lockedThrough } from './finance.ledger';
 import { toTransactionDto, transactionInclude } from './finance.mapper';
 
@@ -54,6 +63,7 @@ export class TransactionsService {
       ...(query.vendorId ? { vendorId: query.vendorId } : {}),
       ...(query.workId ? { workId: query.workId } : {}),
       ...(query.employeeId ? { employeeId: query.employeeId } : {}),
+      ...(query.block ? { blockId: query.block === SITE_WIDE ? null : query.block } : {}),
       ...(query.from || query.to
         ? {
             date: {
@@ -94,36 +104,68 @@ export class TransactionsService {
     if (input.type === 'TRANSFER') await this.assertAccount(input.toAccountId!);
 
     let vendorId = input.vendorId ?? null;
+    let blockId = input.type === 'EXPENSE' ? (input.blockId ?? null) : null;
     const employeeId = input.type === 'EXPENSE' ? (input.employeeId ?? null) : null;
     if (input.type !== 'TRANSFER') {
       await this.assertCategory(input.categoryId!, input.type);
       if (vendorId) await this.assertVendor(vendorId);
       if (employeeId) await this.assertEmployee(employeeId);
+      if (blockId) await this.assertBlock(blockId);
       if (input.workId) {
         const work = await this.tenant.db.work.findUnique({ where: { id: input.workId } });
         if (!work) throw new NotFoundException('İş bulunamadı');
         if (!employeeId) vendorId ??= work.vendorId;
+        if (input.type === 'EXPENSE' && work.blockId) {
+          if (blockId && blockId !== work.blockId) {
+            throw new BadRequestException('Bu iş başka bir bloğa ait');
+          }
+          blockId = work.blockId;
+        }
       }
     }
+    const reflection = input.reflect
+      ? await this.planReflection(
+          {
+            blockId,
+            amountKurus: input.amountKurus,
+            categoryId: input.categoryId ?? null,
+            description: input.description ?? null,
+          },
+          input.reflect,
+        )
+      : null;
 
     const isTransfer = input.type === 'TRANSFER';
-    const created = await this.tenant.db.transaction.create({
-      data: {
-        siteId,
-        type: input.type,
-        amountKurus: input.amountKurus,
-        date: dateOnly(input.date),
-        accountId: input.accountId,
-        toAccountId: isTransfer ? input.toAccountId! : null,
-        categoryId: isTransfer ? null : input.categoryId!,
-        vendorId: isTransfer ? null : vendorId,
-        workId: input.type === 'EXPENSE' ? (input.workId ?? null) : null,
-        employeeId,
-        description: input.description ?? null,
-        documentNo: isTransfer ? null : (input.documentNo ?? null),
-        visibleToResidents: input.visibleToResidents ?? !employeeId,
-        createdById: this.tenant.userId ?? null,
-      },
+    const created = await this.tenant.db.$transaction(async (tx) => {
+      const row = await tx.transaction.create({
+        data: {
+          siteId,
+          type: input.type,
+          amountKurus: input.amountKurus,
+          date: dateOnly(input.date),
+          accountId: input.accountId,
+          toAccountId: isTransfer ? input.toAccountId! : null,
+          categoryId: isTransfer ? null : input.categoryId!,
+          vendorId: isTransfer ? null : vendorId,
+          workId: input.type === 'EXPENSE' ? (input.workId ?? null) : null,
+          employeeId,
+          blockId,
+          description: input.description ?? null,
+          documentNo: isTransfer ? null : (input.documentNo ?? null),
+          visibleToResidents: input.visibleToResidents ?? !employeeId,
+          createdById: this.tenant.userId ?? null,
+        },
+      });
+      if (reflection) {
+        await tx.charge.createMany({
+          data: reflection.map((r) => ({
+            ...r,
+            siteId,
+            transactionId: row.id,
+          })),
+        });
+      }
+      return row;
     });
     await this.audit.record({
       action: 'CREATE',
@@ -136,6 +178,17 @@ export class TransactionsService {
 
   async update(id: string, input: TransactionUpdateDto): Promise<TransactionDto> {
     const before = await this.editable(id);
+    if (input.blockId !== undefined && input.blockId !== before.blockId) {
+      if (before.type !== 'EXPENSE') {
+        throw new BadRequestException('Yalnızca gider bir bloğa ait olabilir');
+      }
+      if (input.blockId) await this.assertBlock(input.blockId);
+      if (await this.tenant.db.charge.count({ where: { transactionId: id, cancelledAt: null } })) {
+        throw new BadRequestException(
+          'Dairelere yansıtılmış giderin kapsamı değiştirilemez. Önce yansıtılan borçları iptal edin.',
+        );
+      }
+    }
     if (before.type === 'TRANSFER') {
       if (input.categoryId || input.vendorId || input.workId || input.employeeId) {
         throw new BadRequestException(
@@ -172,6 +225,7 @@ export class TransactionsService {
         vendorId: input.vendorId,
         workId: input.workId,
         employeeId: input.employeeId,
+        blockId: input.blockId,
         description: input.description === undefined ? undefined : input.description || null,
         documentNo: input.documentNo === undefined ? undefined : input.documentNo || null,
         visibleToResidents: input.visibleToResidents,
@@ -189,22 +243,118 @@ export class TransactionsService {
 
   async cancel(id: string, reason: string): Promise<TransactionDto> {
     const before = await this.editable(id);
-    await this.tenant.db.transaction.update({
-      where: { id },
-      data: {
-        cancelledAt: new Date(),
-        cancelReason: reason,
-        cancelledById: this.tenant.userId ?? null,
-      },
+    const charges = await this.tenant.db.charge.findMany({
+      where: { transactionId: id, cancelledAt: null },
+      select: { id: true, _count: { select: { allocations: true } } },
+    });
+    if (charges.some((c) => c._count.allocations > 0)) {
+      throw new ConflictException(
+        'Bu giderden dairelere yansıtılan borçlara ödeme yapılmış. Önce ilgili ödemeleri iptal edin.',
+      );
+    }
+    const cancelled = {
+      cancelledAt: new Date(),
+      cancelReason: reason,
+      cancelledById: this.tenant.userId ?? null,
+    };
+    await this.tenant.db.$transaction(async (tx) => {
+      await tx.transaction.update({ where: { id }, data: cancelled });
+      if (charges.length > 0) {
+        await tx.charge.updateMany({
+          where: { siteId: this.tenant.siteId, id: { in: charges.map((c) => c.id) } },
+          data: cancelled,
+        });
+      }
     });
     await this.audit.record({
       action: 'CANCEL',
       entityType: 'Transaction',
       entityId: id,
       before,
-      after: { reason },
+      after: { reason, cancelledCharges: charges.length },
     });
     return this.get(id);
+  }
+
+  async reflect(id: string, input: ExpenseReflectDto): Promise<TransactionDto> {
+    const expense = await this.tenant.db.transaction.findUnique({ where: { id } });
+    if (!expense || expense.cancelledAt) throw new NotFoundException('Gider bulunamadı');
+    if (expense.type !== 'EXPENSE') {
+      throw new BadRequestException('Yalnızca gider dairelere yansıtılabilir');
+    }
+    if (await this.tenant.db.charge.count({ where: { transactionId: id, cancelledAt: null } })) {
+      throw new ConflictException('Bu gider zaten dairelere yansıtılmış');
+    }
+    const rows = await this.planReflection(expense, input);
+    await this.tenant.db.charge.createMany({
+      data: rows.map((r) => ({
+        ...r,
+        siteId: this.tenant.siteId,
+        transactionId: id,
+      })),
+    });
+    await this.audit.record({
+      action: 'REFLECT',
+      entityType: 'Transaction',
+      entityId: id,
+      after: { ...input, chargeCount: rows.length },
+    });
+    return this.get(id);
+  }
+
+  private async planReflection(
+    expense: {
+      blockId: string | null;
+      amountKurus: number;
+      categoryId: string | null;
+      description: string | null;
+    },
+    input: ExpenseReflectDto,
+  ) {
+    const type = await this.tenant.db.chargeType.findUnique({ where: { id: input.chargeTypeId } });
+    if (!type || !type.isActive) throw new NotFoundException('Borç türü bulunamadı');
+    assertMethodAllowed(await loadSiteSettings(this.prisma, this.tenant.siteId), input.method);
+
+    const units = (
+      await this.tenant.db.unit.findMany({
+        where: { archivedAt: null, ...(expense.blockId ? { blockId: expense.blockId } : {}) },
+        include: { block: { select: { name: true } } },
+      })
+    )
+      .map((u) => ({
+        id: u.id,
+        label: `${u.block.name}-${u.number}`,
+        areaM2: u.areaM2,
+        landShare: u.landShare,
+        blockName: u.block.name,
+        number: u.number,
+      }))
+      .sort(compareUnits);
+    if (units.length === 0) throw new BadRequestException('Borç yazılacak daire yok');
+
+    let amounts: number[];
+    try {
+      amounts = splitTotal(input.method, expense.amountKurus, units);
+    } catch (error) {
+      if (error instanceof DistributionError) throw new BadRequestException(error.message);
+      throw error;
+    }
+    const category =
+      !input.description && !expense.description && expense.categoryId
+        ? await this.tenant.db.financeCategory.findUnique({ where: { id: expense.categoryId } })
+        : null;
+
+    return units
+      .map((u, i) => ({
+        unitId: u.id,
+        chargeTypeId: type.id,
+        amountKurus: amounts[i]!,
+        issueDate: dateOnly(input.issueDate),
+        dueDate: dateOnly(input.dueDate),
+        description: input.description ?? expense.description ?? category?.name ?? null,
+        createdById: this.tenant.userId ?? null,
+      }))
+      .filter((row) => row.amountKurus > 0);
   }
 
   private async editable(id: string) {
@@ -249,6 +399,11 @@ export class TransactionsService {
     if (!vendor) throw new NotFoundException('Firma bulunamadı');
   }
 
+  private async assertBlock(id: string) {
+    const block = await this.tenant.db.block.findUnique({ where: { id } });
+    if (!block) throw new NotFoundException('Blok bulunamadı');
+  }
+
   private async assertEmployee(id: string) {
     const employee = await this.tenant.db.employee.findUnique({ where: { id } });
     if (!employee) throw new NotFoundException('Çalışan bulunamadı');
@@ -289,6 +444,15 @@ export class TransactionsController {
   @HttpCode(200)
   bulkCancel(@Body() body: BulkCancelDto): Promise<BulkCancelResultDto> {
     return cancelEach(body.ids, (id) => this.transactions.cancel(id, body.reason));
+  }
+
+  @Post(':id/reflect')
+  @HttpCode(200)
+  reflect(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: ExpenseReflectDto,
+  ): Promise<TransactionDto> {
+    return this.transactions.reflect(id, body);
   }
 
   @Post(':id/cancel')

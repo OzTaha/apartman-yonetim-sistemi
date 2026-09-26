@@ -1,13 +1,14 @@
 import {
   cashAccountKindLabels,
   formatKurus,
+  SITE_WIDE,
   transactionTypeLabels,
   type TransactionDto,
   type TransactionType,
 } from '@apartman/shared';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ArrowLeftRight, Lock, Minus, Paperclip, Plus } from 'lucide-react';
+import { ArrowLeftRight, Lock, Minus, Paperclip, Plus, Split } from 'lucide-react';
 import { useState } from 'react';
 import { BulkCancelBar } from '@/components/bulk-cancel-bar';
 import { DataTable } from '@/components/data-table';
@@ -28,8 +29,9 @@ import { TransactionDialog } from '@/features/finance/transaction-dialog';
 import { transactionTitle } from '@/features/finance/files';
 import { TransactionDetailsDialog } from '@/features/finance/transaction-details';
 import { formatDate, todayIso } from '@/lib/format';
-import { useCashAccounts, useTransactions } from '@/lib/queries';
+import { useCashAccounts, useScopeBlocks, useTransactions } from '@/lib/queries';
 import { useSelection } from '@/lib/selection';
+import { blockScopeLabel } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
 const TYPES = ['INCOME', 'EXPENSE', 'TRANSFER'] as const;
@@ -37,8 +39,9 @@ const TYPES = ['INCOME', 'EXPENSE', 'TRANSFER'] as const;
 export const Route = createFileRoute('/_app/kasa')({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { hesap?: string; tur?: TransactionType; bas?: string; bit?: string } => ({
+  ): { hesap?: string; tur?: TransactionType; kapsam?: string; bas?: string; bit?: string } => ({
     hesap: typeof s['hesap'] === 'string' ? s['hesap'] : undefined,
+    kapsam: typeof s['kapsam'] === 'string' ? s['kapsam'] : undefined,
     tur: TYPES.includes(s['tur'] as TransactionType) ? (s['tur'] as TransactionType) : undefined,
     bas: typeof s['bas'] === 'string' ? s['bas'] : undefined,
     bit: typeof s['bit'] === 'string' ? s['bit'] : undefined,
@@ -73,7 +76,14 @@ function Amount({ t, accountId }: { t: TransactionDto; accountId?: string }) {
 
 function detailOf(t: TransactionDto): string {
   if (t.type === 'TRANSFER') return transactionTypeLabels.TRANSFER;
-  return [t.categoryName, t.vendorName ?? t.employeeName, t.workTitle].filter(Boolean).join(' · ');
+  return [
+    t.blockName ? blockScopeLabel(t.blockName) : null,
+    t.categoryName,
+    t.vendorName ?? t.employeeName,
+    t.workTitle,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 function Marks({ t }: { t: TransactionDto }) {
@@ -83,6 +93,11 @@ function Marks({ t }: { t: TransactionDto }) {
         <span className="inline-flex items-center gap-0.5 text-xs" title="Belge var">
           <Paperclip className="size-3.5" />
           {t.attachments.length}
+        </span>
+      )}
+      {t.reflection && (
+        <span className="inline-flex" title="Dairelere yansıtıldı">
+          <Split className="size-3.5" aria-label="Dairelere yansıtıldı" />
         </span>
       )}
       {t.locked && <Lock className="size-3.5" aria-label="Kapanmış ay" />}
@@ -100,7 +115,14 @@ function CashPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const accounts = useCashAccounts();
-  const transactions = useTransactions({ accountId: search.hesap, type: search.tur, from, to });
+  const scopeBlocks = useScopeBlocks();
+  const transactions = useTransactions({
+    accountId: search.hesap,
+    type: search.tur,
+    block: search.kapsam,
+    from,
+    to,
+  });
   const selected = transactions.data?.find((t) => t.id === selectedId);
   const selection = useSelection(transactions.data, (t) => t.id);
   const activeAccounts = (accounts.data ?? []).filter((a) => a.isActive || a.balanceKurus !== 0);
@@ -213,7 +235,12 @@ function CashPage() {
         </div>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-4">
+      <div
+        className={cn(
+          'grid gap-2 sm:grid-cols-2',
+          scopeBlocks.length > 1 ? 'lg:grid-cols-5' : 'lg:grid-cols-4',
+        )}
+      >
         <div className="grid gap-1">
           <Label htmlFor="tx-filter-account" className="text-xs text-muted-foreground">
             Hesap
@@ -256,6 +283,30 @@ function CashPage() {
             </SelectContent>
           </Select>
         </div>
+        {scopeBlocks.length > 1 && (
+          <div className="grid gap-1">
+            <Label htmlFor="tx-filter-block" className="text-xs text-muted-foreground">
+              Kapsam
+            </Label>
+            <Select
+              value={search.kapsam ?? 'all'}
+              onValueChange={(v) => setFilter({ kapsam: v === 'all' ? undefined : v })}
+            >
+              <SelectTrigger id="tx-filter-block" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm kapsamlar</SelectItem>
+                <SelectItem value={SITE_WIDE}>Site geneli</SelectItem>
+                {scopeBlocks.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {blockScopeLabel(b.name)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="grid gap-1">
           <Label htmlFor="tx-from" className="text-xs text-muted-foreground">
             Başlangıç

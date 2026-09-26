@@ -10,6 +10,10 @@ export function labelUnit(blockName: string, number: string, style: 'long' | 'sh
   return unitLabel(activeSiteKind(), blockName, number, style);
 }
 
+export function blockScopeLabel(blockName: string | null): string {
+  return blockName ? `${blockName} Blok` : 'Site geneli';
+}
+
 export function useSiteKind(): SiteKind {
   const { siteId, siteKinds } = useSession();
   return (siteId && siteKinds[siteId]) || 'SITE';

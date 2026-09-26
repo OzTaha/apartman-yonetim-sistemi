@@ -19,6 +19,17 @@ import { BlockDto } from '../../common/dto';
 import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
 
+function isDeletable(block: {
+  units: { _count: { payments: number; occupancies: number } }[];
+  _count: { transactions: number; works: number };
+}): boolean {
+  return (
+    block._count.transactions === 0 &&
+    block._count.works === 0 &&
+    block.units.every((u) => u._count.payments === 0 && u._count.occupancies === 0)
+  );
+}
+
 @Injectable()
 export class BlocksService {
   constructor(
@@ -30,6 +41,7 @@ export class BlocksService {
     const blocks = await this.tenant.db.block.findMany({
       include: {
         units: { select: { _count: { select: { payments: true, occupancies: true } } } },
+        _count: { select: { transactions: true, works: true } },
       },
       orderBy: { name: 'asc' },
     });
@@ -37,7 +49,7 @@ export class BlocksService {
       id: b.id,
       name: b.name,
       unitCount: b.units.length,
-      deletable: b.units.every((u) => u._count.payments === 0 && u._count.occupancies === 0),
+      deletable: isDeletable(b),
     }));
   }
 
@@ -66,6 +78,7 @@ export class BlocksService {
       data: { name: input.name },
       include: {
         units: { select: { _count: { select: { payments: true, occupancies: true } } } },
+        _count: { select: { transactions: true, works: true } },
       },
     });
     await this.audit.record({
@@ -79,7 +92,7 @@ export class BlocksService {
       id: block.id,
       name: block.name,
       unitCount: block.units.length,
-      deletable: block.units.every((u) => u._count.payments === 0 && u._count.occupancies === 0),
+      deletable: isDeletable(block),
     };
   }
 
@@ -91,8 +104,14 @@ export class BlocksService {
       where: { id },
       include: {
         units: { select: { id: true, _count: { select: { payments: true, occupancies: true } } } },
+        _count: { select: { transactions: true, works: true } },
       },
     });
+    if (block._count.transactions > 0 || block._count.works > 0) {
+      throw new ConflictException(
+        'Bu bloğa kayıtlı gider veya iş var. Blok silinemez; kayıtların kapsamını değiştirebilirsiniz.',
+      );
+    }
     const withHistory = block.units.filter(
       (u) => u._count.payments > 0 || u._count.occupancies > 0,
     ).length;

@@ -2,6 +2,7 @@ import {
   attachmentUploadQuerySchema,
   cashAccountCreateSchema,
   cashAccountUpdateSchema,
+  expenseReflectSchema,
   financeCategoryCreateSchema,
   financeCategoryUpdateSchema,
   financeReportQuerySchema,
@@ -23,6 +24,7 @@ export class FinanceCategoryCreateDto extends createZodDto(financeCategoryCreate
 export class FinanceCategoryUpdateDto extends createZodDto(financeCategoryUpdateSchema) {}
 export class VendorCreateDto extends createZodDto(vendorCreateSchema) {}
 export class VendorUpdateDto extends createZodDto(vendorUpdateSchema) {}
+export class ExpenseReflectDto extends createZodDto(expenseReflectSchema) {}
 export class TransactionCreateDto extends createZodDto(transactionCreateSchema) {}
 export class TransactionUpdateDto extends createZodDto(transactionUpdateSchema) {}
 export class TransactionListQueryDto extends createZodDto(transactionListQuerySchema) {}

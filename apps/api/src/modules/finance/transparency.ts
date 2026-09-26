@@ -24,6 +24,8 @@ export class TransparencyService {
     const to = `${year}-12-31`;
     const now = currentPeriod();
     const lastPeriod = `${year}-12` < now ? `${year}-12` : now;
+    const blockIds = this.tenant.isResident ? await this.tenant.residentBlockIds() : null;
+    const blockFilter = blockIds ? { OR: [{ blockId: null }, { blockId: { in: blockIds } }] } : {};
 
     const [accounts, balances, months, expenses, works, workAttachments] = await Promise.all([
       this.tenant.db.cashAccount.findMany({ select: { id: true } }),
@@ -35,18 +37,20 @@ export class TransparencyService {
           cancelledAt: null,
           visibleToResidents: true,
           date: { gte: dateOnly(from), lte: dateOnly(to) },
+          ...blockFilter,
         },
         include: {
           category: { select: { name: true } },
           vendor: { select: { name: true } },
+          block: { select: { name: true } },
           work: { select: { title: true, visibleToResidents: true } },
           attachments: { select: attachmentSelect, orderBy: { createdAt: 'asc' } },
         },
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       }),
-      this.works.list(true),
+      this.works.list({ blockIds }),
       this.tenant.db.attachment.findMany({
-        where: { work: { visibleToResidents: true } },
+        where: { work: { visibleToResidents: true, ...blockFilter } },
         select: { ...attachmentSelect, workId: true },
         orderBy: { createdAt: 'asc' },
       }),
@@ -67,6 +71,7 @@ export class TransparencyService {
         amountKurus: t.amountKurus,
         categoryName: t.category?.name ?? null,
         vendorName: t.vendor?.name ?? null,
+        blockName: t.block?.name ?? null,
         workId: t.work?.visibleToResidents ? t.workId : null,
         workTitle: t.work?.visibleToResidents ? t.work.title : null,
         description: t.description,
