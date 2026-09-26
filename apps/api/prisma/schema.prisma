@@ -151,6 +151,7 @@ model User {
   announcementReads AnnouncementRead[]
   paymentIntents    PaymentIntent[]
   passwordResets    PasswordReset[]
+  notifications     Notification[]
 
   @@map("users")
 }
@@ -195,6 +196,7 @@ model Site {
   campaigns         MessageCampaign[]
   deliveries        MessageDelivery[]
   paymentIntents    PaymentIntent[]
+  notifications     Notification[]
 
   @@map("sites")
 }
@@ -898,4 +900,30 @@ model PasswordReset {
 
   @@index([userId])
   @@map("password_resets")
+}
+
+enum NotificationType {
+  PASSWORD_RESET_REQUEST
+}
+
+model Notification {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  userId       String           @db.Uuid
+  siteId       String?          @db.Uuid
+  type         NotificationType
+  subjectKey   String
+  title        String
+  body         String
+  data         Json
+  readAt       DateTime?
+  resolvedAt   DateTime?
+  resolvedById String?          @db.Uuid
+  createdAt    DateTime         @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site Site? @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([subjectKey, resolvedAt])
+  @@map("notifications")
 }

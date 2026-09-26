@@ -51,8 +51,11 @@ Uygulama internet bağlantısı olmadan açıldığında bağlantı olmadığın
 
 ## Şifresini unutanlar
 
-- **Sakin:** Sakinler sayfasında sakinin yanındaki menüden "Şifre yenileme bağlantısı"nı seçin. Bağlantıyı
-  kopyalayıp iletebilir ya da SMS/WhatsApp ile gönderebilirsiniz.
+- **Sakin:** Sakin giriş ekranında "Şifremi unuttum"a basıp telefonunu veya e-postasını yazar; talep yöneticilerin
+  bildirimlerine anında düşer (üst çubuktaki zil). Bildirimden ya da Sakinler sayfasındaki menüden "Şifre yenileme
+  bağlantısı" oluşturup kopyalayabilir veya SMS/WhatsApp ile gönderebilirsiniz. Bir yönetici gönderdiğinde talep
+  herkeste "Tamamlandı" olur. Hesabı henüz olmayan sakinin talebi "Hesap açma talebi" olarak gelir; davet bağlantısı
+  gönderilir.
 - **Site yöneticisi:** Sistem yöneticisi "Apartman ve siteler" sayfasından bağlantı oluşturur.
 - **Sistem yöneticisi:** Bağlantı sunucuda oluşturulur; teknik destek alın.
 

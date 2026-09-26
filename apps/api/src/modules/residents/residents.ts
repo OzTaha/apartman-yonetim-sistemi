@@ -29,6 +29,11 @@ import type { Env } from '../../config/env';
 import type { Prisma } from '../../generated/prisma/client';
 import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
+import {
+  NotificationsModule,
+  NotificationsService,
+  resetSubject,
+} from '../notifications/notifications';
 import { compareUnits, occupancyInclude, toOccupancyDto } from './occupancy.mapper';
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -39,6 +44,7 @@ export class ResidentsService {
     private readonly tenant: TenantContext,
     private readonly audit: AuditService,
     private readonly config: ConfigService<Env, true>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(query: ResidentListQueryDto): Promise<OccupancyDto[]> {
@@ -213,6 +219,7 @@ export class ResidentsService {
       entityType: 'Occupancy',
       entityId: id,
     });
+    await this.notifications.resolve(resetSubject.occupancy(id), this.tenant.userId ?? null);
 
     const webOrigin = this.config.get('WEB_ORIGIN', { infer: true }).replace(/\/$/, '');
     return { url: `${webOrigin}/davet/${token}`, expiresAt: expiresAt.toISOString() };
@@ -266,6 +273,7 @@ export class ResidentsController {
 }
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [ResidentsController],
   providers: [ResidentsService],
 })

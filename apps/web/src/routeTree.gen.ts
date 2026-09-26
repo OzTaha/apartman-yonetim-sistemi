@@ -14,6 +14,7 @@ import { Route as GirisRouteImport } from './routes/giris'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAidatRouteImport } from './routes/_app/aidat'
 import { Route as AppAidatAyarlariRouteImport } from './routes/_app/aidat-ayarlari'
+import { Route as AppBildirimlerRouteImport } from './routes/_app/bildirimler'
 import { Route as AppBorclarRouteImport } from './routes/_app/borclar'
 import { Route as AppCalisanRaporuRouteImport } from './routes/_app/calisan-raporu'
 import { Route as AppDairemRouteImport } from './routes/_app/dairem'
@@ -71,6 +72,11 @@ const AppAidatRoute = AppAidatRouteImport.update({
 const AppAidatAyarlariRoute = AppAidatAyarlariRouteImport.update({
   id: '/aidat-ayarlari',
   path: '/aidat-ayarlari',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBildirimlerRoute = AppBildirimlerRouteImport.update({
+  id: '/bildirimler',
+  path: '/bildirimler',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBorclarRoute = AppBorclarRouteImport.update({
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/giris': typeof GirisRoute
   '/aidat': typeof AppAidatRoute
   '/aidat-ayarlari': typeof AppAidatAyarlariRoute
+  '/bildirimler': typeof AppBildirimlerRoute
   '/borclar': typeof AppBorclarRoute
   '/calisan-raporu': typeof AppCalisanRaporuRoute
   '/dairem': typeof AppDairemRoute
@@ -289,6 +296,7 @@ export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
   '/aidat': typeof AppAidatRoute
   '/aidat-ayarlari': typeof AppAidatAyarlariRoute
+  '/bildirimler': typeof AppBildirimlerRoute
   '/borclar': typeof AppBorclarRoute
   '/calisan-raporu': typeof AppCalisanRaporuRoute
   '/dairem': typeof AppDairemRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/giris': typeof GirisRoute
   '/_app/aidat': typeof AppAidatRoute
   '/_app/aidat-ayarlari': typeof AppAidatAyarlariRoute
+  '/_app/bildirimler': typeof AppBildirimlerRoute
   '/_app/borclar': typeof AppBorclarRoute
   '/_app/calisan-raporu': typeof AppCalisanRaporuRoute
   '/_app/dairem': typeof AppDairemRoute
@@ -374,6 +383,7 @@ export interface FileRouteTypes {
     | '/giris'
     | '/aidat'
     | '/aidat-ayarlari'
+    | '/bildirimler'
     | '/borclar'
     | '/calisan-raporu'
     | '/dairem'
@@ -413,6 +423,7 @@ export interface FileRouteTypes {
     | '/giris'
     | '/aidat'
     | '/aidat-ayarlari'
+    | '/bildirimler'
     | '/borclar'
     | '/calisan-raporu'
     | '/dairem'
@@ -454,6 +465,7 @@ export interface FileRouteTypes {
     | '/giris'
     | '/_app/aidat'
     | '/_app/aidat-ayarlari'
+    | '/_app/bildirimler'
     | '/_app/borclar'
     | '/_app/calisan-raporu'
     | '/_app/dairem'
@@ -533,6 +545,13 @@ declare module '@tanstack/react-router' {
       path: '/aidat-ayarlari'
       fullPath: '/aidat-ayarlari'
       preLoaderRoute: typeof AppAidatAyarlariRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/bildirimler': {
+      id: '/_app/bildirimler'
+      path: '/bildirimler'
+      fullPath: '/bildirimler'
+      preLoaderRoute: typeof AppBildirimlerRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/borclar': {
@@ -779,6 +798,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAidatRoute: typeof AppAidatRoute
   AppAidatAyarlariRoute: typeof AppAidatAyarlariRoute
+  AppBildirimlerRoute: typeof AppBildirimlerRoute
   AppBorclarRoute: typeof AppBorclarRoute
   AppCalisanRaporuRoute: typeof AppCalisanRaporuRoute
   AppDairemRoute: typeof AppDairemRoute
@@ -817,6 +837,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAidatRoute: AppAidatRoute,
   AppAidatAyarlariRoute: AppAidatAyarlariRoute,
+  AppBildirimlerRoute: AppBildirimlerRoute,
   AppBorclarRoute: AppBorclarRoute,
   AppCalisanRaporuRoute: AppCalisanRaporuRoute,
   AppDairemRoute: AppDairemRoute,

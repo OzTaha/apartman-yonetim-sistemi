@@ -48,7 +48,7 @@ test('yönetici sakine şifre yenileme bağlantısı gönderir, sakin yeni şifr
   const resident = await residentContext.newPage();
   await resident.goto('/giris');
   await resident.getByRole('button', { name: 'Şifremi unuttum' }).click();
-  await expect(resident.getByText(/şifre yenileme bağlantısı isteyin/)).toBeVisible();
+  await expect(resident.locator('#forgot-identifier')).toBeVisible();
 
   await resident.goto(new URL(url).pathname);
   await expect(resident.getByText('Merhaba Ayşe, yeni şifrenizi girin.')).toBeVisible();

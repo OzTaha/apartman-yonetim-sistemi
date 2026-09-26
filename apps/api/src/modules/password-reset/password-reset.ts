@@ -37,6 +37,11 @@ import { AuditService } from '../audit/audit.service';
 import { hashPassword } from '../auth/password';
 import { CommunicationModule } from '../communication/communication.module';
 import { MessagingProvider } from '../communication/messaging.provider';
+import {
+  NotificationsModule,
+  NotificationsService,
+  resetSubject,
+} from '../notifications/notifications';
 import { createResetLink } from './tokens';
 
 class PasswordResetDto extends createZodDto(passwordResetSchema) {}
@@ -53,6 +58,7 @@ export class PasswordResetService {
     private readonly config: ConfigService<Env, true>,
     private readonly messaging: MessagingProvider,
     private readonly cls: ClsService<AppClsStore>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async forResident(occupancyId: string, send?: MessageChannel): Promise<PasswordResetLinkDto> {
@@ -109,6 +115,10 @@ export class PasswordResetService {
       entityId: user.id,
       after: { occupancyId, sentVia: result.sentVia },
     });
+    await this.notifications.resolve(
+      resetSubject.occupancy(occupancyId),
+      this.tenant.userId ?? null,
+    );
     return result;
   }
 
@@ -125,6 +135,7 @@ export class PasswordResetService {
       entityId: user.id,
       siteId: null,
     });
+    await this.notifications.resolve(resetSubject.user(user.id), actor.id);
     return { ...link, sentVia: null, sendError: null };
   }
 
@@ -237,7 +248,7 @@ export class UserPasswordResetController {
 }
 
 @Module({
-  imports: [CommunicationModule],
+  imports: [CommunicationModule, NotificationsModule],
   controllers: [
     PasswordResetPublicController,
     ResidentPasswordResetController,

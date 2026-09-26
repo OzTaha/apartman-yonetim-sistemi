@@ -81,6 +81,10 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   return (await response.json()) as T;
 }
 
+export function openStream(path: string, signal: AbortSignal): Promise<Response> {
+  return authorizedFetch(path, { signal });
+}
+
 async function authorizedFetch(
   path: string,
   init: RequestInit = {},

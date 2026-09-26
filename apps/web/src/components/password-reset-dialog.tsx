@@ -27,12 +27,14 @@ export function PasswordResetDialog({
   personName,
   phone,
   request,
+  invite = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   personName: string;
   phone?: string | null;
   request: (send?: MessageChannel) => Promise<PasswordResetLinkDto>;
+  invite?: boolean;
 }) {
   const [link, setLink] = useState<PasswordResetLinkDto | null>(null);
   const [busy, setBusy] = useState(false);
@@ -76,11 +78,11 @@ export function PasswordResetDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Şifre yenileme bağlantısı</DialogTitle>
+          <DialogTitle>{invite ? 'Davet bağlantısı' : 'Şifre yenileme bağlantısı'}</DialogTitle>
           <DialogDescription>
-            {personName} bu bağlantıyla yeni şifresini belirler. Bağlantı tek kullanımlıktır ve{' '}
-            {PASSWORD_RESET_HOURS} saat geçerlidir; yenisi oluşturulursa eskisi geçersiz olur. Yeni
-            şifre belirlenince açık oturumları kapatılır.
+            {invite
+              ? `${personName} bu bağlantıyla şifresini belirleyip hesabını oluşturur. Bağlantı tek kullanımlıktır ve 7 gün geçerlidir.`
+              : `${personName} bu bağlantıyla yeni şifresini belirler. Bağlantı tek kullanımlıktır ve ${PASSWORD_RESET_HOURS} saat geçerlidir; yenisi oluşturulursa eskisi geçersiz olur. Yeni şifre belirlenince açık oturumları kapatılır.`}
           </DialogDescription>
         </DialogHeader>
 

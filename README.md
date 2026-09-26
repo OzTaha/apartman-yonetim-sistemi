@@ -97,6 +97,11 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   kullanımlık, 24 saat geçerli bağlantı oluşturur (kopyalanır ya da SMS/WhatsApp ile gönderilir). Site yöneticisi başka bir
   yöneticinin şifresini yenileyemez. Sistem yöneticisi için bağlantı sunucuda `node dist/cli/reset-password.js` ile
   üretilir. Yeni şifre belirlenince kullanıcının tüm oturumları kapatılır.
+- Şifremi unuttum: giriş ekranında telefon veya e-posta yazılır. Kayıtlı değilse bu söylenir; kayıtlıysa talep sakinin
+  sitesinin yöneticilerine ve sistem yöneticisine (site yöneticisinin talebi yalnızca sistem yöneticisine) bildirim olarak
+  düşer. Aynı kişi için bir saat içinde tek talep oluşur; form IP başına dakikada 5 istekle sınırlıdır.
+- Bildirimler: yöneticilerde üst çubukta zil ve "Bildirimler" sayfası. Yeni bildirimler açık sekmeye anında gelir
+  (Server-Sent Events, `/api/notifications/stream`).
 - Oturum: 15 dakikalık erişim token'ı (yalnızca bellekte) ve 30 günlük refresh token (httpOnly cookie).
   Refresh token her kullanımda yenilenir. Eski bir token tekrar kullanılırsa kullanıcının tüm oturumları kapatılır.
 - Önemli değişiklikler `audit_logs` tablosuna kim/ne zaman/önce/sonra bilgisiyle yazılır.
@@ -131,6 +136,8 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   her ödemenin makbuzunu ve istediği tarih aralığının hesap ekstresini indirir.
 - Borç, tahsilat ve kasa hareketleri listelerinde kayıtlar toplu seçilip tek seferde iptal edilebilir. İptal edilemeyenler
   (ödemesi olan borç, kapatılmış aya ait kayıt vb.) atlanır ve nedeni gösterilir.
+- Tüm listeler sayfalanır (sayfa başına 15/20/25/30/40 satır, varsayılan 20; seçim her liste için tarayıcıda hatırlanır).
+  "Tümünü seç" görünen sayfayı seçer; ardından listedeki tüm kayıtları seçme bağlantısı çıkar.
 
 ## Gelir-gider ve kasa
 
