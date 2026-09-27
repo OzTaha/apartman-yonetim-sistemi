@@ -35,6 +35,7 @@ import {
   Users,
   Wrench,
   Calculator,
+  Gavel,
   MessageSquareWarning,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -100,7 +101,8 @@ interface NavItem {
     | '/banka-hareketleri'
     | '/talepler'
     | '/taleplerim'
-    | '/butce';
+    | '/butce'
+    | '/genel-kurul';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -245,6 +247,7 @@ export function AppSidebar() {
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
   if (hasUnit) items.push({ to: '/taleplerim', label: 'Taleplerim', icon: MessageSquareWarning });
+  if (hasSite) items.push({ to: '/genel-kurul', label: 'Genel kurul', icon: Gavel });
   if ((role === 'RESIDENT' || auditor) && hasSite) {
     items.push({ to: '/duyurular', label: 'Duyurular', icon: Megaphone });
   }

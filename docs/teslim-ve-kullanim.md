@@ -57,6 +57,10 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
   kalem kalem girin, sistem daire başına düşen aylık avans aidatı hesaplar. PDF'i genel kurula sunun; kabul edilince
   "Aidat planı olarak uygula" ile yeni aidat tutarını başlatın. Yıl boyunca "Bütçe ve gerçekleşen" bölümünden harcamaları
   bütçeyle karşılaştırabilirsiniz.
+- **Genel kurul:** "Genel kurul" sayfasından toplantıyı planlayın ve en az 15 gün önce "Çağrıyı yayınla" ile
+  sakinlere duyurun. Toplantı öncesi hazirun cetvelini PDF olarak yazdırıp imzaya açın. Toplantıda katılanları
+  işaretleyin, her gündem maddesinin kararını yazın ve "Toplantıyı tamamla" deyin; kararlar karar defterine sıra
+  numarasıyla işlenir ve tutanak PDF'i hazırlanır.
 - **Ay kapanışı:** Gelir-gider raporu sayfasında geçmiş ayı kapatın; kapanan ayın kayıtları değiştirilemez.
 
 Parasal kayıtlar silinmez, iptal edilir. İptal edilen kayıtlar nedeniyle birlikte saklanır; bakiyelerden ve

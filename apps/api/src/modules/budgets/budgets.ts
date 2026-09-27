@@ -38,7 +38,7 @@ import {
 import type { Response } from 'express';
 import { createZodDto } from 'nestjs-zod';
 import type { Content } from 'pdfmake/interfaces';
-import { dateOnly, todayInIstanbul } from '../../common/dates';
+import { dateOnly, toDateString, todayInIstanbul } from '../../common/dates';
 import { formatDateTr, PDF, sendFile } from '../../common/http';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -90,6 +90,7 @@ function toDto(b: BudgetRow, unitCount: number): BudgetDto {
       b.duesPlan.amountKurus === advanceKurus,
     ),
     appliedAt: b.appliedAt?.toISOString() ?? null,
+    approvedAt: b.approvedAt ? toDateString(b.approvedAt) : null,
     createdAt: b.createdAt.toISOString(),
   };
 }
@@ -230,6 +231,10 @@ export class BudgetsService {
 
   async remove(id: string): Promise<void> {
     const budget = await this.find(id);
+    const linked = await this.tenant.db.meetingItem.count({ where: { budgetId: id } });
+    if (linked > 0) {
+      throw new ConflictException('Bu bütçe bir genel kurul gündemine bağlı olduğu için silinemez');
+    }
     await this.tenant.db.budget.delete({ where: { id } });
     await this.audit.record({
       action: 'DELETE',

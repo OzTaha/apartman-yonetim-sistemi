@@ -33,6 +33,7 @@ import { UsageBar } from '@/features/budget/parts';
 import { apiFetch, downloadFile, errorMessage } from '@/lib/api';
 import { useApiMutation, useBudget } from '@/lib/queries';
 import { canManage, useRole } from '@/lib/session';
+import { formatDate } from '@/lib/format';
 import { labelUnit } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
@@ -320,6 +321,11 @@ function BudgetPage() {
           <span className="inline-flex flex-wrap items-center gap-2">
             İşletme projesi
             {b.isCurrent && <Badge>Güncel dönem</Badge>}
+            {b.approvedAt && (
+              <Badge variant="secondary">
+                Genel kurulda onaylandı ({formatDate(b.approvedAt)})
+              </Badge>
+            )}
             {b.applied && <Badge variant="secondary">Aidata uygulandı</Badge>}
           </span>
         }

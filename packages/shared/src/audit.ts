@@ -47,6 +47,7 @@ export const auditEntityLabels: Record<string, string> = {
   DuesSettings: 'Aidat ayarı',
   Employee: 'Çalışan',
   FinanceCategory: 'Kategori',
+  Meeting: 'Genel kurul',
   MessageCampaign: 'Mesaj gönderimi',
   MessageTemplate: 'Mesaj şablonu',
   MonthClosing: 'Ay kapanışı',
@@ -107,6 +108,10 @@ export const auditActionLabels: Record<string, string> = {
   COMMENT: 'Yanıt',
   CREATE_TASK: 'Görev oluşturuldu',
   APPLY: 'Aidat planına uygulandı',
+  CALL: 'Çağrı yayınlandı',
+  ATTENDANCE: 'Hazirun',
+  DECISION: 'Karar',
+  COMPLETE: 'Toplantı tamamlandı',
 };
 
 export const auditLabel = (labels: Record<string, string>, key: string) => labels[key] ?? key;

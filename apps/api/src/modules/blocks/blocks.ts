@@ -20,14 +20,20 @@ import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../ten
 import { AuditService } from '../audit/audit.service';
 
 function isDeletable(block: {
-  units: { _count: { payments: number; occupancies: number; requests: number } }[];
+  units: {
+    _count: { payments: number; occupancies: number; requests: number; attendance: number };
+  }[];
   _count: { transactions: number; works: number };
 }): boolean {
   return (
     block._count.transactions === 0 &&
     block._count.works === 0 &&
     block.units.every(
-      (u) => u._count.payments === 0 && u._count.occupancies === 0 && u._count.requests === 0,
+      (u) =>
+        u._count.payments === 0 &&
+        u._count.occupancies === 0 &&
+        u._count.requests === 0 &&
+        u._count.attendance === 0,
     )
   );
 }
@@ -45,7 +51,11 @@ export class BlocksService {
       where: scope ? { id: { in: scope } } : {},
       include: {
         units: {
-          select: { _count: { select: { payments: true, occupancies: true, requests: true } } },
+          select: {
+            _count: {
+              select: { payments: true, occupancies: true, requests: true, attendance: true },
+            },
+          },
         },
         _count: { select: { transactions: true, works: true } },
       },
@@ -84,7 +94,11 @@ export class BlocksService {
       data: { name: input.name },
       include: {
         units: {
-          select: { _count: { select: { payments: true, occupancies: true, requests: true } } },
+          select: {
+            _count: {
+              select: { payments: true, occupancies: true, requests: true, attendance: true },
+            },
+          },
         },
         _count: { select: { transactions: true, works: true } },
       },
@@ -114,7 +128,9 @@ export class BlocksService {
         units: {
           select: {
             id: true,
-            _count: { select: { payments: true, occupancies: true, requests: true } },
+            _count: {
+              select: { payments: true, occupancies: true, requests: true, attendance: true },
+            },
           },
         },
         _count: { select: { transactions: true, works: true } },
@@ -126,7 +142,11 @@ export class BlocksService {
       );
     }
     const withHistory = block.units.filter(
-      (u) => u._count.payments > 0 || u._count.occupancies > 0 || u._count.requests > 0,
+      (u) =>
+        u._count.payments > 0 ||
+        u._count.occupancies > 0 ||
+        u._count.requests > 0 ||
+        u._count.attendance > 0,
     ).length;
     if (withHistory > 0) {
       throw new ConflictException(

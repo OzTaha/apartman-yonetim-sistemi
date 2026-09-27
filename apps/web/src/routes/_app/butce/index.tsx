@@ -31,6 +31,7 @@ function BudgetCard({ b }: { b: BudgetDto }) {
             </span>
             <span className="flex flex-wrap gap-1">
               {b.isCurrent && <Badge>Güncel dönem</Badge>}
+              {b.approvedAt && <Badge variant="secondary">Genel kurulda onaylandı</Badge>}
               {b.applied && <Badge variant="secondary">Aidata uygulandı</Badge>}
             </span>
           </div>

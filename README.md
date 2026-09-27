@@ -65,7 +65,8 @@ Seed iki örnek yer oluşturur: 5 daireli "Örnek Apartmanı" ve 2 bloklu, 4 dai
 Yönetici hesabı ikisini de yönetir. Sitede A Blok'un yöneticisi (A-1 sakini) ve bir denetçi (A-2 sakini) tanımlıdır. Son 3 ayın aidatı ve ödemeleri yüklenir. Apartmanın 3 numaralı
 dairesi iki ay borçlu, arada bir ay ödenmiş örneğini gösterir. Her yerde iki örnek çalışan, geçen ve bu haftanın vardiyaları,
 açık, gecikmiş ve tamamlanmış görevler ile bir tekrarlayan görev, iki duyuru ve varsayılan mesaj şablonları bulunur.
-Sitede güncel döneme ait uygulanmış bir işletme projesi, apartmanın 1 numaralı dairesinde biri çözülmüş iki arıza talebi vardır. Seed yalnızca boş veritabanında çalışır.
+Sitede güncel döneme ait, genel kurulda onaylanmış ve aidata uygulanmış bir işletme projesi ile onu kabul eden tamamlanmış
+bir olağan genel kurul; apartmanın 1 numaralı dairesinde biri çözülmüş iki arıza talebi vardır. Seed yalnızca boş veritabanında çalışır.
 
 ## Komutlar
 
@@ -189,6 +190,22 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   dairelere otomatik yansıtılmaz.
 - Genel kurula sunulacak PDF gider kalemlerini ve her dairenin aylık/yıllık avansını içerir; site yöneticisinin adıyla imzalanır.
 - Bütçeyi site yöneticisi hazırlar; denetçi görür ve PDF alır.
+
+## Genel kurul ve karar defteri
+
+- Toplantı olağan veya olağanüstü olarak, tarih-saat, yer, ikinci toplantı tarihi ve gündemle planlanır. Olağan
+  toplantıda gündem örnek maddelerle başlar; maddeler sıralanabilir ve bir işletme projesine bağlanabilir.
+- "Çağrıyı yayınla" tarih, yer, ikinci toplantı ve gündemi tüm sakinlere sabitlenmiş duyuru olarak yayınlar; istenirse
+  SMS de gönderilir. Toplantıya 15 günden az kalmışsa uyarı verilir. Çağrısı yapılan toplantı silinmez, iptal edilir.
+- Hazirunda her bağımsız bölüm katıldı, vekil (adıyla) veya katılmadı olarak işaretlenir. Yeter sayı bağımsız bölüm
+  sayısının ve arsa payının yarısından fazlası olarak hesaplanır; arsa payı eksikse yalnızca bölüm sayısına bakılır.
+  Yeter sayı yoksa toplantı ikinci toplantı olarak tamamlanır.
+- Her gündem maddesine sonuç (kabul, ret, bilgilendirme), karar metni ve isteğe bağlı oy sayıları yazılır. Toplantı
+  tamamlanınca kabul ve ret kararları site genelinde sıra numarası alır (karar defteri); hazirun ve kararlar kilitlenir.
+  Bütçeye bağlı madde kabul edilirse bütçe "genel kurulda onaylandı" olarak işaretlenir.
+- PDF: toplantı tutanağı, imza sütunlu hazirun cetveli ve karar defteri.
+- Site yöneticisi yönetir, denetçi görür. Sakinler ve blok yöneticileri çağrısı yapılmış ve tamamlanmış toplantıları,
+  gündemi, kararları ve tutanağı "Genel kurul" sayfasında görür; hazirun cetvelini göremez.
 
 ## Çalışan ve görev takibi
 

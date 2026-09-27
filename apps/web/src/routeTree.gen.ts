@@ -46,6 +46,8 @@ import { Route as AppDairelerIndexRouteImport } from './routes/_app/daireler/ind
 import { Route as AppDairelerUnitIdRouteImport } from './routes/_app/daireler/$unitId'
 import { Route as AppDuyurularIndexRouteImport } from './routes/_app/duyurular/index'
 import { Route as AppDuyurularAnnouncementIdRouteImport } from './routes/_app/duyurular/$announcementId'
+import { Route as AppGenelKurulIndexRouteImport } from './routes/_app/genel-kurul/index'
+import { Route as AppGenelKurulMeetingIdRouteImport } from './routes/_app/genel-kurul/$meetingId'
 import { Route as AppGorevlerIndexRouteImport } from './routes/_app/gorevler/index'
 import { Route as AppGorevlerTaskIdRouteImport } from './routes/_app/gorevler/$taskId'
 import { Route as AppIslerIndexRouteImport } from './routes/_app/isler/index'
@@ -244,6 +246,16 @@ const AppDuyurularAnnouncementIdRoute =
     path: '/duyurular/$announcementId',
     getParentRoute: () => AppRoute,
   } as any)
+const AppGenelKurulIndexRoute = AppGenelKurulIndexRouteImport.update({
+  id: '/genel-kurul/',
+  path: '/genel-kurul/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGenelKurulMeetingIdRoute = AppGenelKurulMeetingIdRouteImport.update({
+  id: '/genel-kurul/$meetingId',
+  path: '/genel-kurul/$meetingId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppGorevlerIndexRoute = AppGorevlerIndexRouteImport.update({
   id: '/gorevler/',
   path: '/gorevler/',
@@ -338,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
   '/duyurular/$announcementId': typeof AppDuyurularAnnouncementIdRoute
+  '/genel-kurul/$meetingId': typeof AppGenelKurulMeetingIdRoute
   '/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/isler/$workId': typeof AppIslerWorkIdRoute
   '/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
@@ -349,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/calisanlar/': typeof AppCalisanlarIndexRoute
   '/daireler/': typeof AppDairelerIndexRoute
   '/duyurular/': typeof AppDuyurularIndexRoute
+  '/genel-kurul/': typeof AppGenelKurulIndexRoute
   '/gorevler/': typeof AppGorevlerIndexRoute
   '/isler/': typeof AppIslerIndexRoute
   '/mesajlar/': typeof AppMesajlarIndexRoute
@@ -388,6 +402,7 @@ export interface FileRoutesByTo {
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
   '/duyurular/$announcementId': typeof AppDuyurularAnnouncementIdRoute
+  '/genel-kurul/$meetingId': typeof AppGenelKurulMeetingIdRoute
   '/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/isler/$workId': typeof AppIslerWorkIdRoute
   '/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
@@ -399,6 +414,7 @@ export interface FileRoutesByTo {
   '/calisanlar': typeof AppCalisanlarIndexRoute
   '/daireler': typeof AppDairelerIndexRoute
   '/duyurular': typeof AppDuyurularIndexRoute
+  '/genel-kurul': typeof AppGenelKurulIndexRoute
   '/gorevler': typeof AppGorevlerIndexRoute
   '/isler': typeof AppIslerIndexRoute
   '/mesajlar': typeof AppMesajlarIndexRoute
@@ -440,6 +456,7 @@ export interface FileRoutesById {
   '/_app/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/_app/daireler/$unitId': typeof AppDairelerUnitIdRoute
   '/_app/duyurular/$announcementId': typeof AppDuyurularAnnouncementIdRoute
+  '/_app/genel-kurul/$meetingId': typeof AppGenelKurulMeetingIdRoute
   '/_app/gorevler/$taskId': typeof AppGorevlerTaskIdRoute
   '/_app/isler/$workId': typeof AppIslerWorkIdRoute
   '/_app/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
@@ -451,6 +468,7 @@ export interface FileRoutesById {
   '/_app/calisanlar/': typeof AppCalisanlarIndexRoute
   '/_app/daireler/': typeof AppDairelerIndexRoute
   '/_app/duyurular/': typeof AppDuyurularIndexRoute
+  '/_app/genel-kurul/': typeof AppGenelKurulIndexRoute
   '/_app/gorevler/': typeof AppGorevlerIndexRoute
   '/_app/isler/': typeof AppIslerIndexRoute
   '/_app/mesajlar/': typeof AppMesajlarIndexRoute
@@ -492,6 +510,7 @@ export interface FileRouteTypes {
     | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
     | '/duyurular/$announcementId'
+    | '/genel-kurul/$meetingId'
     | '/gorevler/$taskId'
     | '/isler/$workId'
     | '/mesajlar/$campaignId'
@@ -503,6 +522,7 @@ export interface FileRouteTypes {
     | '/calisanlar/'
     | '/daireler/'
     | '/duyurular/'
+    | '/genel-kurul/'
     | '/gorevler/'
     | '/isler/'
     | '/mesajlar/'
@@ -542,6 +562,7 @@ export interface FileRouteTypes {
     | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
     | '/duyurular/$announcementId'
+    | '/genel-kurul/$meetingId'
     | '/gorevler/$taskId'
     | '/isler/$workId'
     | '/mesajlar/$campaignId'
@@ -553,6 +574,7 @@ export interface FileRouteTypes {
     | '/calisanlar'
     | '/daireler'
     | '/duyurular'
+    | '/genel-kurul'
     | '/gorevler'
     | '/isler'
     | '/mesajlar'
@@ -593,6 +615,7 @@ export interface FileRouteTypes {
     | '/_app/calisanlar/$employeeId'
     | '/_app/daireler/$unitId'
     | '/_app/duyurular/$announcementId'
+    | '/_app/genel-kurul/$meetingId'
     | '/_app/gorevler/$taskId'
     | '/_app/isler/$workId'
     | '/_app/mesajlar/$campaignId'
@@ -604,6 +627,7 @@ export interface FileRouteTypes {
     | '/_app/calisanlar/'
     | '/_app/daireler/'
     | '/_app/duyurular/'
+    | '/_app/genel-kurul/'
     | '/_app/gorevler/'
     | '/_app/isler/'
     | '/_app/mesajlar/'
@@ -879,6 +903,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDuyurularAnnouncementIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/genel-kurul/': {
+      id: '/_app/genel-kurul/'
+      path: '/genel-kurul'
+      fullPath: '/genel-kurul/'
+      preLoaderRoute: typeof AppGenelKurulIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/genel-kurul/$meetingId': {
+      id: '/_app/genel-kurul/$meetingId'
+      path: '/genel-kurul/$meetingId'
+      fullPath: '/genel-kurul/$meetingId'
+      preLoaderRoute: typeof AppGenelKurulMeetingIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/gorevler/': {
       id: '/_app/gorevler/'
       path: '/gorevler'
@@ -996,6 +1034,7 @@ interface AppRouteChildren {
   AppCalisanlarEmployeeIdRoute: typeof AppCalisanlarEmployeeIdRoute
   AppDairelerUnitIdRoute: typeof AppDairelerUnitIdRoute
   AppDuyurularAnnouncementIdRoute: typeof AppDuyurularAnnouncementIdRoute
+  AppGenelKurulMeetingIdRoute: typeof AppGenelKurulMeetingIdRoute
   AppGorevlerTaskIdRoute: typeof AppGorevlerTaskIdRoute
   AppIslerWorkIdRoute: typeof AppIslerWorkIdRoute
   AppMesajlarCampaignIdRoute: typeof AppMesajlarCampaignIdRoute
@@ -1007,6 +1046,7 @@ interface AppRouteChildren {
   AppCalisanlarIndexRoute: typeof AppCalisanlarIndexRoute
   AppDairelerIndexRoute: typeof AppDairelerIndexRoute
   AppDuyurularIndexRoute: typeof AppDuyurularIndexRoute
+  AppGenelKurulIndexRoute: typeof AppGenelKurulIndexRoute
   AppGorevlerIndexRoute: typeof AppGorevlerIndexRoute
   AppIslerIndexRoute: typeof AppIslerIndexRoute
   AppMesajlarIndexRoute: typeof AppMesajlarIndexRoute
@@ -1044,6 +1084,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalisanlarEmployeeIdRoute: AppCalisanlarEmployeeIdRoute,
   AppDairelerUnitIdRoute: AppDairelerUnitIdRoute,
   AppDuyurularAnnouncementIdRoute: AppDuyurularAnnouncementIdRoute,
+  AppGenelKurulMeetingIdRoute: AppGenelKurulMeetingIdRoute,
   AppGorevlerTaskIdRoute: AppGorevlerTaskIdRoute,
   AppIslerWorkIdRoute: AppIslerWorkIdRoute,
   AppMesajlarCampaignIdRoute: AppMesajlarCampaignIdRoute,
@@ -1055,6 +1096,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalisanlarIndexRoute: AppCalisanlarIndexRoute,
   AppDairelerIndexRoute: AppDairelerIndexRoute,
   AppDuyurularIndexRoute: AppDuyurularIndexRoute,
+  AppGenelKurulIndexRoute: AppGenelKurulIndexRoute,
   AppGorevlerIndexRoute: AppGorevlerIndexRoute,
   AppIslerIndexRoute: AppIslerIndexRoute,
   AppMesajlarIndexRoute: AppMesajlarIndexRoute,

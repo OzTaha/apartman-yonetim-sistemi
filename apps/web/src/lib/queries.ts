@@ -1,4 +1,8 @@
 import type {
+  DecisionDto,
+  MeetingDetailDto,
+  MeetingDto,
+  ResidentMeetingDto,
   BudgetDetailDto,
   BudgetDto,
   MyRequestDetailDto,
@@ -170,6 +174,12 @@ function useSiteQuery<T>(key: string, path: string, extra: unknown = null, enabl
 export const useAuditLogs = (filters: AuditQueryInput) =>
   useSiteQuery<AuditLogListDto>('audit-logs', `/audit-logs${toQuery({ ...filters })}`, filters);
 
+export const useMeetings = () => useSiteQuery<MeetingDto[]>('meetings', '/meetings');
+export const useMeeting = (id: string) =>
+  useSiteQuery<MeetingDetailDto>('meeting', `/meetings/${id}`, id);
+export const useDecisions = () => useSiteQuery<DecisionDto[]>('decisions', '/meetings/decisions');
+export const useAssemblies = () => useSiteQuery<ResidentMeetingDto[]>('assemblies', '/assemblies');
+
 export const useBudgets = () => useSiteQuery<BudgetDto[]>('budgets', '/budgets');
 export const useBudget = (id: string) =>
   useSiteQuery<BudgetDetailDto>('budget', `/budgets/${id}`, id);
@@ -325,6 +335,10 @@ const SITE_SCOPED = new Set([
   'my-request',
   'budgets',
   'budget',
+  'meetings',
+  'meeting',
+  'decisions',
+  'assemblies',
   'requests',
   'request',
 ]);

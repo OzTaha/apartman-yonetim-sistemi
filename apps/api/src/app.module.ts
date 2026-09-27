@@ -21,6 +21,7 @@ import { OnlinePaymentsModule } from './modules/online-payments/online-payments.
 import { NotificationsModule } from './modules/notifications/notifications';
 import { RequestsModule } from './modules/requests/requests';
 import { BudgetsModule } from './modules/budgets/budgets';
+import { MeetingsModule } from './modules/meetings/meetings';
 import { OfficersModule } from './modules/officers/officers';
 import { PasswordResetModule } from './modules/password-reset/password-reset';
 import { ResidentsModule } from './modules/residents/residents';
@@ -66,6 +67,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     NotificationsModule,
     RequestsModule,
     BudgetsModule,
+    MeetingsModule,
   ],
   controllers: [HealthController],
   providers: [

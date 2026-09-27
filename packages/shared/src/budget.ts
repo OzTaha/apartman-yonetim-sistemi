@@ -68,6 +68,7 @@ export interface BudgetDto {
   isCurrent: boolean;
   applied: boolean;
   appliedAt: string | null;
+  approvedAt: string | null;
   createdAt: string;
 }
 

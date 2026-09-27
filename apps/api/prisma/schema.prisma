@@ -207,6 +207,9 @@ model Site {
   requestEvents     ServiceRequestEvent[]
   budgets           Budget[]
   budgetLines       BudgetLine[]
+  meetings          Meeting[]
+  meetingItems      MeetingItem[]
+  meetingAttendance MeetingAttendance[]
 
   @@map("sites")
 }
@@ -272,13 +275,14 @@ model Unit {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  site        Site             @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  block       Block            @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
+  site        Site                @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  block       Block               @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
   occupancies Occupancy[]
   charges     Charge[]
   payments    Payment[]
   intents     PaymentIntent[]
   requests    ServiceRequest[]
+  attendance  MeetingAttendance[]
 
   @@unique([blockId, number])
   @@unique([id, siteId])
@@ -1087,13 +1091,15 @@ model Budget {
   method      DistributionMethod
   duesPlanId  String?            @db.Uuid
   appliedAt   DateTime?
+  approvedAt  DateTime?          @db.Date
   createdById String?            @db.Uuid
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
-  site     Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  duesPlan DuesPlan?    @relation(fields: [duesPlanId], references: [id], onDelete: SetNull)
+  site     Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  duesPlan DuesPlan?     @relation(fields: [duesPlanId], references: [id], onDelete: SetNull)
   lines    BudgetLine[]
+  items    MeetingItem[]
 
   @@unique([siteId, startPeriod])
   @@unique([id, siteId])
@@ -1114,4 +1120,99 @@ model BudgetLine {
 
   @@unique([budgetId, categoryId])
   @@map("budget_lines")
+}
+
+enum MeetingKind {
+  ORDINARY
+  EXTRAORDINARY
+}
+
+enum MeetingStatus {
+  PLANNED
+  HELD
+  CANCELLED
+}
+
+enum MeetingSession {
+  FIRST
+  SECOND
+}
+
+enum AttendanceStatus {
+  PRESENT
+  PROXY
+  ABSENT
+}
+
+enum DecisionResult {
+  ACCEPTED
+  REJECTED
+  INFO
+}
+
+model Meeting {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  siteId         String          @db.Uuid
+  kind           MeetingKind
+  startsAt       DateTime
+  secondStartsAt DateTime?
+  location       String
+  notes          String?
+  status         MeetingStatus   @default(PLANNED)
+  heldSession    MeetingSession?
+  heldAt         DateTime?
+  cancelReason   String?
+  announcementId String?         @db.Uuid
+  calledAt       DateTime?
+  createdById    String?         @db.Uuid
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  site       Site                @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  items      MeetingItem[]
+  attendance MeetingAttendance[]
+
+  @@unique([id, siteId])
+  @@index([siteId, startsAt])
+  @@map("meetings")
+}
+
+model MeetingItem {
+  id           String          @id @default(uuid(7)) @db.Uuid
+  siteId       String          @db.Uuid
+  meetingId    String          @db.Uuid
+  position     Int
+  title        String
+  budgetId     String?         @db.Uuid
+  resolution   String?
+  result       DecisionResult?
+  votesFor     Int?
+  votesAgainst Int?
+  votesAbstain Int?
+  decisionNo   Int?
+
+  site    Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId, siteId], references: [id, siteId], onDelete: Cascade)
+  budget  Budget? @relation(fields: [budgetId, siteId], references: [id, siteId], onDelete: Restrict)
+
+  @@unique([siteId, decisionNo])
+  @@index([meetingId, position])
+  @@index([budgetId])
+  @@map("meeting_items")
+}
+
+model MeetingAttendance {
+  id        String           @id @default(uuid(7)) @db.Uuid
+  siteId    String           @db.Uuid
+  meetingId String           @db.Uuid
+  unitId    String           @db.Uuid
+  status    AttendanceStatus
+  name      String?
+
+  site    Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId, siteId], references: [id, siteId], onDelete: Cascade)
+  unit    Unit    @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
+
+  @@unique([meetingId, unitId])
+  @@map("meeting_attendance")
 }

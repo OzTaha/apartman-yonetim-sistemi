@@ -54,6 +54,6 @@ import { ReminderSettingsController, TemplatesController, TemplatesService } fro
     MessageProcessor,
     { provide: MessagingProvider, useClass: LogMessagingProvider },
   ],
-  exports: [MessagingProvider],
+  exports: [MessagingProvider, AnnouncementsService],
 })
 export class CommunicationModule {}

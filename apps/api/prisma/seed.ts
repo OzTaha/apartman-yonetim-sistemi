@@ -432,6 +432,81 @@ async function seedBudget(tx: Tx, siteId: string, startPeriod: string) {
       note,
     })),
   });
+  return budget.id;
+}
+
+async function seedMeeting(tx: Tx, siteId: string, budgetId: string, day: string) {
+  const units = await tx.unit.findMany({
+    where: { siteId },
+    include: { block: { select: { name: true } } },
+  });
+  units.sort((a, b) => `${a.block.name}-${a.number}`.localeCompare(`${b.block.name}-${b.number}`));
+  const meeting = await tx.meeting.create({
+    data: {
+      siteId,
+      kind: 'ORDINARY',
+      startsAt: new Date(`${day}T19:00:00+03:00`),
+      secondStartsAt: new Date(`${addDays(day, 7)}T19:00:00+03:00`),
+      location: 'Site sosyal tesis salonu',
+      status: 'HELD',
+      heldSession: 'FIRST',
+      heldAt: new Date(`${day}T21:00:00+03:00`),
+      calledAt: new Date(`${addDays(day, -20)}T10:00:00+03:00`),
+    },
+  });
+  await tx.meetingAttendance.createMany({
+    data: units.slice(0, 3).map((u, i) => ({
+      siteId,
+      meetingId: meeting.id,
+      unitId: u.id,
+      status: i === 2 ? ('PROXY' as const) : ('PRESENT' as const),
+      name: i === 2 ? 'Hakan Vekil' : null,
+    })),
+  });
+  const items: [string, 'INFO' | 'ACCEPTED', string, number | null][] = [
+    [
+      'Açılış ve toplantı başkanının seçimi',
+      'INFO',
+      'Toplantı başkanlığına oy birliğiyle A-1 maliki seçildi.',
+      null,
+    ],
+    [
+      'Yönetim raporunun okunması ve görüşülmesi',
+      'INFO',
+      'Yönetim raporu okundu, soru olmadı.',
+      null,
+    ],
+    [
+      'İşletme projesinin görüşülmesi ve karara bağlanması',
+      'ACCEPTED',
+      'Yönetimin hazırladığı işletme projesi aynen kabul edildi; aylık avans aidat daire başı 1.750 TL.',
+      1,
+    ],
+    [
+      'Yönetici ve denetçinin seçimi',
+      'ACCEPTED',
+      'Mevcut yönetici bir yıl daha görevlendirildi.',
+      2,
+    ],
+    ['Dilek ve temenniler', 'INFO', 'Otopark aydınlatmasının artırılması istendi.', null],
+  ];
+  await tx.meetingItem.createMany({
+    data: items.map(([title, result, resolution, decisionNo], i) => ({
+      siteId,
+      meetingId: meeting.id,
+      position: i + 1,
+      title,
+      budgetId: decisionNo === 1 ? budgetId : null,
+      result,
+      resolution,
+      decisionNo,
+      votesFor: decisionNo ? 3 : null,
+      votesAgainst: decisionNo ? 0 : null,
+      votesAbstain: decisionNo ? 0 : null,
+    })),
+  });
+  await tx.siteCounter.create({ data: { siteId, name: 'decision', value: 2 } });
+  await tx.budget.update({ where: { id: budgetId }, data: { approvedAt: dateOnly(day) } });
 }
 
 async function seedRequests(tx: Tx, siteId: string, residentId: string, managerId: string) {
@@ -729,7 +804,8 @@ async function main() {
             recurring: [{ title: 'Merdiven temizliği', employee: 0, weekdays: [2, 5] }],
           },
         });
-        await seedBudget(tx, site.id, periods[0]!);
+        const budgetId = await seedBudget(tx, site.id, periods[0]!);
+        await seedMeeting(tx, site.id, budgetId, `${addMonths(periods[0]!, -1)}-25`);
         await seedStaff(tx, site.id, {
           today,
           periods,
