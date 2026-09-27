@@ -34,6 +34,7 @@ import {
   Settings2,
   Users,
   Wrench,
+  Calculator,
   MessageSquareWarning,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -98,7 +99,8 @@ interface NavItem {
     | '/islem-gecmisi'
     | '/banka-hareketleri'
     | '/talepler'
-    | '/taleplerim';
+    | '/taleplerim'
+    | '/butce';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -283,6 +285,7 @@ export function AppSidebar() {
           { to: '/isler', label: 'Yapılan işler', icon: Hammer },
           { to: '/firmalar', label: 'Firmalar', icon: Store },
           { to: '/gelir-gider', label: 'Gelir-gider raporu', icon: ChartColumn },
+          { to: '/butce', label: 'İşletme projesi', icon: Calculator },
         ] as NavItem[])
       : []),
     ...(manager

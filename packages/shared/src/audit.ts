@@ -36,6 +36,7 @@ export const auditEntityLabels: Record<string, string> = {
   Announcement: 'Duyuru',
   Attachment: 'Belge',
   BankImport: 'Banka hareketi',
+  Budget: 'İşletme projesi',
   Block: 'Blok',
   Branding: 'Marka',
   CashAccount: 'Kasa hesabı',
@@ -105,6 +106,7 @@ export const auditActionLabels: Record<string, string> = {
   IGNORE: 'Yoksayıldı',
   COMMENT: 'Yanıt',
   CREATE_TASK: 'Görev oluşturuldu',
+  APPLY: 'Aidat planına uygulandı',
 };
 
 export const auditLabel = (labels: Record<string, string>, key: string) => labels[key] ?? key;

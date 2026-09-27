@@ -64,7 +64,8 @@ Tüm hesapların şifresi `Deneme123!`.
 Seed iki örnek yer oluşturur: 5 daireli "Örnek Apartmanı" ve 2 bloklu, 4 daireli "Örnek Sitesi".
 Yönetici hesabı ikisini de yönetir. Sitede A Blok'un yöneticisi (A-1 sakini) ve bir denetçi (A-2 sakini) tanımlıdır. Son 3 ayın aidatı ve ödemeleri yüklenir. Apartmanın 3 numaralı
 dairesi iki ay borçlu, arada bir ay ödenmiş örneğini gösterir. Her yerde iki örnek çalışan, geçen ve bu haftanın vardiyaları,
-açık, gecikmiş ve tamamlanmış görevler ile bir tekrarlayan görev, iki duyuru ve varsayılan mesaj şablonları bulunur. Seed yalnızca boş veritabanında çalışır.
+açık, gecikmiş ve tamamlanmış görevler ile bir tekrarlayan görev, iki duyuru ve varsayılan mesaj şablonları bulunur.
+Sitede güncel döneme ait uygulanmış bir işletme projesi, apartmanın 1 numaralı dairesinde biri çözülmüş iki arıza talebi vardır. Seed yalnızca boş veritabanında çalışır.
 
 ## Komutlar
 
@@ -175,6 +176,19 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   Yönetici tek tek kayıtları sakinlerden gizleyebilir; gizlenen tutarlar toplamlara dahil kalır.
 - Ay kapanışı, kapanan ay ve öncesindeki gelir, gider, tahsilat ve belgeleri kilitler. Yalnızca son kapanış geri alınabilir.
 - Yüklenen dosyalar `UPLOAD_DIR` klasöründe (varsayılan `apps/api/uploads`) tutulur; veritabanı ile birlikte yedeklenmelidir.
+
+## İşletme projesi (yıllık bütçe)
+
+- Bütçe seçilen aydan başlayarak 12 ay sürer; dönemler çakışamaz. Yeni bütçe önceki bütçenin kalemleri kopyalanarak başlatılabilir.
+- Kalemler gider kategorisi başına yıllık tutar ve isteğe bağlı açıklamadır. Aylık avans aidat, yıllık toplamın on ikide biridir:
+  eşit dağıtımda daire sayısına bölünür, oranlı dağıtımda (m² / arsa payı) dairelere paylaştırılır. Tutar tam liraya yukarı yuvarlanır.
+- "Aidat planı olarak uygula" avansı yeni bir aidat planı olarak ekler; plan bütçenin başlangıç ayından, bu ay geçtiyse
+  içinde bulunulan aydan geçerli olur. Önceden yazılmış aidatlar değişmez. Bütçe sonradan değişirse yeniden uygulanabilir.
+- "Bütçe ve gerçekleşen" dönem içindeki iptal edilmemiş giderleri kalem kalem planla karşılaştırır, bütçe dışı giderleri
+  ayrıca gösterir; avans aidatın tahakkuk ve tahsilatını da verir. Yıl sonu açık veya fazla yalnızca raporda görünür,
+  dairelere otomatik yansıtılmaz.
+- Genel kurula sunulacak PDF gider kalemlerini ve her dairenin aylık/yıllık avansını içerir; site yöneticisinin adıyla imzalanır.
+- Bütçeyi site yöneticisi hazırlar; denetçi görür ve PDF alır.
 
 ## Çalışan ve görev takibi
 

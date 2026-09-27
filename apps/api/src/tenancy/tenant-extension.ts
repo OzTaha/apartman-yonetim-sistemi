@@ -34,6 +34,8 @@ export const TENANT_MODELS: ReadonlySet<string> = new Set([
   'BankImportLine',
   'ServiceRequest',
   'ServiceRequestEvent',
+  'Budget',
+  'BudgetLine',
 ]);
 
 const WHERE_OPERATIONS = new Set([

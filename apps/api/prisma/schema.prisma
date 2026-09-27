@@ -205,6 +205,8 @@ model Site {
   bankLines         BankImportLine[]
   serviceRequests   ServiceRequest[]
   requestEvents     ServiceRequestEvent[]
+  budgets           Budget[]
+  budgetLines       BudgetLine[]
 
   @@map("sites")
 }
@@ -395,6 +397,7 @@ model DuesPlan {
 
   site    Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
   charges Charge[]
+  budgets Budget[]
 
   @@index([siteId, validFrom])
   @@map("dues_plans")
@@ -524,6 +527,7 @@ model FinanceCategory {
 
   site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  budgetLines  BudgetLine[]
 
   @@unique([siteId, kind, name])
   @@unique([siteId, code])
@@ -1074,4 +1078,40 @@ model ServiceRequestEvent {
 
   @@index([requestId, createdAt])
   @@map("service_request_events")
+}
+
+model Budget {
+  id          String             @id @default(uuid(7)) @db.Uuid
+  siteId      String             @db.Uuid
+  startPeriod String
+  method      DistributionMethod
+  duesPlanId  String?            @db.Uuid
+  appliedAt   DateTime?
+  createdById String?            @db.Uuid
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  site     Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  duesPlan DuesPlan?    @relation(fields: [duesPlanId], references: [id], onDelete: SetNull)
+  lines    BudgetLine[]
+
+  @@unique([siteId, startPeriod])
+  @@unique([id, siteId])
+  @@map("budgets")
+}
+
+model BudgetLine {
+  id          String  @id @default(uuid(7)) @db.Uuid
+  siteId      String  @db.Uuid
+  budgetId    String  @db.Uuid
+  categoryId  String  @db.Uuid
+  amountKurus Int
+  note        String?
+
+  site     Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  budget   Budget          @relation(fields: [budgetId, siteId], references: [id, siteId], onDelete: Cascade)
+  category FinanceCategory @relation(fields: [categoryId, siteId], references: [id, siteId], onDelete: Restrict)
+
+  @@unique([budgetId, categoryId])
+  @@map("budget_lines")
 }

@@ -408,6 +408,32 @@ const person = (
   type: 'OWNER' | 'TENANT' = 'OWNER',
 ) => ({ firstName, lastName, phone, type });
 
+async function seedBudget(tx: Tx, siteId: string, startPeriod: string) {
+  const lines: [string, number, string | null][] = [
+    ['CLEANING', 3_000_000, 'Temizlik firması sözleşmesi'],
+    ['ELECTRICITY', 2_300_000, 'Ortak alan ve bahçe aydınlatması'],
+    ['REPAIR', 1_200_000, null],
+    ['INSURANCE', 1_000_000, 'Bina ve deprem sigortası'],
+    ['ELEVATOR', 900_000, 'Aylık bakım sözleşmesi'],
+  ];
+  const categories = await tx.financeCategory.findMany({
+    where: { siteId, code: { in: lines.map(([code]) => code) } },
+  });
+  const plan = await tx.duesPlan.findFirstOrThrow({ where: { siteId } });
+  const budget = await tx.budget.create({
+    data: { siteId, startPeriod, method: 'EQUAL', duesPlanId: plan.id, appliedAt: new Date() },
+  });
+  await tx.budgetLine.createMany({
+    data: lines.map(([code, amountKurus, note]) => ({
+      siteId,
+      budgetId: budget.id,
+      categoryId: categories.find((c) => c.code === code)!.id,
+      amountKurus,
+      note,
+    })),
+  });
+}
+
 async function seedRequests(tx: Tx, siteId: string, residentId: string, managerId: string) {
   const occupancy = await tx.occupancy.findFirstOrThrow({
     where: { siteId, userId: residentId },
@@ -703,6 +729,7 @@ async function main() {
             recurring: [{ title: 'Merdiven temizliği', employee: 0, weekdays: [2, 5] }],
           },
         });
+        await seedBudget(tx, site.id, periods[0]!);
         await seedStaff(tx, site.id, {
           today,
           periods,

@@ -1,4 +1,6 @@
 import type {
+  BudgetDetailDto,
+  BudgetDto,
   MyRequestDetailDto,
   MyRequestDto,
   RequestCategory,
@@ -168,6 +170,10 @@ function useSiteQuery<T>(key: string, path: string, extra: unknown = null, enabl
 export const useAuditLogs = (filters: AuditQueryInput) =>
   useSiteQuery<AuditLogListDto>('audit-logs', `/audit-logs${toQuery({ ...filters })}`, filters);
 
+export const useBudgets = () => useSiteQuery<BudgetDto[]>('budgets', '/budgets');
+export const useBudget = (id: string) =>
+  useSiteQuery<BudgetDetailDto>('budget', `/budgets/${id}`, id);
+
 export interface RequestFilters {
   view: RequestView;
   category?: RequestCategory;
@@ -317,6 +323,8 @@ const SITE_SCOPED = new Set([
   'audit-logs',
   'my-requests',
   'my-request',
+  'budgets',
+  'budget',
   'requests',
   'request',
 ]);

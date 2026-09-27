@@ -53,6 +53,10 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
   bir çalışana verebilirsiniz; görev tamamlanınca talep de kapanır. Sakinler talep açmak için "Taleplerim" sayfasını
   veya Dairem'deki "Arıza / talep bildir" düğmesini kullanır.
 - **Çalışanlar:** Vardiya planı, görevler ve tekrarlayan görevler "Çalışan ve görev" menüsündedir.
+- **İşletme projesi:** Yıllık bütçeyi "İşletme projesi" sayfasında hazırlayın: önümüzdeki 12 ayın tahmini giderlerini
+  kalem kalem girin, sistem daire başına düşen aylık avans aidatı hesaplar. PDF'i genel kurula sunun; kabul edilince
+  "Aidat planı olarak uygula" ile yeni aidat tutarını başlatın. Yıl boyunca "Bütçe ve gerçekleşen" bölümünden harcamaları
+  bütçeyle karşılaştırabilirsiniz.
 - **Ay kapanışı:** Gelir-gider raporu sayfasında geçmiş ayı kapatın; kapanan ayın kayıtları değiştirilemez.
 
 Parasal kayıtlar silinmez, iptal edilir. İptal edilen kayıtlar nedeniyle birlikte saklanır; bakiyelerden ve
