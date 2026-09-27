@@ -249,7 +249,7 @@ export class UnitsService {
     const unit = await this.tenant.db.unit.findUnique({
       where: { id },
       include: {
-        _count: { select: { occupancies: true, payments: true } },
+        _count: { select: { occupancies: true, payments: true, requests: true } },
         charges: { where: { cancelledAt: null }, select: { amountKurus: true } },
       },
     });
@@ -257,7 +257,8 @@ export class UnitsService {
     const activeResidentCount = await this.tenant.db.occupancy.count({
       where: { unitId: id, ...activeOn() },
     });
-    const canDelete = unit._count.payments === 0 && unit._count.occupancies === 0;
+    const canDelete =
+      unit._count.payments === 0 && unit._count.occupancies === 0 && unit._count.requests === 0;
     return {
       canDelete,
       canArchive: !canDelete && !unit.archivedAt && activeResidentCount === 0,

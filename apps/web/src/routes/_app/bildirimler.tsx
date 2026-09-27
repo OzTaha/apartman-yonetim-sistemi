@@ -1,7 +1,7 @@
 import type { InvitationDto, NotificationDto, PasswordResetLinkDto } from '@apartman/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { Navigate, createFileRoute } from '@tanstack/react-router';
-import { CheckCheck, KeyRound, UserPlus } from 'lucide-react';
+import { Navigate, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { CheckCheck, KeyRound, UserPlus, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
@@ -23,6 +23,8 @@ import {
   useCanReceiveNotifications,
   useNotifications,
 } from '@/lib/notifications';
+import { session } from '@/lib/session';
+import { labelUnit } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/bildirimler')({
@@ -40,7 +42,9 @@ const time = new Intl.DateTimeFormat('tr-TR', {
   timeZone: 'Europe/Istanbul',
 });
 
-function requestFor(n: NotificationDto) {
+type ResetNotification = Extract<NotificationDto, { type: 'PASSWORD_RESET_REQUEST' }>;
+
+function requestFor(n: ResetNotification) {
   const { data } = n;
   if (data.isManager && data.userId) {
     return () =>
@@ -66,12 +70,60 @@ function requestFor(n: NotificationDto) {
     });
 }
 
+function RequestNotificationCard({
+  n,
+}: {
+  n: Extract<NotificationDto, { type: 'SERVICE_REQUEST' }>;
+}) {
+  const navigate = useNavigate();
+  const resolved = Boolean(n.resolvedAt);
+  return (
+    <Card className={cn('py-4', !n.readAt && 'border-primary')}>
+      <CardContent className="grid gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-2">
+            <Wrench className="size-4 shrink-0 text-muted-foreground" />
+            <span className={cn('break-words', !n.readAt ? 'font-semibold' : 'font-medium')}>
+              {n.title}
+            </span>
+          </span>
+          <Badge variant={resolved ? 'secondary' : 'outline'} className="shrink-0">
+            {resolved ? 'İlgilenildi' : 'Bekliyor'}
+          </Badge>
+        </div>
+        <p className="text-sm break-words">{n.body}</p>
+        <p className="text-xs text-muted-foreground">
+          {[
+            time.format(new Date(n.createdAt)),
+            n.siteName,
+            `#${n.data.number} · ${labelUnit(n.data.blockName, n.data.unitNumber, 'short')}`,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+        <Button
+          size="sm"
+          variant={resolved ? 'outline' : 'default'}
+          className="w-fit"
+          onClick={() => {
+            if (n.siteId && n.siteId !== session.get().siteId) session.setSite(n.siteId);
+            void navigate({ to: '/talepler/$requestId', params: { requestId: n.data.requestId } });
+          }}
+        >
+          <Wrench />
+          Talebi aç
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function NotificationCard({
   n,
   onAction,
 }: {
-  n: NotificationDto;
-  onAction: (n: NotificationDto) => void;
+  n: ResetNotification;
+  onAction: (n: ResetNotification) => void;
 }) {
   const resolved = Boolean(n.resolvedAt);
   const Icon = n.data.hasAccount ? KeyRound : UserPlus;
@@ -114,7 +166,7 @@ function NotificationsPage() {
   const [filter, setFilter] = useState<'unread' | 'all'>('all');
   const notifications = useNotifications(filter);
   const queryClient = useQueryClient();
-  const [active, setActive] = useState<NotificationDto | null>(null);
+  const [active, setActive] = useState<ResetNotification | null>(null);
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -146,7 +198,7 @@ function NotificationsPage() {
     <div className="grid gap-6">
       <PageHeader
         title="Bildirimler"
-        description="Şifresini unutan veya hesap açmak isteyen kişilerin talepleri anında buraya düşer."
+        description="Yeni arıza ve talepler, şifresini unutan veya hesap açmak isteyen kişilerin istekleri anında buraya düşer."
         actions={
           <Button variant="outline" disabled={unread === 0} onClick={() => void readAll()}>
             <CheckCheck />
@@ -175,7 +227,11 @@ function NotificationsPage() {
         <div className="grid gap-3">
           {notifications.data.map((n) => (
             <div key={n.id} onClick={() => void markRead(n)}>
-              <NotificationCard n={n} onAction={setActive} />
+              {n.type === 'SERVICE_REQUEST' ? (
+                <RequestNotificationCard n={n} />
+              ) : (
+                <NotificationCard n={n} onAction={setActive} />
+              )}
             </div>
           ))}
         </div>

@@ -166,3 +166,13 @@ export async function uploadFile<T>(path: string, file: File): Promise<T> {
   const response = await authorizedFetch(path, { method: 'POST', body });
   return (await response.json()) as T;
 }
+
+export async function postForm<T>(path: string, body: FormData): Promise<T> {
+  const response = await authorizedFetch(path, { method: 'POST', body });
+  return (await response.json()) as T;
+}
+
+export async function fetchBlob(path: string): Promise<Blob> {
+  const response = await authorizedFetch(path);
+  return response.blob();
+}

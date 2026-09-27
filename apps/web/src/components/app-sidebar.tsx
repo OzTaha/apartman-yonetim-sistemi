@@ -33,6 +33,8 @@ import {
   ReceiptText,
   Settings2,
   Users,
+  Wrench,
+  MessageSquareWarning,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { BrandMark } from '@/components/brand';
@@ -60,7 +62,8 @@ import {
 import { siteRoleLabels } from '@apartman/shared';
 import { logout } from '@/lib/auth';
 import { useCanReceiveNotifications, useNotificationCount } from '@/lib/notifications';
-import { activeRole, canManage, session, useSession } from '@/lib/session';
+import { useMyRequests } from '@/lib/queries';
+import { activeRole, canManage, session, useHasUnitInSite, useSession } from '@/lib/session';
 import { useSiteOptions } from '@/lib/site-options';
 
 interface NavItem {
@@ -93,7 +96,9 @@ interface NavItem {
     | '/bildirimler'
     | '/yetkililer'
     | '/islem-gecmisi'
-    | '/banka-hareketleri';
+    | '/banka-hareketleri'
+    | '/talepler'
+    | '/taleplerim';
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -212,6 +217,12 @@ export function AppSidebar() {
   const unread = useNotificationCount().data?.unread ?? 0;
   const notifications = useCanReceiveNotifications();
   const hasSite = Boolean(s.siteId);
+  const hasUnit = useHasUnitInSite();
+  const unseen = (useMyRequests(hasUnit).data ?? []).filter((r) => r.unseen).length;
+  const badges: Partial<Record<NavItem['to'], number>> = {
+    '/bildirimler': unread,
+    '/taleplerim': unseen,
+  };
   const manager = canManage(role) && hasSite;
   const blockManager = role === 'BLOCK_MANAGER' && hasSite;
   const auditor = role === 'AUDITOR' && hasSite;
@@ -226,8 +237,12 @@ export function AppSidebar() {
     items.push({ to: '/islem-gecmisi', label: 'İşlem geçmişi', icon: History });
   }
   if (notifications) items.push({ to: '/bildirimler', label: 'Bildirimler', icon: Bell });
+  if (manager || blockManager) {
+    items.push({ to: '/talepler', label: 'Arıza ve talepler', icon: Wrench });
+  }
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
+  if (hasUnit) items.push({ to: '/taleplerim', label: 'Taleplerim', icon: MessageSquareWarning });
   if ((role === 'RESIDENT' || auditor) && hasSite) {
     items.push({ to: '/duyurular', label: 'Duyurular', icon: Megaphone });
   }
@@ -304,12 +319,12 @@ export function AppSidebar() {
           <Link to={item.to} onClick={() => setOpenMobile(false)}>
             <item.icon />
             <span>{item.label}</span>
-            {item.to === '/bildirimler' && unread > 0 && (
+            {(badges[item.to] ?? 0) > 0 && (
               <span
                 className="ml-auto rounded-full bg-destructive px-1.5 text-xs leading-5 font-medium text-white tabular-nums"
-                aria-label={`${unread} okunmamış`}
+                aria-label={`${badges[item.to]} okunmamış`}
               >
-                {unread > 99 ? '99+' : unread}
+                {badges[item.to]! > 99 ? '99+' : badges[item.to]}
               </span>
             )}
           </Link>

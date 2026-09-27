@@ -15,6 +15,7 @@ import {
   useNotifications,
   useNotificationStream,
 } from '@/lib/notifications';
+import { session } from '@/lib/session';
 
 const time = new Intl.DateTimeFormat('tr-TR', {
   dateStyle: 'short',
@@ -60,7 +61,14 @@ export function NotificationBell() {
             <DropdownMenuItem
               key={n.id}
               className="grid gap-0.5"
-              onSelect={() => void navigate({ to: '/bildirimler' })}
+              onSelect={() =>
+                void (n.type === 'SERVICE_REQUEST' && n.siteId === session.get().siteId
+                  ? navigate({
+                      to: '/talepler/$requestId',
+                      params: { requestId: n.data.requestId },
+                    })
+                  : navigate({ to: '/bildirimler' }))
+              }
             >
               <span className="font-medium">{n.title}</span>
               <span className="text-xs whitespace-normal text-muted-foreground">{n.body}</span>

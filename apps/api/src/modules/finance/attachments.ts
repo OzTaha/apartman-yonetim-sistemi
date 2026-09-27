@@ -50,7 +50,7 @@ export interface UploadedFileData {
 }
 
 @Catch(PayloadTooLargeException)
-class FileTooLargeFilter implements ExceptionFilter {
+export class FileTooLargeFilter implements ExceptionFilter {
   catch(_exception: PayloadTooLargeException, host: ArgumentsHost) {
     const body: ApiErrorBody = {
       statusCode: HttpStatus.PAYLOAD_TOO_LARGE,
@@ -60,7 +60,7 @@ class FileTooLargeFilter implements ExceptionFilter {
   }
 }
 
-function cleanFileName(raw: string, ext: string): string {
+export function cleanFileName(raw: string, ext: string): string {
   const codes = [...raw].map((c) => c.codePointAt(0)!);
   let decoded = raw;
   if (codes.some((c) => c >= 0x80) && codes.every((c) => c <= 0xff)) {
@@ -141,9 +141,17 @@ export class AttachmentsService {
         },
         work: { select: { visibleToResidents: true, blockId: true } },
         payment: { select: { unitId: true } },
+        request: { select: { createdById: true } },
       },
     });
     if (!attachment) throw new NotFoundException('Dosya bulunamadı');
+    if (
+      attachment.request &&
+      this.tenant.role === 'AUDITOR' &&
+      attachment.request.createdById !== this.tenant.userId
+    ) {
+      throw new NotFoundException('Dosya bulunamadı');
+    }
     if (this.tenant.isResident && !(await this.residentCanSee(attachment))) {
       throw new NotFoundException('Dosya bulunamadı');
     }
@@ -194,6 +202,7 @@ export class AttachmentsService {
     paymentId?: string | null;
     workId?: string | null;
     announcementId?: string | null;
+    requestId?: string | null;
   }): Promise<boolean> {
     const scope = this.tenant.blockScope ?? [];
     const inScope = (blockId: string | null | undefined) =>
@@ -217,6 +226,13 @@ export class AttachmentsService {
       const n = await this.tenant.db.announcement.findUnique({ where: { id: a.announcementId } });
       return n?.createdById === this.tenant.userId;
     }
+    if (a.requestId) {
+      const r = await this.tenant.db.serviceRequest.findUnique({
+        where: { id: a.requestId },
+        select: { unit: { select: { blockId: true } } },
+      });
+      return inScope(r?.unit.blockId);
+    }
     return false;
   }
 
@@ -230,6 +246,7 @@ export class AttachmentsService {
     } | null;
     work: { visibleToResidents: boolean; blockId: string | null } | null;
     payment: { unitId: string } | null;
+    request: { createdById: string } | null;
   }): Promise<boolean> {
     const inResidentBlock = async (blockId: string | null) =>
       !blockId || (await this.tenant.residentBlockIds()).includes(blockId);
@@ -242,6 +259,7 @@ export class AttachmentsService {
       );
     }
     if (a.work) return a.work.visibleToResidents && (await inResidentBlock(a.work.blockId));
+    if (a.request) return a.request.createdById === this.tenant.userId;
     if (a.payment) {
       const count = await this.tenant.db.occupancy.count({
         where: { unitId: a.payment.unitId, userId: this.tenant.userId, ...activeOn() },

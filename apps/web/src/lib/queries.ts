@@ -1,4 +1,10 @@
 import type {
+  MyRequestDetailDto,
+  MyRequestDto,
+  RequestCategory,
+  RequestView,
+  ServiceRequestDetailDto,
+  ServiceRequestDto,
   AuditLogListDto,
   AuditQueryInput,
   OfficerCandidateDto,
@@ -162,6 +168,21 @@ function useSiteQuery<T>(key: string, path: string, extra: unknown = null, enabl
 export const useAuditLogs = (filters: AuditQueryInput) =>
   useSiteQuery<AuditLogListDto>('audit-logs', `/audit-logs${toQuery({ ...filters })}`, filters);
 
+export interface RequestFilters {
+  view: RequestView;
+  category?: RequestCategory;
+  blockId?: string;
+}
+
+export const useServiceRequests = (filters: RequestFilters) =>
+  useSiteQuery<ServiceRequestDto[]>('requests', `/requests${toQuery({ ...filters })}`, filters);
+export const useServiceRequest = (id: string) =>
+  useSiteQuery<ServiceRequestDetailDto>('request', `/requests/${id}`, id);
+export const useMyRequests = (enabled = true) =>
+  useSiteQuery<MyRequestDto[]>('my-requests', '/requests/mine', null, enabled);
+export const useMyRequest = (id: string) =>
+  useSiteQuery<MyRequestDetailDto>('my-request', `/requests/mine/${id}`, id);
+
 export const useOfficers = () => useSiteQuery<OfficerDto[]>('officers', '/officers');
 export const useOfficerCandidates = (enabled: boolean) =>
   useSiteQuery<OfficerCandidateDto[]>('officer-candidates', '/officers/candidates', null, enabled);
@@ -294,6 +315,10 @@ const SITE_SCOPED = new Set([
   'officers',
   'officer-candidates',
   'audit-logs',
+  'my-requests',
+  'my-request',
+  'requests',
+  'request',
 ]);
 
 const isSiteData = (q: { queryKey: readonly unknown[] }) =>

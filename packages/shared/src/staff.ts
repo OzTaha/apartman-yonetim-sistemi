@@ -343,6 +343,7 @@ export interface TaskDto {
   overdue: boolean;
   completedAt: string | null;
   recurringTaskId: string | null;
+  request: { id: string; number: number } | null;
   createdAt: string;
 }
 

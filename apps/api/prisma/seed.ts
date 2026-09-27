@@ -408,6 +408,97 @@ const person = (
   type: 'OWNER' | 'TENANT' = 'OWNER',
 ) => ({ firstName, lastName, phone, type });
 
+async function seedRequests(tx: Tx, siteId: string, residentId: string, managerId: string) {
+  const occupancy = await tx.occupancy.findFirstOrThrow({
+    where: { siteId, userId: residentId },
+    include: { unit: { select: { number: true, block: { select: { name: true } } } } },
+  });
+  const at = (daysAgo: number, hour: number) => {
+    const d = new Date(Date.now() - daysAgo * 86_400_000);
+    d.setUTCHours(hour - 3, 0, 0, 0);
+    return d;
+  };
+
+  const resolved = await tx.serviceRequest.create({
+    data: {
+      siteId,
+      number: 1,
+      unitId: occupancy.unitId,
+      location: 'UNIT',
+      category: 'FAULT',
+      title: 'Banyo tavanından su damlıyor',
+      description: 'Üst kattan geldiğini düşünüyorum, tavanda leke oluştu.',
+      status: 'RESOLVED',
+      createdById: residentId,
+      createdAt: at(12, 9),
+      resolvedAt: at(9, 16),
+      residentUpdatedAt: at(9, 16),
+      residentSeenAt: at(9, 18),
+    },
+  });
+  await tx.serviceRequestEvent.createMany({
+    data: [
+      { kind: 'CREATED', userId: residentId, byResident: true, createdAt: at(12, 9) },
+      {
+        kind: 'STATUS',
+        status: 'IN_PROGRESS',
+        note: 'Tesisatçı yarın öğleden sonra bakacak.',
+        userId: managerId,
+        createdAt: at(12, 14),
+      },
+      {
+        kind: 'STATUS',
+        status: 'RESOLVED',
+        note: 'Üst dairedeki gider contası değiştirildi.',
+        userId: managerId,
+        createdAt: at(9, 16),
+      },
+    ].map((e) => ({ siteId, requestId: resolved.id, byResident: false, ...e })),
+  });
+
+  const open = await tx.serviceRequest.create({
+    data: {
+      siteId,
+      number: 2,
+      unitId: occupancy.unitId,
+      location: 'COMMON',
+      category: 'FAULT',
+      title: 'Merdiven lambası yanmıyor',
+      description: '3. kat ile 4. kat arasındaki merdiven lambası iki gündür yanmıyor.',
+      createdById: residentId,
+      createdAt: at(0, 8),
+    },
+  });
+  await tx.serviceRequestEvent.create({
+    data: {
+      siteId,
+      requestId: open.id,
+      kind: 'CREATED',
+      userId: residentId,
+      byResident: true,
+      createdAt: at(0, 8),
+    },
+  });
+  await tx.siteCounter.create({ data: { siteId, name: 'service-request', value: 2 } });
+  await tx.notification.create({
+    data: {
+      userId: managerId,
+      siteId,
+      type: 'SERVICE_REQUEST',
+      subjectKey: `request:${open.id}`,
+      title: 'Yeni arıza talebi',
+      body: `Daire ${occupancy.unit.number}: ${open.title}`,
+      data: {
+        requestId: open.id,
+        number: open.number,
+        blockName: occupancy.unit.block.name,
+        unitNumber: occupancy.unit.number,
+      },
+      createdAt: at(0, 8),
+    },
+  });
+}
+
 async function main() {
   if (process.env['NODE_ENV'] === 'production') {
     throw new Error('Seed yalnızca geliştirme ortamı içindir; canlı sistemde çalıştırılamaz.');
@@ -700,6 +791,7 @@ async function main() {
         await tx.siteMembership.create({
           data: { siteId: apartment.id, userId: resident.id, role: 'RESIDENT' },
         });
+        await seedRequests(tx, apartment.id, resident.id, manager.id);
 
         const blockA = await tx.block.findUniqueOrThrow({
           where: { siteId_name: { siteId: site.id, name: 'A' } },

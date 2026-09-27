@@ -32,6 +32,8 @@ import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService, requestSubject } from '../notifications/notifications';
+import { resolveRequestOfTask } from '../requests/requests';
 import { activeEmployee } from './employees';
 import { fullName, OPEN_STATUSES, taskInclude, toTaskDto } from './staff.mapper';
 
@@ -48,6 +50,7 @@ export class TasksService {
     private readonly prisma: PrismaService,
     private readonly tenant: TenantContext,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(query: TaskListQueryDto): Promise<TaskDto[]> {
@@ -191,7 +194,7 @@ export class TasksService {
     if (before.status === input.status) {
       throw new BadRequestException(`Görev zaten "${taskStatusLabels[input.status]}" durumunda`);
     }
-    await this.tenant.db.$transaction(async (tx) => {
+    const resolvedRequest = await this.tenant.db.$transaction(async (tx) => {
       await tx.task.update({
         where: { id },
         data: {
@@ -202,7 +205,13 @@ export class TasksService {
       await tx.taskEvent.create({
         data: this.event(id, { kind: 'STATUS', status: input.status, note: input.note }),
       });
+      return input.status === 'DONE'
+        ? resolveRequestOfTask(tx, this.tenant.siteId, id, this.tenant.userId ?? null)
+        : null;
     });
+    if (resolvedRequest) {
+      await this.notifications.resolve(requestSubject(resolvedRequest), this.tenant.userId ?? null);
+    }
     await this.audit.record({
       action: 'STATUS',
       entityType: 'Task',

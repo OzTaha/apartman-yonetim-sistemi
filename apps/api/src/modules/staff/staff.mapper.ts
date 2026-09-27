@@ -35,7 +35,10 @@ export function toShiftDto(s: ShiftRow): ShiftDto {
   };
 }
 
-export const taskInclude = { employee: employeeName } satisfies Prisma.TaskInclude;
+export const taskInclude = {
+  employee: employeeName,
+  request: { select: { id: true, number: true } },
+} satisfies Prisma.TaskInclude;
 
 type TaskRow = Prisma.TaskGetPayload<{ include: typeof taskInclude }>;
 
@@ -53,6 +56,7 @@ export function toTaskDto(t: TaskRow, today: string): TaskDto {
     overdue: isTaskOverdue({ status: t.status, dueDate }, today),
     completedAt: t.completedAt?.toISOString() ?? null,
     recurringTaskId: t.recurringTaskId,
+    request: t.request,
     createdAt: t.createdAt.toISOString(),
   };
 }

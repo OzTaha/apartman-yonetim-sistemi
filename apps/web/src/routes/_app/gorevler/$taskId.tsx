@@ -6,7 +6,7 @@ import {
   type TaskStatus,
 } from '@apartman/shared';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Ban, Check, Pencil, Play, Repeat, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Ban, Check, Pencil, Play, Repeat, RotateCcw, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { ManagerOnly } from '@/components/manager-only';
 import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
@@ -168,6 +168,16 @@ function TaskDetailPage() {
                 <Repeat className="size-3.5" />
                 Tekrarlayan görev
               </span>
+            )}
+            {t.request && (
+              <Link
+                to="/talepler/$requestId"
+                params={{ requestId: t.request.id }}
+                className="inline-flex items-center gap-1 underline-offset-4 hover:underline"
+              >
+                <Wrench className="size-3.5" />
+                Talep #{t.request.number}
+              </Link>
             )}
           </span>
         }

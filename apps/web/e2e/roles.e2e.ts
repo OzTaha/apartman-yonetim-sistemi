@@ -7,8 +7,8 @@ async function login(page: Page, identifier: string) {
   await page.getByRole('button', { name: 'Giriş yap' }).click();
 }
 
-async function menuLink(page: Page, name: string) {
-  const link = page.getByRole('link', { name, exact: true });
+async function menuLink(page: Page, name: string | RegExp) {
+  const link = page.getByRole('link', typeof name === 'string' ? { name, exact: true } : { name });
   if (!(await link.first().isVisible())) {
     await page.getByRole('button', { name: 'Menüyü aç/kapat' }).click();
   }
@@ -27,7 +27,7 @@ test('yönetici yetkilileri görür; blok yöneticisi kendi bloğunu, denetçi f
 
   await login(page, 'yonetici@ornek.com');
   await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
-  await (await menuLink(page, 'Bildirimler')).click();
+  await (await menuLink(page, /^Bildirimler/)).click();
   await expect(page.getByRole('heading', { name: 'Bildirimler' })).toBeVisible();
   await page.goto('/yetkililer');
   const mehmet = page.locator('[data-slot="card"]', { hasText: 'Mehmet Kaya' });

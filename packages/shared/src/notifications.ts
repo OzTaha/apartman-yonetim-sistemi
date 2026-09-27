@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import type { ServiceRequestNotificationData } from './requests';
 import { removeSpaces } from './schemas';
 
-export type NotificationType = 'PASSWORD_RESET_REQUEST';
+export type NotificationType = 'PASSWORD_RESET_REQUEST' | 'SERVICE_REQUEST';
 
 export const passwordResetRequestSchema = z.object({
   identifier: z
@@ -26,18 +27,22 @@ export interface PasswordResetRequestData {
   unitNumber: string | null;
 }
 
-export interface NotificationDto {
+interface NotificationBase {
   id: string;
-  type: NotificationType;
   title: string;
   body: string;
   siteId: string | null;
   siteName: string | null;
-  data: PasswordResetRequestData;
   readAt: string | null;
   resolvedAt: string | null;
   createdAt: string;
 }
+
+export type NotificationDto = NotificationBase &
+  (
+    | { type: 'PASSWORD_RESET_REQUEST'; data: PasswordResetRequestData }
+    | { type: 'SERVICE_REQUEST'; data: ServiceRequestNotificationData }
+  );
 
 export interface NotificationCountDto {
   unread: number;

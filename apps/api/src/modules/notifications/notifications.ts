@@ -25,6 +25,7 @@ import {
   type NotificationDto,
   type NotificationEventDto,
   type PasswordResetRequestData,
+  type ServiceRequestNotificationData,
 } from '@apartman/shared';
 import { createZodDto } from 'nestjs-zod';
 import { filter, interval, map, merge, type Observable, Subject } from 'rxjs';
@@ -44,21 +45,24 @@ export const resetSubject = {
   user: (id: string) => `pwreset:user:${id}`,
 };
 
+export const requestSubject = (id: string) => `request:${id}`;
+
 type Row = Notification & { site: { name: string } | null };
 
 function toDto(n: Row): NotificationDto {
-  return {
+  const base = {
     id: n.id,
-    type: n.type,
     title: n.title,
     body: n.body,
     siteId: n.siteId,
     siteName: n.site?.name ?? null,
-    data: n.data as unknown as PasswordResetRequestData,
     readAt: n.readAt?.toISOString() ?? null,
     resolvedAt: n.resolvedAt?.toISOString() ?? null,
     createdAt: n.createdAt.toISOString(),
   };
+  return n.type === 'SERVICE_REQUEST'
+    ? { ...base, type: n.type, data: n.data as unknown as ServiceRequestNotificationData }
+    : { ...base, type: n.type, data: n.data as unknown as PasswordResetRequestData };
 }
 
 @Injectable()
@@ -141,6 +145,70 @@ export class NotificationsService {
       data: { resolvedAt: new Date(), resolvedById },
     });
     for (const userId of new Set(open.map((n) => n.userId))) {
+      this.hub.emit(userId, { kind: 'changed' });
+    }
+  }
+
+  async notifySiteStaff(input: {
+    siteId: string;
+    blockId: string;
+    subjectKey: string;
+    title: string;
+    body: string;
+    data: ServiceRequestNotificationData;
+    exclude: string;
+  }): Promise<void> {
+    const [managers, blockManagers] = await Promise.all([
+      this.prisma.siteMembership.findMany({
+        where: { siteId: input.siteId, role: 'SITE_MANAGER', user: { isActive: true } },
+        select: { userId: true },
+      }),
+      this.prisma.blockManager.findMany({
+        where: {
+          blockId: input.blockId,
+          user: {
+            isActive: true,
+            memberships: { some: { siteId: input.siteId, role: 'BLOCK_MANAGER' } },
+          },
+        },
+        select: { userId: true },
+      }),
+    ]);
+    let recipients = [...managers, ...blockManagers].map((m) => m.userId);
+    if (managers.length === 0) {
+      const admins = await this.prisma.user.findMany({
+        where: { isPlatformAdmin: true, isActive: true },
+        select: { id: true },
+      });
+      recipients.push(...admins.map((u) => u.id));
+    }
+    recipients = [...new Set(recipients)].filter((id) => id !== input.exclude);
+    if (recipients.length === 0) return;
+    const rows = await this.prisma.notification.createManyAndReturn({
+      data: recipients.map((userId) => ({
+        userId,
+        siteId: input.siteId,
+        type: 'SERVICE_REQUEST' as const,
+        subjectKey: input.subjectKey,
+        title: input.title,
+        body: input.body,
+        data: input.data as unknown as Prisma.InputJsonValue,
+      })),
+      include: { site: { select: { name: true } } },
+    });
+    for (const row of rows) {
+      this.hub.emit(row.userId, { kind: 'created', notification: toDto(row) });
+    }
+  }
+
+  async discard(subjectKey: string): Promise<void> {
+    const rows = await this.prisma.notification.findMany({
+      where: { subjectKey },
+      select: { userId: true },
+    });
+    if (rows.length === 0) return;
+    await this.prisma.notification.deleteMany({ where: { subjectKey } });
+    for (const userId of new Set(rows.map((n) => n.userId))) {
       this.hub.emit(userId, { kind: 'changed' });
     }
   }

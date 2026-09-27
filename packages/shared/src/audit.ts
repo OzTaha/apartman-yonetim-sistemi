@@ -57,6 +57,7 @@ export const auditEntityLabels: Record<string, string> = {
   ReminderSettings: 'Hatırlatma ayarı',
   Shift: 'Vardiya',
   Site: 'Site',
+  ServiceRequest: 'Arıza/talep',
   SiteMembership: 'Yetki',
   Task: 'Görev',
   Transaction: 'Kasa hareketi',
@@ -102,6 +103,8 @@ export const auditActionLabels: Record<string, string> = {
   ISSUE: 'Yazı düzenlendi',
   IMPORT: 'İçe aktarma',
   IGNORE: 'Yoksayıldı',
+  COMMENT: 'Yanıt',
+  CREATE_TASK: 'Görev oluşturuldu',
 };
 
 export const auditLabel = (labels: Record<string, string>, key: string) => labels[key] ?? key;

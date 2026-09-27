@@ -5,8 +5,8 @@ import {
   type MyOccupancyDto,
   type PaymentDto,
 } from '@apartman/shared';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { CreditCard, FileDown, Megaphone, Pin, Receipt, Scale } from 'lucide-react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { CreditCard, FileDown, Megaphone, Pin, Receipt, Scale, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
@@ -19,7 +19,7 @@ import { OccupancyTypeBadge } from '@/features/residents/occupancy-actions';
 import { downloadFile, errorMessage } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { useMyAnnouncements, useOnlineStatus, useUnitAccount } from '@/lib/queries';
-import { session, useSession } from '@/lib/session';
+import { session, useHasUnitInSite, useSession } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/dairem')({
@@ -298,10 +298,24 @@ function UnreadAnnouncements({ siteId, siteName }: { siteId: string; siteName: s
 function MyUnitsPage() {
   const { user } = useSession();
   const occupancies = user?.occupancies ?? [];
+  const hasUnit = useHasUnitInSite();
 
   return (
     <div className="grid gap-6">
-      <PageHeader title="Dairem" description={`Hoş geldiniz, ${user?.firstName ?? ''}`} />
+      <PageHeader
+        title="Dairem"
+        description={`Hoş geldiniz, ${user?.firstName ?? ''}`}
+        actions={
+          hasUnit && (
+            <Button variant="outline" asChild>
+              <Link to="/taleplerim" search={{ yeni: true }}>
+                <Wrench />
+                Arıza / talep bildir
+              </Link>
+            </Button>
+          )
+        }
+      />
       {occupancies.length === 0 ? (
         <EmptyState
           title="Hesabınıza bağlı daire yok"

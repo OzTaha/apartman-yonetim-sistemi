@@ -14,13 +14,13 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 
 ## Roller
 
-| Rol               | Neler yapabilir                                                                              |
-| ----------------- | -------------------------------------------------------------------------------------------- |
-| Sistem yöneticisi | Apartman ve siteleri oluşturur, yöneticileri atar, uygulama adını ve logoyu değiştirir       |
-| Site yöneticisi   | Daireler, sakinler, aidat, tahsilat, kasa, çalışanlar, duyurular ve mesajları yönetir        |
-| Blok yöneticisi   | Kendi bloğunun sakinlerini, borç ve tahsilatlarını, blok giderlerini ve duyurularını yönetir |
-| Denetçi           | Kasa, gelir-gider, borç ve tahsilatları görür; hiçbir kaydı değiştiremez                     |
-| Sakin             | Kendi borçlarını, ödemelerini, makbuzlarını, duyuruları ve giderleri görür; online öder      |
+| Rol               | Neler yapabilir                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Sistem yöneticisi | Apartman ve siteleri oluşturur, yöneticileri atar, uygulama adını ve logoyu değiştirir                           |
+| Site yöneticisi   | Daireler, sakinler, aidat, tahsilat, kasa, çalışanlar, talepler, duyuru ve mesajları yönetir                     |
+| Blok yöneticisi   | Kendi bloğunun sakinlerini, borç ve tahsilatlarını, giderlerini, taleplerini ve duyurularını yönetir             |
+| Denetçi           | Kasa, gelir-gider, borç ve tahsilatları görür; hiçbir kaydı değiştiremez                                         |
+| Sakin             | Kendi borçlarını, ödemelerini, makbuzlarını, duyuruları ve giderleri görür; online öder; arıza ve talep bildirir |
 
 ## İlk adımlar
 
@@ -48,6 +48,10 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
   görülür.
 - **Mesaj:** Mesajlar sayfasından borç hatırlatması, acil durum veya genel bilgi SMS/WhatsApp ile gönderilir.
   İletişim onayı vermemiş sakinlere mesaj gönderilmez.
+- **Arıza ve talepler:** Sakinlerin bildirdiği arızalar "Arıza ve talepler" sayfasına ve bildirimlere düşer. Talebi
+  açıp sakine yanıt yazın, "İşleme al", "Çözüldü" veya "Reddet" ile durumunu güncelleyin. "Görev oluştur" ile talebi
+  bir çalışana verebilirsiniz; görev tamamlanınca talep de kapanır. Sakinler talep açmak için "Taleplerim" sayfasını
+  veya Dairem'deki "Arıza / talep bildir" düğmesini kullanır.
 - **Çalışanlar:** Vardiya planı, görevler ve tekrarlayan görevler "Çalışan ve görev" menüsündedir.
 - **Ay kapanışı:** Gelir-gider raporu sayfasında geçmiş ayı kapatın; kapanan ayın kayıtları değiştirilemez.
 

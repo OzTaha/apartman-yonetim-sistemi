@@ -192,6 +192,20 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Çalışan raporu seçilen tarih aralığında vardiya sayısı ve süresini, tamamlanan ve geç tamamlanan görevleri, çalışana yapılan
   ödemeleri; ayrıca bugün itibarıyla açık ve geciken görevleri gösterir.
 
+## Arıza ve talepler
+
+- Sakin "Taleplerim" sayfasından kendi dairesi veya ortak alan için arıza, temizlik, güvenlik, şikâyet, öneri ya da diğer
+  kategoride talep açar; en fazla 3 fotoğraf (JPG, PNG, WEBP) ekleyebilir. Talepler site içinde sıra numarası alır.
+- Yeni talep ve sakinin yeni mesajı site yöneticilerine ve dairenin bloğunun yöneticilerine anında bildirim olarak düşer.
+  Sitede site yöneticisi yoksa bildirim sistem yöneticisine gider.
+- Durumlar: yeni, işlemde, çözüldü, reddedildi (neden zorunlu). Yönetimin yanıtları ve durum değişiklikleri sakine
+  "Yönetim" adıyla görünür; okunmamış yanıt sayısı sakinin menüsünde gösterilir.
+- Site yöneticisi talebi tek adımda çalışana görev olarak verebilir; görev tamamlanınca talep kendiliğinden çözülür.
+- Sakin yalnızca kendi taleplerini görür. Blok yöneticisi kendi bloklarının taleplerini yönetir, görev oluşturamaz.
+  Denetçi talepleri ve fotoğrafları göremez.
+- Yönetim henüz işlem yapmadıysa sakin talebini geri çekebilir; talep fotoğraflarıyla birlikte silinir.
+  Talebi olan daire silinmez, arşivlenir.
+
 ## Duyuru ve mesajlaşma
 
 - Duyurular tüm sakinlere, seçili bloklara veya seçili dairelere yayınlanır; dosya/görsel eklenebilir, üste sabitlenebilir.

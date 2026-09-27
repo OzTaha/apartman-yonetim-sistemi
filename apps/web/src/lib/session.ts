@@ -105,3 +105,8 @@ export function canManage(role: ActiveRole): boolean {
 export function useRole(): ActiveRole {
   return activeRole(useSession());
 }
+
+export function useHasUnitInSite(): boolean {
+  const { user, siteId } = useSession();
+  return Boolean(siteId && user?.occupancies.some((o) => o.siteId === siteId));
+}

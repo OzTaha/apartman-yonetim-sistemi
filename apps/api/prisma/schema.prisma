@@ -155,6 +155,7 @@ model User {
   passwordResets    PasswordReset[]
   notifications     Notification[]
   managedBlocks     BlockManager[]
+  serviceRequests   ServiceRequest[]
 
   @@map("users")
 }
@@ -202,6 +203,8 @@ model Site {
   notifications     Notification[]
   blockManagers     BlockManager[]
   bankLines         BankImportLine[]
+  serviceRequests   ServiceRequest[]
+  requestEvents     ServiceRequestEvent[]
 
   @@map("sites")
 }
@@ -267,12 +270,13 @@ model Unit {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  site        Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  block       Block           @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
+  site        Site             @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  block       Block            @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
   occupancies Occupancy[]
   charges     Charge[]
   payments    Payment[]
   intents     PaymentIntent[]
+  requests    ServiceRequest[]
 
   @@unique([blockId, number])
   @@unique([id, siteId])
@@ -632,19 +636,22 @@ model Attachment {
   workId         String?  @db.Uuid
   paymentId      String?  @db.Uuid
   announcementId String?  @db.Uuid
+  requestId      String?  @db.Uuid
   uploadedById   String?  @db.Uuid
   createdAt      DateTime @default(now())
 
-  site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  transaction  Transaction?  @relation(fields: [transactionId, siteId], references: [id, siteId], onDelete: Restrict)
-  work         Work?         @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
-  payment      Payment?      @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
-  announcement Announcement? @relation(fields: [announcementId, siteId], references: [id, siteId], onDelete: Restrict)
+  site         Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  transaction  Transaction?    @relation(fields: [transactionId, siteId], references: [id, siteId], onDelete: Restrict)
+  work         Work?           @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
+  payment      Payment?        @relation(fields: [paymentId, siteId], references: [id, siteId], onDelete: Restrict)
+  announcement Announcement?   @relation(fields: [announcementId, siteId], references: [id, siteId], onDelete: Restrict)
+  request      ServiceRequest? @relation(fields: [requestId, siteId], references: [id, siteId], onDelete: Restrict)
 
   @@index([transactionId])
   @@index([workId])
   @@index([paymentId])
   @@index([announcementId])
+  @@index([requestId])
   @@map("attachments")
 }
 
@@ -747,10 +754,11 @@ model Task {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  site          Site           @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  employee      Employee?      @relation(fields: [employeeId, siteId], references: [id, siteId], onDelete: Restrict)
-  recurringTask RecurringTask? @relation(fields: [recurringTaskId, siteId], references: [id, siteId], onDelete: Restrict)
+  site          Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  employee      Employee?       @relation(fields: [employeeId, siteId], references: [id, siteId], onDelete: Restrict)
+  recurringTask RecurringTask?  @relation(fields: [recurringTaskId, siteId], references: [id, siteId], onDelete: Restrict)
   events        TaskEvent[]
+  request       ServiceRequest?
 
   @@unique([id, siteId])
   @@unique([recurringTaskId, occurrenceDate])
@@ -936,6 +944,34 @@ model PasswordReset {
   @@map("password_resets")
 }
 
+enum RequestCategory {
+  FAULT
+  CLEANING
+  SECURITY
+  COMPLAINT
+  SUGGESTION
+  OTHER
+}
+
+enum RequestStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum RequestLocation {
+  UNIT
+  COMMON
+}
+
+enum RequestEventKind {
+  CREATED
+  STATUS
+  COMMENT
+  TASK
+}
+
 enum BankLineStatus {
   IMPORTED
   IGNORED
@@ -943,6 +979,7 @@ enum BankLineStatus {
 
 enum NotificationType {
   PASSWORD_RESET_REQUEST
+  SERVICE_REQUEST
 }
 
 model Notification {
@@ -985,4 +1022,56 @@ model BankImportLine {
   @@unique([siteId, fingerprint])
   @@unique([paymentId, siteId])
   @@map("bank_import_lines")
+}
+
+model ServiceRequest {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  siteId            String          @db.Uuid
+  number            Int
+  unitId            String          @db.Uuid
+  location          RequestLocation
+  category          RequestCategory
+  title             String
+  description       String
+  status            RequestStatus   @default(NEW)
+  taskId            String?         @db.Uuid
+  createdById       String          @db.Uuid
+  resolvedAt        DateTime?
+  residentUpdatedAt DateTime?
+  residentSeenAt    DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  site        Site                  @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  unit        Unit                  @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
+  task        Task?                 @relation(fields: [taskId, siteId], references: [id, siteId], onDelete: Restrict)
+  createdBy   User                  @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  events      ServiceRequestEvent[]
+  attachments Attachment[]
+
+  @@unique([siteId, number])
+  @@unique([id, siteId])
+  @@unique([taskId, siteId])
+  @@index([siteId, status])
+  @@index([createdById])
+  @@index([unitId])
+  @@map("service_requests")
+}
+
+model ServiceRequestEvent {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  siteId     String           @db.Uuid
+  requestId  String           @db.Uuid
+  kind       RequestEventKind
+  status     RequestStatus?
+  note       String?
+  userId     String?          @db.Uuid
+  byResident Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  site    Site           @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  request ServiceRequest @relation(fields: [requestId, siteId], references: [id, siteId], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+  @@map("service_request_events")
 }

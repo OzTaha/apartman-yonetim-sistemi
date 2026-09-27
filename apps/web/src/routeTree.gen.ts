@@ -52,6 +52,10 @@ import { Route as AppMesajlarIndexRouteImport } from './routes/_app/mesajlar/ind
 import { Route as AppMesajlarCampaignIdRouteImport } from './routes/_app/mesajlar/$campaignId'
 import { Route as AppMesajlarYeniRouteImport } from './routes/_app/mesajlar/yeni'
 import { Route as AppOdemeSonucRouteImport } from './routes/_app/odeme/sonuc'
+import { Route as AppTaleplerIndexRouteImport } from './routes/_app/talepler/index'
+import { Route as AppTaleplerRequestIdRouteImport } from './routes/_app/talepler/$requestId'
+import { Route as AppTaleplerimIndexRouteImport } from './routes/_app/taleplerim/index'
+import { Route as AppTaleplerimRequestIdRouteImport } from './routes/_app/taleplerim/$requestId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -268,6 +272,26 @@ const AppOdemeSonucRoute = AppOdemeSonucRouteImport.update({
   path: '/odeme/sonuc',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTaleplerIndexRoute = AppTaleplerIndexRouteImport.update({
+  id: '/talepler/',
+  path: '/talepler/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTaleplerRequestIdRoute = AppTaleplerRequestIdRouteImport.update({
+  id: '/talepler/$requestId',
+  path: '/talepler/$requestId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTaleplerimIndexRoute = AppTaleplerimIndexRouteImport.update({
+  id: '/taleplerim/',
+  path: '/taleplerim/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTaleplerimRequestIdRoute = AppTaleplerimRequestIdRouteImport.update({
+  id: '/taleplerim/$requestId',
+  path: '/taleplerim/$requestId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -306,12 +330,16 @@ export interface FileRoutesByFullPath {
   '/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
   '/mesajlar/yeni': typeof AppMesajlarYeniRoute
   '/odeme/sonuc': typeof AppOdemeSonucRoute
+  '/talepler/$requestId': typeof AppTaleplerRequestIdRoute
+  '/taleplerim/$requestId': typeof AppTaleplerimRequestIdRoute
   '/calisanlar/': typeof AppCalisanlarIndexRoute
   '/daireler/': typeof AppDairelerIndexRoute
   '/duyurular/': typeof AppDuyurularIndexRoute
   '/gorevler/': typeof AppGorevlerIndexRoute
   '/isler/': typeof AppIslerIndexRoute
   '/mesajlar/': typeof AppMesajlarIndexRoute
+  '/talepler/': typeof AppTaleplerIndexRoute
+  '/taleplerim/': typeof AppTaleplerimIndexRoute
 }
 export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
@@ -350,12 +378,16 @@ export interface FileRoutesByTo {
   '/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
   '/mesajlar/yeni': typeof AppMesajlarYeniRoute
   '/odeme/sonuc': typeof AppOdemeSonucRoute
+  '/talepler/$requestId': typeof AppTaleplerRequestIdRoute
+  '/taleplerim/$requestId': typeof AppTaleplerimRequestIdRoute
   '/calisanlar': typeof AppCalisanlarIndexRoute
   '/daireler': typeof AppDairelerIndexRoute
   '/duyurular': typeof AppDuyurularIndexRoute
   '/gorevler': typeof AppGorevlerIndexRoute
   '/isler': typeof AppIslerIndexRoute
   '/mesajlar': typeof AppMesajlarIndexRoute
+  '/talepler': typeof AppTaleplerIndexRoute
+  '/taleplerim': typeof AppTaleplerimIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -396,12 +428,16 @@ export interface FileRoutesById {
   '/_app/mesajlar/$campaignId': typeof AppMesajlarCampaignIdRoute
   '/_app/mesajlar/yeni': typeof AppMesajlarYeniRoute
   '/_app/odeme/sonuc': typeof AppOdemeSonucRoute
+  '/_app/talepler/$requestId': typeof AppTaleplerRequestIdRoute
+  '/_app/taleplerim/$requestId': typeof AppTaleplerimRequestIdRoute
   '/_app/calisanlar/': typeof AppCalisanlarIndexRoute
   '/_app/daireler/': typeof AppDairelerIndexRoute
   '/_app/duyurular/': typeof AppDuyurularIndexRoute
   '/_app/gorevler/': typeof AppGorevlerIndexRoute
   '/_app/isler/': typeof AppIslerIndexRoute
   '/_app/mesajlar/': typeof AppMesajlarIndexRoute
+  '/_app/talepler/': typeof AppTaleplerIndexRoute
+  '/_app/taleplerim/': typeof AppTaleplerimIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -442,12 +478,16 @@ export interface FileRouteTypes {
     | '/mesajlar/$campaignId'
     | '/mesajlar/yeni'
     | '/odeme/sonuc'
+    | '/talepler/$requestId'
+    | '/taleplerim/$requestId'
     | '/calisanlar/'
     | '/daireler/'
     | '/duyurular/'
     | '/gorevler/'
     | '/isler/'
     | '/mesajlar/'
+    | '/talepler/'
+    | '/taleplerim/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/giris'
@@ -486,12 +526,16 @@ export interface FileRouteTypes {
     | '/mesajlar/$campaignId'
     | '/mesajlar/yeni'
     | '/odeme/sonuc'
+    | '/talepler/$requestId'
+    | '/taleplerim/$requestId'
     | '/calisanlar'
     | '/daireler'
     | '/duyurular'
     | '/gorevler'
     | '/isler'
     | '/mesajlar'
+    | '/talepler'
+    | '/taleplerim'
   id:
     | '__root__'
     | '/_app'
@@ -531,12 +575,16 @@ export interface FileRouteTypes {
     | '/_app/mesajlar/$campaignId'
     | '/_app/mesajlar/yeni'
     | '/_app/odeme/sonuc'
+    | '/_app/talepler/$requestId'
+    | '/_app/taleplerim/$requestId'
     | '/_app/calisanlar/'
     | '/_app/daireler/'
     | '/_app/duyurular/'
     | '/_app/gorevler/'
     | '/_app/isler/'
     | '/_app/mesajlar/'
+    | '/_app/talepler/'
+    | '/_app/taleplerim/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -849,6 +897,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOdemeSonucRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/talepler/': {
+      id: '/_app/talepler/'
+      path: '/talepler'
+      fullPath: '/talepler/'
+      preLoaderRoute: typeof AppTaleplerIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/talepler/$requestId': {
+      id: '/_app/talepler/$requestId'
+      path: '/talepler/$requestId'
+      fullPath: '/talepler/$requestId'
+      preLoaderRoute: typeof AppTaleplerRequestIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/taleplerim/': {
+      id: '/_app/taleplerim/'
+      path: '/taleplerim'
+      fullPath: '/taleplerim/'
+      preLoaderRoute: typeof AppTaleplerimIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/taleplerim/$requestId': {
+      id: '/_app/taleplerim/$requestId'
+      path: '/taleplerim/$requestId'
+      fullPath: '/taleplerim/$requestId'
+      preLoaderRoute: typeof AppTaleplerimRequestIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -886,12 +962,16 @@ interface AppRouteChildren {
   AppMesajlarCampaignIdRoute: typeof AppMesajlarCampaignIdRoute
   AppMesajlarYeniRoute: typeof AppMesajlarYeniRoute
   AppOdemeSonucRoute: typeof AppOdemeSonucRoute
+  AppTaleplerRequestIdRoute: typeof AppTaleplerRequestIdRoute
+  AppTaleplerimRequestIdRoute: typeof AppTaleplerimRequestIdRoute
   AppCalisanlarIndexRoute: typeof AppCalisanlarIndexRoute
   AppDairelerIndexRoute: typeof AppDairelerIndexRoute
   AppDuyurularIndexRoute: typeof AppDuyurularIndexRoute
   AppGorevlerIndexRoute: typeof AppGorevlerIndexRoute
   AppIslerIndexRoute: typeof AppIslerIndexRoute
   AppMesajlarIndexRoute: typeof AppMesajlarIndexRoute
+  AppTaleplerIndexRoute: typeof AppTaleplerIndexRoute
+  AppTaleplerimIndexRoute: typeof AppTaleplerimIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -928,12 +1008,16 @@ const AppRouteChildren: AppRouteChildren = {
   AppMesajlarCampaignIdRoute: AppMesajlarCampaignIdRoute,
   AppMesajlarYeniRoute: AppMesajlarYeniRoute,
   AppOdemeSonucRoute: AppOdemeSonucRoute,
+  AppTaleplerRequestIdRoute: AppTaleplerRequestIdRoute,
+  AppTaleplerimRequestIdRoute: AppTaleplerimRequestIdRoute,
   AppCalisanlarIndexRoute: AppCalisanlarIndexRoute,
   AppDairelerIndexRoute: AppDairelerIndexRoute,
   AppDuyurularIndexRoute: AppDuyurularIndexRoute,
   AppGorevlerIndexRoute: AppGorevlerIndexRoute,
   AppIslerIndexRoute: AppIslerIndexRoute,
   AppMesajlarIndexRoute: AppMesajlarIndexRoute,
+  AppTaleplerIndexRoute: AppTaleplerIndexRoute,
+  AppTaleplerimIndexRoute: AppTaleplerimIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
