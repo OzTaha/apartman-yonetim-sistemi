@@ -13,20 +13,23 @@ export class ApiError extends Error {
 }
 
 let refreshing: Promise<boolean> | null = null;
+let sessionEnded = false;
+
+session.subscribe(() => {
+  if (session.get().accessToken) sessionEnded = false;
+});
 
 async function requestRefresh(): Promise<Response> {
   return fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
 }
 
 export function refreshSession(): Promise<boolean> {
+  if (sessionEnded) return Promise.resolve(false);
   refreshing ??= (async () => {
     try {
-      let response = await requestRefresh();
-      if (response.status === 401 && session.get().accessToken) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        response = await requestRefresh();
-      }
+      const response = await requestRefresh();
       if (!response.ok) {
+        sessionEnded = true;
         session.clear();
         return false;
       }

@@ -82,6 +82,7 @@ export const session = {
     setState({ siteId });
   },
   clear() {
+    if (!state.accessToken && !state.user) return;
     setState({ accessToken: null, user: null });
   },
 };

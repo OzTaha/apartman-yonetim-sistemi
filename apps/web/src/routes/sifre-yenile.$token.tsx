@@ -12,7 +12,7 @@ import { LoadingRows } from '@/components/page';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/password-input';
 import { apiFetch, errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/sifre-yenile/$token')({
@@ -117,9 +117,8 @@ function PasswordResetPage() {
               error={form.formState.errors.password?.message}
               hint="En az 8 karakter"
             >
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="new-password"
                 autoFocus
                 {...form.register('password')}
@@ -130,9 +129,8 @@ function PasswordResetPage() {
               htmlFor="confirm"
               error={form.formState.errors.confirm?.message}
             >
-              <Input
+              <PasswordInput
                 id="confirm"
-                type="password"
                 autoComplete="new-password"
                 {...form.register('confirm')}
               />

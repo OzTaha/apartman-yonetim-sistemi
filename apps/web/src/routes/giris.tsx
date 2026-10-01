@@ -9,6 +9,7 @@ import { Field } from '@/components/form-field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PasswordInput } from '@/components/password-input';
 import { Input } from '@/components/ui/input';
 import { apiFetch, errorMessage } from '@/lib/api';
 import { ensureSession, login } from '@/lib/auth';
@@ -80,9 +81,8 @@ function LoginPage() {
               />
             </Field>
             <Field label="Şifre" htmlFor="password" error={form.formState.errors.password?.message}>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 {...form.register('password')}
               />

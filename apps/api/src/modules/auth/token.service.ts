@@ -59,15 +59,23 @@ export class TokenService {
     if (!existing) throw new UnauthorizedException('Oturum bulunamadı');
 
     if (existing.revokedAt) {
-      const withinGrace =
-        existing.replacedById !== null &&
-        Date.now() - existing.revokedAt.getTime() < REUSE_GRACE_MS;
-      if (!withinGrace) {
-        this.logger.warn(
-          `Refresh token yeniden kullanıldı, kullanıcı ${existing.userId} için tüm oturumlar kapatılıyor`,
-        );
-        await this.revokeAllForUser(existing.userId);
+      if (!existing.replacedById) throw new UnauthorizedException('Oturum geçersiz');
+      if (Date.now() - existing.revokedAt.getTime() < REUSE_GRACE_MS) {
+        const replacement = await this.prisma.refreshToken.findUnique({
+          where: { id: existing.replacedById },
+        });
+        if (replacement && (!replacement.revokedAt || replacement.replacedById)) {
+          return {
+            userId: existing.userId,
+            token: await this.issueRefreshToken(existing.userId, meta),
+          };
+        }
+        throw new UnauthorizedException('Oturum geçersiz');
       }
+      this.logger.warn(
+        `Refresh token yeniden kullanıldı, kullanıcı ${existing.userId} için tüm oturumlar kapatılıyor`,
+      );
+      await this.revokeAllForUser(existing.userId);
       throw new UnauthorizedException('Oturum geçersiz');
     }
     if (existing.expiresAt.getTime() <= Date.now()) {

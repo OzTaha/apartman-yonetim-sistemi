@@ -7,7 +7,7 @@ import { Field } from '@/components/form-field';
 import { PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/password-input';
 import { apiFetch } from '@/lib/api';
 import { useApiMutation } from '@/lib/queries';
 import { session } from '@/lib/session';
@@ -60,9 +60,8 @@ function ChangePasswordPage() {
             onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
           >
             <Field label="Mevcut şifre" htmlFor="current" error={errors.currentPassword?.message}>
-              <Input
+              <PasswordInput
                 id="current"
-                type="password"
                 autoComplete="current-password"
                 {...form.register('currentPassword')}
               />
@@ -73,17 +72,15 @@ function ChangePasswordPage() {
               error={errors.newPassword?.message}
               hint="En az 8 karakter"
             >
-              <Input
+              <PasswordInput
                 id="new"
-                type="password"
                 autoComplete="new-password"
                 {...form.register('newPassword')}
               />
             </Field>
             <Field label="Yeni şifre (tekrar)" htmlFor="confirm" error={errors.confirm?.message}>
-              <Input
+              <PasswordInput
                 id="confirm"
-                type="password"
                 autoComplete="new-password"
                 {...form.register('confirm')}
               />

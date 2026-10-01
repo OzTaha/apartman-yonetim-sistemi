@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { PasswordInput } from '@/components/password-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -197,9 +198,8 @@ export function ManagerAssignDialog({ open, onOpenChange, site }: DialogProps & 
             hint="Yalnızca yeni hesap oluşturulacaksa gerekir (en az 8 karakter)"
             className="sm:col-span-2"
           >
-            <Input
+            <PasswordInput
               id="mgr-password"
-              type="password"
               autoComplete="new-password"
               {...form.register('password')}
             />

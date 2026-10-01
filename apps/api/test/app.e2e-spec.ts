@@ -197,6 +197,30 @@ describe('Refresh token', () => {
     await http().post('/api/auth/refresh').set('Cookie', second).expect(401);
   });
 
+  it('yenilemeden hemen sonra eski token gelirse oturumlar kapanmaz', async () => {
+    const { cookie: first } = await login('yonetici-a@test.com');
+    const second = refreshCookie(
+      await http().post('/api/auth/refresh').set('Cookie', first).expect(200),
+    );
+
+    const third = refreshCookie(
+      await http().post('/api/auth/refresh').set('Cookie', first).expect(200),
+    );
+    expect(third).not.toBe(second);
+    await http().post('/api/auth/refresh').set('Cookie', second).expect(200);
+    await http().post('/api/auth/refresh').set('Cookie', third).expect(200);
+  });
+
+  it('tüm oturumlar kapatıldıktan sonra eski token tolerans süresinde de geçersizdir', async () => {
+    const { cookie: first } = await login('yonetici-b@test.com');
+    const second = refreshCookie(
+      await http().post('/api/auth/refresh').set('Cookie', first).expect(200),
+    );
+    await http().post('/api/auth/logout').set('Cookie', second).expect(204);
+
+    await http().post('/api/auth/refresh').set('Cookie', first).expect(401);
+  });
+
   it('çıkış yapınca refresh token geçersiz olur', async () => {
     const { cookie } = await login('yonetici-b@test.com');
     await http().post('/api/auth/logout').set('Cookie', cookie).expect(204);

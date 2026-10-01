@@ -102,4 +102,14 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab'],
+  [role='checkbox']:not(:disabled),
+  [role='switch']:not(:disabled),
+  [role='combobox']:not(:disabled),
+  summary,
+  label:has(> input[type='checkbox'], > button[role='checkbox']) {
+    cursor: pointer;
+  }
 }
