@@ -12,6 +12,18 @@ hesaplarına veya bilgisayarına bağlı kalmaz.
   bir `A` kaydı açılmış olmalıdır.
 - Sunucuda 80 ve 443 portları dışarıya açık olmalıdır (HTTPS sertifikası 80 portu üzerinden doğrulanır).
 
+**Oracle Cloud:** Bu portlar iki yerde kapalı gelir. Panelde VCN'in security list'ine `0.0.0.0/0` için TCP 80 ve
+443 giriş kuralları eklenir; sunucuda da şu komutlarla açılır:
+
+```sh
+sudo iptables -I INPUT 5 -p tcp --dport 80 -m state --state NEW -j ACCEPT
+sudo iptables -I INPUT 5 -p tcp --dport 443 -m state --state NEW -j ACCEPT
+sudo netfilter-persistent save
+```
+
+Ücretsiz ARM sunucularda (VM.Standard.A1.Flex) bölgede kapasite yoksa başka bir availability domain denenir.
+RAM 8 GB'tan azsa derleme için 2 GB swap eklenmesi önerilir.
+
 Docker Engine ve Compose eklentisini resmi depodan kurun:
 
 ```sh

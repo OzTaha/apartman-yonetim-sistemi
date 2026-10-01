@@ -40,11 +40,11 @@ pnpm --filter @apartman/api db:seed       # örnek veriyi yükler
 pnpm dev                                  # API ve web uygulamasını birlikte başlatır
 ```
 
-| Adres                            | Açıklama                   |
-| -------------------------------- | -------------------------- |
-| http://localhost:5173            | Web uygulaması             |
-| http://localhost:3000/api/health | API sağlık kontrolü        |
-| http://localhost:3000/api/docs   | Swagger API dokümantasyonu |
+| Adres                            | Açıklama                                               |
+| -------------------------------- | ------------------------------------------------------ |
+| http://localhost:5173            | Web uygulaması                                         |
+| http://localhost:3000/api/health | API sağlık kontrolü                                    |
+| http://localhost:3000/api/docs   | Swagger API dokümantasyonu (canlı kurulumda kapalıdır) |
 
 PostgreSQL 5433, Redis 6380 portunu kullanır.
 Farklı port gerekirse `POSTGRES_PORT` / `REDIS_PORT` ortam değişkenleri ve `apps/api/.env` birlikte değiştirilmelidir.

@@ -16,6 +16,8 @@ export function configureApp(app: NestExpressApplication): void {
   app.enableCors({ origin: config.get('WEB_ORIGIN', { infer: true }), credentials: true });
   app.enableShutdownHooks();
 
+  if (config.get('NODE_ENV', { infer: true }) === 'production') return;
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Apartman Yönetim Sistemi API')
     .setVersion('0.1.0')

@@ -11,10 +11,13 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   configureApp(app);
 
-  const port = app.get(ConfigService<Env, true>).get('PORT', { infer: true });
+  const config = app.get(ConfigService<Env, true>);
+  const port = config.get('PORT', { infer: true });
   await app.listen(port);
   Logger.log(`API http://localhost:${port}/api adresinde çalışıyor`, 'Bootstrap');
-  Logger.log(`Swagger dokümantasyonu: http://localhost:${port}/api/docs`, 'Bootstrap');
+  if (config.get('NODE_ENV', { infer: true }) !== 'production') {
+    Logger.log(`Swagger dokümantasyonu: http://localhost:${port}/api/docs`, 'Bootstrap');
+  }
 }
 
 void bootstrap();

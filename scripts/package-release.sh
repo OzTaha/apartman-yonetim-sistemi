@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-if [ -n "$(git status --porcelain)" ]; then
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   echo "Commit edilmemiş değişiklikler var; paket yalnızca commit edilmiş koddan hazırlanır." >&2
   exit 1
 fi
