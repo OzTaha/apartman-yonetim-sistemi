@@ -36,7 +36,7 @@ test('sistem yöneticisi siteyi verilerini indirip şifresiyle siler ve geri get
   await card.getByRole('button', { name: `${name} için işlemler` }).click();
   await page.getByRole('menuitem', { name: 'Sil' }).click();
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText(/15 gün boyunca/)).toBeVisible();
+  await expect(dialog.getByText(/30 gün boyunca/)).toBeVisible();
 
   const [file] = await Promise.all([
     page.waitForEvent('download'),

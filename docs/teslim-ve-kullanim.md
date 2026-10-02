@@ -81,7 +81,7 @@ Silmeden önce "Verileri Excel olarak indir" ile daireler, sakinler, borçlar, t
 firmalar, çalışanlar, talepler ve genel kurul kararları tek dosyada indirilir. Silmek için yerin adı yazılır ve sistem
 yöneticisinin e-posta/telefonu ile şifresi yeniden girilir.
 
-Silinen yer 15 gün boyunca aynı sayfadaki "Silinenler" bölümünde bekler ve "Geri getir" ile eski haline döner. Süre
+Silinen yer 30 gün boyunca aynı sayfadaki "Silinenler" bölümünde bekler ve "Geri getir" ile eski haline döner. Süre
 dolunca tüm verileri kalıcı olarak silinir; yalnızca o yere bağlı olan yönetici ve sakin hesapları da kaldırılır.
 
 ## Telefona uygulama olarak ekleme

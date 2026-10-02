@@ -205,7 +205,7 @@ describe('Apartman ve site silme', () => {
     expect(deleted.body[0]).toMatchObject({ id: ids.site, name: 'Lale Apartmanı', unitCount: 1 });
     const days =
       (Date.parse(deleted.body[0].purgeAt) - Date.parse(deleted.body[0].deletedAt)) / 86_400_000;
-    expect(days).toBe(15);
+    expect(days).toBe(30);
 
     const me = await http().get('/api/auth/me').set(auth(tokens.manager)).expect(200);
     expect(me.body.memberships).toHaveLength(0);
@@ -225,7 +225,7 @@ describe('Apartman ve site silme', () => {
     expect(audit.map((a) => a.action)).toEqual(['DELETE', 'RESTORE']);
   });
 
-  it('15 gün dolunca veriler ve başka yerde üyeliği olmayan hesaplar kalıcı silinir', async () => {
+  it('30 gün dolunca veriler ve başka yerde üyeliği olmayan hesaplar kalıcı silinir', async () => {
     await deleteSite({
       confirmName: 'Lale Apartmanı',
       identifier: 'admin@silme.test',
@@ -233,10 +233,10 @@ describe('Apartman ve site silme', () => {
     }).expect(204);
     const deletion = app.get(SiteDeletionService);
 
-    await deletion.purgeExpired(new Date(Date.now() + 14 * 86_400_000));
+    await deletion.purgeExpired(new Date(Date.now() + 29 * 86_400_000));
     expect(await prisma.site.count({ where: { id: ids.site } })).toBe(1);
 
-    await deletion.purgeExpired(new Date(Date.now() + 16 * 86_400_000));
+    await deletion.purgeExpired(new Date(Date.now() + 31 * 86_400_000));
     expect(await prisma.site.count({ where: { id: ids.site } })).toBe(0);
     expect(await prisma.charge.count({ where: { siteId: ids.site } })).toBe(0);
     const users = await prisma.user.findMany({ select: { id: true } });

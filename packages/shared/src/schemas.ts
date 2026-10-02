@@ -97,7 +97,7 @@ export type SiteCreateInput = z.input<typeof siteCreateSchema>;
 export const siteUpdateSchema = siteFields.partial();
 export type SiteUpdateInput = z.input<typeof siteUpdateSchema>;
 
-export const SITE_RESTORE_DAYS = 15;
+export const SITE_RESTORE_DAYS = 30;
 
 export const siteDeleteSchema = z.object({
   confirmName: z.string().trim().min(1, 'Adı yazın'),
