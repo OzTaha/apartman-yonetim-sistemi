@@ -102,12 +102,24 @@ test('yönetici genel kurulu planlar, çağırır, hazirun ve kararları girer; 
   await expect(page.getByText('2. madde kaydedildi')).toBeVisible();
 
   await page.getByRole('button', { name: 'Toplantıyı tamamla' }).click();
+  await expect(page.getByRole('dialog').locator('#complete-share')).toBeChecked();
   await page.getByRole('dialog').getByRole('button', { name: 'Tamamla' }).click();
-  await expect(page.getByText(/kararlar deftere işlendi/)).toBeVisible();
+  await expect(
+    page.getByText(/kararlar deftere işlendi ve duyuru olarak paylaşıldı/),
+  ).toBeVisible();
+  await expect(page.getByText(/tarihinde yayınlandı/).nth(1)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Kararları duyuru olarak paylaş' })).toHaveCount(0);
   await expect(page.getByText(/Karar no \d+/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Kararı kaydet' })).toHaveCount(0);
   await expectNoHorizontalScroll(page);
   await page.screenshot({ path: info.outputPath('genel-kurul.png'), fullPage: true });
+
+  const meetingUrl = page.url();
+  await page.goto('/duyurular');
+  await expect(
+    page.getByText('Olağanüstü genel kurul kararları').filter({ visible: true }).first(),
+  ).toBeVisible();
+  await page.goto(meetingUrl);
 
   const [minutes] = await Promise.all([
     page.waitForEvent('download'),

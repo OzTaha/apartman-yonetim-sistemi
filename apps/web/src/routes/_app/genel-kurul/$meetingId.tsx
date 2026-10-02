@@ -23,7 +23,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CallDialog, CancelDialog, CompleteDialog } from '@/features/meetings/action-dialogs';
+import {
+  CallDialog,
+  CancelDialog,
+  CompleteDialog,
+  ShareDecisionsDialog,
+} from '@/features/meetings/action-dialogs';
 import {
   AttendanceEditor,
   DecisionEditor,
@@ -46,7 +51,7 @@ export const Route = createFileRoute('/_app/genel-kurul/$meetingId')({
   ),
 });
 
-type DialogName = 'edit' | 'call' | 'complete' | 'cancel' | null;
+type DialogName = 'edit' | 'call' | 'complete' | 'cancel' | 'share' | null;
 
 const dateTime = new Intl.DateTimeFormat('tr-TR', {
   dateStyle: 'short',
@@ -100,6 +105,14 @@ function MeetingPage() {
       m.calledAt ? `${dateTime.format(new Date(m.calledAt))} tarihinde yayınlandı` : 'Yapılmadı',
     ],
     ['Yapılan toplantı', m.heldSession ? meetingSessionLabels[m.heldSession] : null],
+    [
+      'Kararların duyurusu',
+      m.status !== 'HELD'
+        ? null
+        : m.decisionsSharedAt
+          ? `${dateTime.format(new Date(m.decisionsSharedAt))} tarihinde yayınlandı`
+          : 'Yapılmadı',
+    ],
     ['İptal nedeni', m.cancelReason],
     ['Not', m.notes],
   ];
@@ -130,6 +143,12 @@ function MeetingPage() {
               >
                 <CalendarCheck2 />
                 Toplantıyı tamamla
+              </Button>
+            )}
+            {manager && m.status === 'HELD' && !m.decisionsSharedAt && (
+              <Button onClick={() => setDialog('share')}>
+                <Megaphone />
+                Kararları duyuru olarak paylaş
               </Button>
             )}
             {m.status === 'HELD' && (
@@ -296,6 +315,7 @@ function MeetingPage() {
       {dialog === 'call' && <CallDialog meeting={m} onOpenChange={close} />}
       {dialog === 'complete' && <CompleteDialog meeting={m} onOpenChange={close} />}
       {dialog === 'cancel' && <CancelDialog meeting={m} onOpenChange={close} />}
+      {dialog === 'share' && <ShareDecisionsDialog meeting={m} onOpenChange={close} />}
     </div>
   );
 }

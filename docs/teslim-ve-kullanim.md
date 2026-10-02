@@ -68,7 +68,8 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 - **Genel kurul:** "Genel kurul" sayfasından toplantıyı planlayın ve en az 15 gün önce "Çağrıyı yayınla" ile
   sakinlere duyurun. Toplantı öncesi hazirun cetvelini PDF olarak yazdırıp imzaya açın. Toplantıda katılanları
   işaretleyin, her gündem maddesinin kararını yazın ve "Toplantıyı tamamla" deyin; kararlar karar defterine sıra
-  numarasıyla işlenir ve tutanak PDF'i hazırlanır.
+  numarasıyla işlenir ve tutanak PDF'i hazırlanır. "Kararları duyuru olarak paylaş" işaretliyse kararlar sakinlere duyuru
+  olarak yayınlanır; sakinlerin genel kurul menüsü yoktur, kararları duyurulardan görürler.
 - **Ay kapanışı:** Gelir-gider raporu sayfasında geçmiş ayı kapatın; kapanan ayın kayıtları değiştirilemez.
 
 Parasal kayıtlar silinmez, iptal edilir. İptal edilen kayıtlar nedeniyle birlikte saklanır; bakiyelerden ve

@@ -83,15 +83,15 @@ export const meetingSchema = z
   });
 export type MeetingInput = z.input<typeof meetingSchema>;
 
-export const meetingCallSchema = z.object({
-  notify: z
-    .object({
-      channel: z.enum(['SMS', 'WHATSAPP']),
-      body: z.string().trim().min(1, 'Mesaj metnini yazın').max(1000),
-    })
-    .nullable()
-    .optional(),
-});
+const meetingNotifySchema = z
+  .object({
+    channel: z.enum(['SMS', 'WHATSAPP']),
+    body: z.string().trim().min(1, 'Mesaj metnini yazın').max(1000),
+  })
+  .nullable()
+  .optional();
+
+export const meetingCallSchema = z.object({ notify: meetingNotifySchema });
 export type MeetingCallInput = z.input<typeof meetingCallSchema>;
 
 export const attendanceSchema = z.object({
@@ -129,7 +129,14 @@ export const decisionSchema = z
   );
 export type DecisionInput = z.input<typeof decisionSchema>;
 
-export const meetingCompleteSchema = z.object({ session: meetingSessionSchema });
+export const meetingCompleteSchema = z.object({
+  session: meetingSessionSchema,
+  shareDecisions: z.boolean().default(false),
+  notify: meetingNotifySchema,
+});
+export type MeetingCompleteInput = z.input<typeof meetingCompleteSchema>;
+
+export const meetingShareDecisionsSchema = z.object({ notify: meetingNotifySchema });
 export const meetingCancelSchema = z.object({
   reason: z.string().trim().min(3, 'İptal nedenini yazın').max(500),
 });
@@ -212,6 +219,7 @@ export interface MeetingDetailDto extends MeetingDto {
   cancelReason: string | null;
   heldAt: string | null;
   announcementId: string | null;
+  decisionsSharedAt: string | null;
   noticeDays: number;
   items: MeetingItemDto[];
   attendance: AttendanceRowDto[];

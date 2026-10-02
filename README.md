@@ -206,8 +206,9 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   Bütçeye bağlı madde kabul edilirse bütçe "genel kurulda onaylandı" olarak işaretlenir.
 - PDF: toplantı tutanağı, imza sütunlu hazirun cetveli ve karar defteri.
 - Site yöneticisi yönetir, denetçi görür. Blok yöneticileri çağrısı yapılmış ve tamamlanmış toplantıları, gündemi,
-  kararları ve tutanağı "Genel kurul" sayfasında görür; hazirun cetvelini göremez. Sakinlerde bu menü yoktur, toplantı
-  çağrısını duyurulardan görürler.
+  kararları ve tutanağı "Genel kurul" sayfasında görür; hazirun cetvelini göremez. Sakinlerde bu menü yoktur; toplantı
+  çağrısını ve kararları duyurulardan görürler. Toplantı tamamlanırken "Kararları duyuru olarak paylaş" varsayılan
+  olarak işaretlidir (isteğe bağlı SMS ile); paylaşılmadıysa toplantı sayfasından sonradan paylaşılabilir.
 
 ## Çalışan ve görev takibi
 

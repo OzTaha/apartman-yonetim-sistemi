@@ -294,12 +294,27 @@ describe('Genel kurul', () => {
       .set(as(tokens.auditor))
       .send({ session: 'FIRST' })
       .expect(403);
+    await http().post(`/api/meetings/${meetingId}/share-decisions`).set(M()).send({}).expect(400);
     const done = await http()
       .post(`/api/meetings/${meetingId}/complete`)
       .set(M())
-      .send({ session: 'FIRST' })
+      .send({
+        session: 'FIRST',
+        shareDecisions: true,
+        notify: { channel: 'SMS', body: 'Genel kurul kararları duyurularda.' },
+      })
       .expect(200);
     expect(done.body).toMatchObject({ status: 'HELD', heldSession: 'FIRST', decisionCount: 2 });
+    expect(done.body.decisionsSharedAt).not.toBeNull();
+    const shared = await prisma.announcement.findFirstOrThrow({
+      where: { siteId, title: 'Olağan genel kurul kararları' },
+    });
+    expect(shared).toMatchObject({ audience: 'ALL', pinned: false, expiresAt: null });
+    expect(shared.body).toContain('yapılmış ve aşağıdaki kararlar alınmıştır');
+    expect(shared.body).toContain('Kabul edildi · karar no 1');
+    expect(shared.body).toContain('İşletme projesi aynen kabul edildi.');
+    expect(await prisma.messageCampaign.count({ where: { announcementId: shared.id } })).toBe(1);
+    await http().post(`/api/meetings/${meetingId}/share-decisions`).set(M()).send({}).expect(409);
     expect(done.body.items.map((i: { decisionNo: number | null }) => i.decisionNo)).toEqual([
       null,
       1,

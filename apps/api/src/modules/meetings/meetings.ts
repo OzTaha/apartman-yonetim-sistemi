@@ -27,6 +27,7 @@ import {
   meetingCallSchema,
   meetingCancelSchema,
   meetingCompleteSchema,
+  meetingShareDecisionsSchema,
   meetingKindLabels,
   meetingQuorum,
   meetingSchema,
@@ -59,6 +60,7 @@ class MeetingCallDto extends createZodDto(meetingCallSchema) {}
 class AttendanceDto extends createZodDto(attendanceSchema) {}
 class DecisionBodyDto extends createZodDto(decisionSchema) {}
 class MeetingCompleteDto extends createZodDto(meetingCompleteSchema) {}
+class MeetingShareDecisionsDto extends createZodDto(meetingShareDecisionsSchema) {}
 class MeetingCancelDto extends createZodDto(meetingCancelSchema) {}
 
 const localFormat = new Intl.DateTimeFormat('sv-SE', {
@@ -141,6 +143,7 @@ export class MeetingsService {
       cancelReason: meeting.cancelReason,
       heldAt: meeting.heldAt?.toISOString() ?? null,
       announcementId: meeting.announcementId,
+      decisionsSharedAt: meeting.decisionsSharedAt?.toISOString() ?? null,
       noticeDays: daysBetween(todayInIstanbul(), toLocal(meeting.startsAt).slice(0, 10)),
       items: meeting.items.map((i) => ({
         id: i.id,
@@ -392,6 +395,74 @@ export class MeetingsService {
       entityType: 'Meeting',
       entityId: id,
       after: { session: input.session, quorum: detail.quorum },
+    });
+    if (input.shareDecisions) return this.shareDecisions(id, { notify: input.notify ?? null });
+    return this.get(id);
+  }
+
+  async shareDecisions(id: string, input: MeetingShareDecisionsDto): Promise<MeetingDetailDto> {
+    const meeting = await this.find(id);
+    if (meeting.status !== 'HELD') {
+      throw new BadRequestException('Kararlar toplantı tamamlandıktan sonra paylaşılabilir');
+    }
+    if (meeting.decisionsSharedAt) {
+      throw new ConflictException('Bu toplantının kararları zaten duyuru olarak paylaşıldı');
+    }
+    const site = await this.prisma.site.findUniqueOrThrow({
+      where: { id: this.tenant.siteId },
+      select: { name: true },
+    });
+    const heldOn =
+      meeting.heldSession === 'SECOND' && meeting.secondStartsAt
+        ? meeting.secondStartsAt
+        : meeting.startsAt;
+    const kind = meetingKindLabels[meeting.kind];
+    const votes = (i: (typeof meeting.items)[number]) =>
+      [
+        i.votesFor !== null ? `kabul ${i.votesFor}` : null,
+        i.votesAgainst !== null ? `ret ${i.votesAgainst}` : null,
+        i.votesAbstain !== null ? `çekimser ${i.votesAbstain}` : null,
+      ]
+        .filter(Boolean)
+        .join(', ');
+    const lines = [
+      `${site.name} ${kind.toLocaleLowerCase('tr')} toplantısı ${formatLocal(heldOn)} tarihinde yapılmış ve aşağıdaki kararlar alınmıştır.`,
+      ...meeting.items.flatMap((i) => {
+        const result = i.result ? decisionResultLabels[i.result] : '';
+        const voteText = votes(i);
+        return [
+          '',
+          `${i.position}. ${i.title}`,
+          [
+            result,
+            i.decisionNo ? `karar no ${i.decisionNo}` : null,
+            voteText ? `oylar: ${voteText}` : null,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          i.resolution ?? '',
+        ].filter((l) => l !== '');
+      }),
+    ];
+    const announcement = await this.announcements.create({
+      title: `${kind} kararları`,
+      body: lines.join('\n'),
+      audience: 'ALL',
+      blockIds: [],
+      unitIds: [],
+      pinned: false,
+      expiresAt: undefined,
+      notify: input.notify ?? null,
+    });
+    await this.tenant.db.meeting.update({
+      where: { id },
+      data: { decisionsAnnouncementId: announcement.id, decisionsSharedAt: new Date() },
+    });
+    await this.audit.record({
+      action: 'SHARE',
+      entityType: 'Meeting',
+      entityId: id,
+      after: { announcementId: announcement.id, notify: input.notify?.channel ?? null },
     });
     return this.get(id);
   }
@@ -761,6 +832,15 @@ export class MeetingsController {
   @HttpCode(204)
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.meetings.remove(id);
+  }
+
+  @Post(':id/share-decisions')
+  @HttpCode(200)
+  shareDecisions(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: MeetingShareDecisionsDto,
+  ): Promise<MeetingDetailDto> {
+    return this.meetings.shareDecisions(id, body);
   }
 
   @Post(':id/call')

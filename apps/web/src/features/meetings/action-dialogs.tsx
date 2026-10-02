@@ -106,6 +106,96 @@ export function CallDialog({
   );
 }
 
+const DECISIONS_SMS = 'Genel kurul toplantımızda alınan kararlar duyurular sayfasında yayınlandı.';
+
+function SmsFields({
+  id,
+  sms,
+  onSmsChange,
+  body,
+  onBodyChange,
+}: {
+  id: string;
+  sms: boolean;
+  onSmsChange: (value: boolean) => void;
+  body: string;
+  onBodyChange: (value: string) => void;
+}) {
+  return (
+    <>
+      <div className="flex items-start gap-2">
+        <Checkbox id={id} checked={sms} onCheckedChange={(v) => onSmsChange(v === true)} />
+        <Label htmlFor={id} className="leading-snug font-normal">
+          SMS ile de bildir (iletişim onayı olan sakinlere)
+        </Label>
+      </div>
+      {sms && (
+        <Field label="SMS metni" htmlFor={`${id}-body`}>
+          <Textarea
+            id={`${id}-body`}
+            rows={3}
+            maxLength={1000}
+            value={body}
+            onChange={(e) => onBodyChange(e.target.value)}
+          />
+        </Field>
+      )}
+    </>
+  );
+}
+
+export function ShareDecisionsDialog({
+  meeting,
+  onOpenChange,
+}: {
+  meeting: MeetingDetailDto;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [sms, setSms] = useState(false);
+  const [body, setBody] = useState(DECISIONS_SMS);
+  const share = useApiMutation(
+    () =>
+      apiFetch<MeetingDetailDto>(`/meetings/${meeting.id}/share-decisions`, {
+        method: 'POST',
+        body: { notify: sms ? { channel: 'SMS', body: body.trim() } : null },
+      }),
+    { success: 'Kararlar duyuru olarak paylaşıldı', onSuccess: () => onOpenChange(false) },
+  );
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Kararları duyuru olarak paylaş</DialogTitle>
+          <DialogDescription>
+            Gündem maddeleri, sonuçları, karar numaraları ve karar metinleri tüm sakinlere duyuru
+            olarak yayınlanır. Hazirun bilgisi paylaşılmaz.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <SmsFields
+            id="share-sms"
+            sms={sms}
+            onSmsChange={setSms}
+            body={body}
+            onBodyChange={setBody}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Vazgeç
+          </Button>
+          <Button
+            disabled={share.isPending || (sms && !body.trim())}
+            onClick={() => share.mutate(undefined)}
+          >
+            Paylaş
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function CompleteDialog({
   meeting,
   onOpenChange,
@@ -116,14 +206,24 @@ export function CompleteDialog({
   const [session, setSession] = useState<MeetingSession>(
     meeting.quorum.reached ? 'FIRST' : 'SECOND',
   );
+  const [shareDecisions, setShareDecisions] = useState(true);
+  const [sms, setSms] = useState(false);
+  const [body, setBody] = useState(DECISIONS_SMS);
+  const withSms = shareDecisions && sms;
   const complete = useApiMutation(
     () =>
       apiFetch<MeetingDetailDto>(`/meetings/${meeting.id}/complete`, {
         method: 'POST',
-        body: { session },
+        body: {
+          session,
+          shareDecisions,
+          notify: withSms ? { channel: 'SMS', body: body.trim() } : null,
+        },
       }),
     {
-      success: 'Toplantı tamamlandı, kararlar deftere işlendi',
+      success: shareDecisions
+        ? 'Toplantı tamamlandı, kararlar deftere işlendi ve duyuru olarak paylaşıldı'
+        : 'Toplantı tamamlandı, kararlar deftere işlendi',
       onSuccess: () => onOpenChange(false),
     },
   );
@@ -172,13 +272,37 @@ export function CompleteDialog({
               </AlertDescription>
             </Alert>
           )}
+          <div className="grid gap-3 rounded-md border p-3">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="complete-share"
+                checked={shareDecisions}
+                onCheckedChange={(v) => setShareDecisions(v === true)}
+              />
+              <Label htmlFor="complete-share" className="grid gap-0.5 font-normal">
+                <span className="font-medium">Kararları duyuru olarak paylaş</span>
+                <span className="text-xs text-muted-foreground">
+                  Sakinler kararları Duyurular sayfasında görür. Hazirun bilgisi paylaşılmaz.
+                </span>
+              </Label>
+            </div>
+            {shareDecisions && (
+              <SmsFields
+                id="complete-sms"
+                sms={sms}
+                onSmsChange={setSms}
+                body={body}
+                onBodyChange={setBody}
+              />
+            )}
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Vazgeç
           </Button>
           <Button
-            disabled={complete.isPending || missing.length > 0}
+            disabled={complete.isPending || missing.length > 0 || (withSms && !body.trim())}
             onClick={() => complete.mutate(undefined)}
           >
             Tamamla

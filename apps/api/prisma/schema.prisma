@@ -1158,22 +1158,24 @@ enum DecisionResult {
 }
 
 model Meeting {
-  id             String          @id @default(uuid(7)) @db.Uuid
-  siteId         String          @db.Uuid
-  kind           MeetingKind
-  startsAt       DateTime
-  secondStartsAt DateTime?
-  location       String
-  notes          String?
-  status         MeetingStatus   @default(PLANNED)
-  heldSession    MeetingSession?
-  heldAt         DateTime?
-  cancelReason   String?
-  announcementId String?         @db.Uuid
-  calledAt       DateTime?
-  createdById    String?         @db.Uuid
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                      String          @id @default(uuid(7)) @db.Uuid
+  siteId                  String          @db.Uuid
+  kind                    MeetingKind
+  startsAt                DateTime
+  secondStartsAt          DateTime?
+  location                String
+  notes                   String?
+  status                  MeetingStatus   @default(PLANNED)
+  heldSession             MeetingSession?
+  heldAt                  DateTime?
+  cancelReason            String?
+  announcementId          String?         @db.Uuid
+  calledAt                DateTime?
+  decisionsAnnouncementId String?         @db.Uuid
+  decisionsSharedAt       DateTime?
+  createdById             String?         @db.Uuid
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
 
   site       Site                @relation(fields: [siteId], references: [id], onDelete: Cascade)
   items      MeetingItem[]
