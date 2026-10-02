@@ -27,6 +27,9 @@ import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import {
   brandingSchema,
   DEFAULT_APP_NAME,
+  DEFAULT_THEME_COLOR,
+  themeColorHex,
+  themeColorSchema,
   LOGO_MAX_BYTES,
   LOGO_MAX_SIZE,
   LOGO_MIN_SIZE,
@@ -46,6 +49,7 @@ import { FinanceModule } from '../finance/finance.module';
 import { FileStorage } from '../finance/storage';
 
 class BrandingBody extends createZodDto(brandingSchema) {}
+class ThemeColorBody extends createZodDto(themeColorSchema) {}
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -78,6 +82,7 @@ export class BrandingService {
     return {
       appName: row?.appName ?? DEFAULT_APP_NAME,
       logoUrl: row?.logoKey ? `/api/branding/logo?v=${row.updatedAt.getTime()}` : null,
+      themeColor: row?.themeColor ?? DEFAULT_THEME_COLOR,
     };
   }
 
@@ -94,6 +99,24 @@ export class BrandingService {
       entityId: '1',
       siteId: null,
       before,
+      after: input,
+    });
+    return this.get();
+  }
+
+  async setThemeColor(input: ThemeColorBody): Promise<BrandingDto> {
+    const before = await this.get();
+    await this.prisma.branding.upsert({
+      where: { id: 1 },
+      create: { id: 1, appName: DEFAULT_APP_NAME, themeColor: input.themeColor },
+      update: { themeColor: input.themeColor },
+    });
+    await this.audit.record({
+      action: 'UPDATE',
+      entityType: 'Branding',
+      entityId: '1',
+      siteId: null,
+      before: { themeColor: before.themeColor },
       after: input,
     });
     return this.get();
@@ -170,7 +193,7 @@ export class BrandingService {
       scope: '/',
       display: 'standalone',
       background_color: '#ffffff',
-      theme_color: '#18181b',
+      theme_color: themeColorHex[branding.themeColor],
       icons,
     };
   }
@@ -207,6 +230,13 @@ export class BrandingController {
   @Put()
   update(@Body() body: BrandingBody): Promise<BrandingDto> {
     return this.branding.update(body);
+  }
+
+  @ApiBearerAuth()
+  @PlatformAdminOnly()
+  @Put('theme')
+  setThemeColor(@Body() body: ThemeColorBody): Promise<BrandingDto> {
+    return this.branding.setThemeColor(body);
   }
 
   @ApiBearerAuth()

@@ -8,12 +8,13 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
+import { useIsDark } from '@/lib/preferences';
 
-// Uygulama şimdilik yalnızca açık temayı kullanıyor (next-themes gerekmez).
 const Toaster = ({ ...props }: ToasterProps) => {
+  const dark = useIsDark();
   return (
     <Sonner
-      theme="light"
+      theme={dark ? 'dark' : 'light'}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

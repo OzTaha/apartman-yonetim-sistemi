@@ -5,6 +5,7 @@ import { OfflineScreen } from '@/components/offline-screen';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useBranding } from '@/lib/branding';
+import { applyThemeColor } from '@/lib/preferences';
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -20,10 +21,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function RootLayout() {
-  const { appName } = useBranding();
+  const { appName, themeColor } = useBranding();
   useEffect(() => {
     document.title = appName;
   }, [appName]);
+  useEffect(() => {
+    applyThemeColor(themeColor);
+  }, [themeColor]);
 
   return (
     <TooltipProvider>

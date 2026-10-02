@@ -935,11 +935,18 @@ model PaymentIntent {
   @@map("payment_intents")
 }
 
+enum ThemeColor {
+  BLUE
+  GREEN
+  LAVENDER
+}
+
 model Branding {
-  id        Int      @id @default(1)
-  appName   String
-  logoKey   String?
-  updatedAt DateTime @updatedAt
+  id         Int        @id @default(1)
+  appName    String
+  logoKey    String?
+  themeColor ThemeColor @default(BLUE)
+  updatedAt  DateTime   @updatedAt
 
   @@map("branding")
 }

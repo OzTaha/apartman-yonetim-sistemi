@@ -14,7 +14,24 @@ export const brandingSchema = z.object({
 });
 export type BrandingInput = z.input<typeof brandingSchema>;
 
+export const themeColors = ['BLUE', 'GREEN', 'LAVENDER'] as const;
+export type ThemeColor = (typeof themeColors)[number];
+export const DEFAULT_THEME_COLOR: ThemeColor = 'BLUE';
+export const themeColorLabels: Record<ThemeColor, string> = {
+  BLUE: 'Mavi',
+  GREEN: 'Yeşil',
+  LAVENDER: 'Lavanta',
+};
+export const themeColorHex: Record<ThemeColor, string> = {
+  BLUE: '#0F4C81',
+  GREEN: '#00775C',
+  LAVENDER: '#4F5096',
+};
+export const themeColorSchema = z.object({ themeColor: z.enum(themeColors) });
+export type ThemeColorInput = z.input<typeof themeColorSchema>;
+
 export interface BrandingDto {
   appName: string;
   logoUrl: string | null;
+  themeColor: ThemeColor;
 }

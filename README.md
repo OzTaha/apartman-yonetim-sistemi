@@ -280,6 +280,10 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 
 - Sistem yöneticisi "Marka ayarları" sayfasından uygulama adını ve logoyu (kare PNG, 512–2048 px) değiştirir. Ad ve logo
   giriş ekranında, menüde, sekme başlığında, telefona eklenen uygulamada ve PDF/Excel çıktılarında kullanılır.
+- Tema rengi (Mavi varsayılan, Yeşil, Lavanta) aynı sayfadan seçilir; tüm kullanıcılar için geçerlidir ve PWA
+  manifestindeki tema rengi de buna göre değişir.
+- Yazı boyutu (Normal 15 px, Büyük 18 px, Çok büyük 21 px) ve açık/koyu görünüm kullanıcı menüsündeki "Görünüm ve yazı
+  boyutu" bölümünden cihaz bazında seçilir. Telefonda alt menü çubuğu, formlar alttan açılan panel olarak görünür.
 - Uygulama PWA olarak telefona eklenebilir. Uygulama kabuğu önbelleğe alınır; internet yokken açıldığında bağlantı
   olmadığı bildirilir. PWA bildirimi (manifest) marka ayarlarına göre API'den üretilir.
 

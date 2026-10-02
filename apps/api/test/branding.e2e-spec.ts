@@ -70,12 +70,17 @@ afterAll(async () => {
 describe('marka', () => {
   it('oturum açmadan okunur; varsayılan ad ve ikonlar döner', async () => {
     const res = await http().get('/api/branding').expect(200);
-    expect(res.body).toEqual({ appName: 'Apartman Yönetim Sistemi', logoUrl: null });
+    expect(res.body).toEqual({
+      appName: 'Apartman Yönetim Sistemi',
+      logoUrl: null,
+      themeColor: 'BLUE',
+    });
     const manifest = await http().get('/api/branding/manifest.webmanifest').expect(200);
     expect(manifest.headers['content-type']).toContain('application/manifest+json');
     expect(manifest.body).toMatchObject({
       name: 'Apartman Yönetim Sistemi',
       display: 'standalone',
+      theme_color: '#0F4C81',
     });
     expect(manifest.body.icons.map((i: { sizes: string }) => i.sizes)).toEqual([
       '192x192',
@@ -100,6 +105,34 @@ describe('marka', () => {
     expect(res.body.appName).toBe('Güneş Yönetim');
     const manifest = await http().get('/api/branding/manifest.webmanifest').expect(200);
     expect(manifest.body.name).toBe('Güneş Yönetim');
+  });
+
+  it('tema rengini yalnızca sistem yöneticisi seçer; varsayılan mavidir', async () => {
+    await http().put('/api/branding/theme').send({ themeColor: 'GREEN' }).expect(401);
+    await http()
+      .put('/api/branding/theme')
+      .set(bearer(tokens.manager))
+      .send({ themeColor: 'GREEN' })
+      .expect(403);
+    await http()
+      .put('/api/branding/theme')
+      .set(bearer(tokens.admin))
+      .send({ themeColor: 'PINK' })
+      .expect(400);
+    const res = await http()
+      .put('/api/branding/theme')
+      .set(bearer(tokens.admin))
+      .send({ themeColor: 'GREEN' })
+      .expect(200);
+    expect(res.body.themeColor).toBe('GREEN');
+    expect((await http().get('/api/branding').expect(200)).body.themeColor).toBe('GREEN');
+    const manifest = await http().get('/api/branding/manifest.webmanifest').expect(200);
+    expect(manifest.body.theme_color).toBe('#00775C');
+    await http()
+      .put('/api/branding/theme')
+      .set(bearer(tokens.admin))
+      .send({ themeColor: 'BLUE' })
+      .expect(200);
   });
 
   it('logo kare PNG olmalı; yüklenince manifest ikonu olur, kaldırılınca varsayılana döner', async () => {

@@ -12,11 +12,14 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 
 İlk girişte sistem yöneticisi şifrenizi değiştirin (sağ alttaki kullanıcı menüsü > Şifre değiştir).
 
+Her kullanıcı yazı boyutunu (Normal, Büyük, Çok büyük) ve açık/koyu görünümü kullanıcı menüsü > "Görünüm ve yazı
+boyutu" bölümünden kendi cihazı için seçebilir. Telefonda menüye alttaki çubuktan ulaşılır.
+
 ## Roller
 
 | Rol               | Neler yapabilir                                                                                                  |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Sistem yöneticisi | Apartman ve siteleri oluşturur, yöneticileri atar, uygulama adını ve logoyu değiştirir                           |
+| Sistem yöneticisi | Apartman ve siteleri oluşturur, yöneticileri atar, uygulama adını, logoyu ve tema rengini değiştirir             |
 | Site yöneticisi   | Daireler, sakinler, aidat, tahsilat, kasa, çalışanlar, talepler, duyuru ve mesajları yönetir                     |
 | Blok yöneticisi   | Kendi bloğunun sakinlerini, borç ve tahsilatlarını, giderlerini, taleplerini ve duyurularını yönetir             |
 | Denetçi           | Kasa, gelir-gider, borç ve tahsilatları görür; hiçbir kaydı değiştiremez                                         |

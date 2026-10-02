@@ -1,44 +1,7 @@
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import {
-  Bell,
-  History,
-  Landmark,
-  Building,
-  ShieldCheck,
-  CalendarClock,
-  Check,
-  ClipboardList,
-  ListChecks,
-  Megaphone,
-  MessageSquare,
-  MessageSquareText,
-  Palette,
-  Repeat,
-  UserCog,
-  ChartColumn,
-  Hammer,
-  Store,
-  Wallet,
-  WalletCards,
-  Scale,
-  ChevronsUpDown,
-  DoorOpen,
-  FileBarChart,
-  HandCoins,
-  Home,
-  KeyRound,
-  LayoutDashboard,
-  LayoutGrid,
-  LogOut,
-  ReceiptText,
-  Settings2,
-  Users,
-  Wrench,
-  Calculator,
-  Gavel,
-  MessageSquareWarning,
-} from 'lucide-react';
-import type { ComponentType } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Check, ChevronsUpDown, KeyRound, LogOut, SunMoon } from 'lucide-react';
+import { useState } from 'react';
+import { AppearanceDialog } from '@/components/appearance-dialog';
 import { BrandMark } from '@/components/brand';
 import {
   DropdownMenu,
@@ -63,49 +26,9 @@ import {
 } from '@/components/ui/sidebar';
 import { siteRoleLabels } from '@apartman/shared';
 import { logout } from '@/lib/auth';
-import { useCanReceiveNotifications, useNotificationCount } from '@/lib/notifications';
-import { useMyRequests } from '@/lib/queries';
-import { activeRole, canManage, session, useHasUnitInSite, useSession } from '@/lib/session';
+import { useIsActivePath, useNavigation, type NavItem } from '@/lib/navigation';
+import { activeRole, session, useSession } from '@/lib/session';
 import { useSiteOptions } from '@/lib/site-options';
-
-interface NavItem {
-  to:
-    | '/panel'
-    | '/daireler'
-    | '/sakinler'
-    | '/dairem'
-    | '/siteler'
-    | '/aidat'
-    | '/borclar'
-    | '/tahsilatlar'
-    | '/raporlar'
-    | '/aidat-ayarlari'
-    | '/kasa'
-    | '/isler'
-    | '/firmalar'
-    | '/gelir-gider'
-    | '/kasa-ayarlari'
-    | '/giderler'
-    | '/calisanlar'
-    | '/vardiyalar'
-    | '/gorevler'
-    | '/tekrarlayan-gorevler'
-    | '/calisan-raporu'
-    | '/duyurular'
-    | '/mesajlar'
-    | '/mesaj-ayarlari'
-    | '/marka'
-    | '/bildirimler'
-    | '/yetkililer'
-    | '/islem-gecmisi'
-    | '/banka-hareketleri'
-    | '/talepler'
-    | '/taleplerim'
-    | '/butce'
-    | '/genel-kurul';
-  label: string;
-  icon: ComponentType<{ className?: string }>;
-}
 
 const roleLabels = {
   PLATFORM_ADMIN: 'Sistem yöneticisi',
@@ -171,155 +94,59 @@ function SiteSwitcher() {
 function UserMenu() {
   const { user } = useSession();
   const navigate = useNavigate();
+  const [appearance, setAppearance] = useState(false);
   if (!user) return null;
   const initials = `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toLocaleUpperCase('tr');
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <SidebarMenuButton size="lg" aria-label="Kullanıcı menüsü">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-            {initials}
-          </div>
-          <div className="grid min-w-0 flex-1 text-left leading-tight">
-            <span className="truncate text-sm font-medium">
-              {user.firstName} {user.lastName}
-            </span>
-            <span className="truncate text-xs text-muted-foreground">
-              {user.email ?? user.phone}
-            </span>
-          </div>
-          <ChevronsUpDown className="ml-auto size-4" />
-        </SidebarMenuButton>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="w-56">
-        <DropdownMenuItem onSelect={() => void navigate({ to: '/sifre' })}>
-          <KeyRound />
-          Şifre değiştir
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={async () => {
-            await logout();
-            window.location.replace('/giris');
-          }}
-        >
-          <LogOut />
-          Çıkış yap
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <AppearanceDialog open={appearance} onOpenChange={setAppearance} />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuButton size="lg" aria-label="Kullanıcı menüsü">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+              {initials}
+            </div>
+            <div className="grid min-w-0 flex-1 text-left leading-tight">
+              <span className="truncate text-sm font-medium">
+                {user.firstName} {user.lastName}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">
+                {user.email ?? user.phone}
+              </span>
+            </div>
+            <ChevronsUpDown className="ml-auto size-4" />
+          </SidebarMenuButton>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="start" className="w-56">
+          <DropdownMenuItem onSelect={() => setAppearance(true)}>
+            <SunMoon />
+            Görünüm ve yazı boyutu
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void navigate({ to: '/sifre' })}>
+            <KeyRound />
+            Şifre değiştir
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={async () => {
+              await logout();
+              window.location.replace('/giris');
+            }}
+          >
+            <LogOut />
+            Çıkış yap
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }
 
 export function AppSidebar() {
-  const s = useSession();
-  const role = activeRole(s);
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { groups, badges } = useNavigation();
+  const isActive = useIsActivePath();
   const { setOpenMobile } = useSidebar();
-
-  const unread = useNotificationCount().data?.unread ?? 0;
-  const notifications = useCanReceiveNotifications();
-  const hasSite = Boolean(s.siteId);
-  const hasUnit = useHasUnitInSite();
-  const unseen = (useMyRequests(hasUnit).data ?? []).filter((r) => r.unseen).length;
-  const badges: Partial<Record<NavItem['to'], number>> = {
-    '/bildirimler': unread,
-    '/taleplerim': unseen,
-  };
-  const manager = canManage(role) && hasSite;
-  const blockManager = role === 'BLOCK_MANAGER' && hasSite;
-  const auditor = role === 'AUDITOR' && hasSite;
-  const items: NavItem[] = [];
-  if (manager || auditor) items.push({ to: '/panel', label: 'Panel', icon: LayoutDashboard });
-  if (manager || blockManager) {
-    items.push({ to: '/daireler', label: 'Daireler', icon: DoorOpen });
-    items.push({ to: '/sakinler', label: 'Sakinler', icon: Users });
-  }
-  if (manager) items.push({ to: '/yetkililer', label: 'Yetkililer', icon: ShieldCheck });
-  if (s.user?.isPlatformAdmin && hasSite) {
-    items.push({ to: '/islem-gecmisi', label: 'İşlem geçmişi', icon: History });
-  }
-  if (notifications) items.push({ to: '/bildirimler', label: 'Bildirimler', icon: Bell });
-  if (manager || blockManager) {
-    items.push({ to: '/talepler', label: 'Arıza ve talepler', icon: Wrench });
-  }
-  if ((s.user?.occupancies.length ?? 0) > 0)
-    items.push({ to: '/dairem', label: 'Dairem', icon: Home });
-  if (hasUnit) items.push({ to: '/taleplerim', label: 'Taleplerim', icon: MessageSquareWarning });
-  if (hasSite && role !== 'RESIDENT') {
-    items.push({ to: '/genel-kurul', label: 'Genel kurul', icon: Gavel });
-  }
-  if ((role === 'RESIDENT' || auditor) && hasSite) {
-    items.push({ to: '/duyurular', label: 'Duyurular', icon: Megaphone });
-  }
-  if ((role === 'RESIDENT' || auditor || blockManager) && hasSite) {
-    items.push({ to: '/giderler', label: 'Giderler ve işler', icon: Scale });
-  }
-  if (s.user?.isPlatformAdmin) {
-    items.push({ to: '/siteler', label: 'Apartman ve siteler', icon: Building });
-    items.push({ to: '/marka', label: 'Marka ayarları', icon: Palette });
-  }
-
-  const duesItems: NavItem[] = [
-    ...(manager || blockManager || auditor
-      ? ([
-          { to: '/aidat', label: 'Aidat tablosu', icon: LayoutGrid },
-          { to: '/borclar', label: 'Borçlar', icon: ReceiptText },
-          { to: '/tahsilatlar', label: 'Tahsilatlar', icon: HandCoins },
-        ] as NavItem[])
-      : []),
-    ...(manager
-      ? ([{ to: '/banka-hareketleri', label: 'Banka hareketleri', icon: Landmark }] as NavItem[])
-      : []),
-    ...(manager || auditor
-      ? ([{ to: '/raporlar', label: 'Raporlar', icon: FileBarChart }] as NavItem[])
-      : []),
-    ...(manager
-      ? ([{ to: '/aidat-ayarlari', label: 'Aidat ayarları', icon: Settings2 }] as NavItem[])
-      : []),
-  ];
-  const financeItems: NavItem[] = [
-    ...(manager || blockManager || auditor
-      ? ([
-          { to: '/kasa', label: blockManager ? 'Blok giderleri' : 'Kasa', icon: Wallet },
-        ] as NavItem[])
-      : []),
-    ...(manager || auditor
-      ? ([
-          { to: '/isler', label: 'Yapılan işler', icon: Hammer },
-          { to: '/firmalar', label: 'Firmalar', icon: Store },
-          { to: '/gelir-gider', label: 'Gelir-gider raporu', icon: ChartColumn },
-          { to: '/butce', label: 'İşletme projesi', icon: Calculator },
-        ] as NavItem[])
-      : []),
-    ...(manager
-      ? ([{ to: '/kasa-ayarlari', label: 'Kasa ayarları', icon: WalletCards }] as NavItem[])
-      : []),
-  ];
-  const staffItems: NavItem[] = manager
-    ? [
-        { to: '/calisanlar', label: 'Çalışanlar', icon: UserCog },
-        { to: '/vardiyalar', label: 'Vardiya planı', icon: CalendarClock },
-        { to: '/gorevler', label: 'Görevler', icon: ListChecks },
-        { to: '/tekrarlayan-gorevler', label: 'Tekrarlayan görevler', icon: Repeat },
-        { to: '/calisan-raporu', label: 'Çalışan raporu', icon: ClipboardList },
-      ]
-    : [];
-  const contactItems: NavItem[] = [
-    ...(manager || blockManager
-      ? ([
-          { to: '/duyurular', label: 'Duyurular', icon: Megaphone },
-          { to: '/mesajlar', label: 'Mesajlar', icon: MessageSquare },
-        ] as NavItem[])
-      : []),
-    ...(manager
-      ? ([
-          { to: '/mesaj-ayarlari', label: 'Şablonlar ve hatırlatma', icon: MessageSquareText },
-        ] as NavItem[])
-      : []),
-  ];
-  const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
   const renderItems = (list: NavItem[]) =>
     list.map((item) => (
       <SidebarMenuItem key={item.to}>
@@ -350,44 +177,14 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menü</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderItems(items)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        {duesItems.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Aidat ve borç</SidebarGroupLabel>
+        {groups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>{renderItems(duesItems)}</SidebarMenu>
+              <SidebarMenu>{renderItems(group.items)}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
-        {financeItems.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Gelir-gider</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderItems(financeItems)}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-        {contactItems.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>İletişim</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderItems(contactItems)}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-        {staffItems.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Çalışan ve görev</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>{renderItems(staffItems)}</SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        ))}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
