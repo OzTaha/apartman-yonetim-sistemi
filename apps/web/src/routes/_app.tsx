@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { AppSidebar } from '@/components/app-sidebar';
+import { AppearanceMenu } from '@/components/appearance-menu';
 import { MobileTabBar } from '@/components/mobile-tab-bar';
 import { NotificationBell } from '@/components/notification-bell';
 import { Separator } from '@/components/ui/separator';
@@ -72,6 +73,7 @@ function AppLayout() {
           <span className="min-w-0 flex-1 truncate font-heading text-base font-semibold">
             {siteName ?? appName}
           </span>
+          <AppearanceMenu />
           <NotificationBell />
         </header>
         <div ref={content} className="mx-auto w-full max-w-6xl flex-1 p-4 pb-28 md:p-6">

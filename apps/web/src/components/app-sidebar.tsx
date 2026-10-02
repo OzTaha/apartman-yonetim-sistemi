@@ -1,7 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Check, ChevronsUpDown, KeyRound, LogOut, SunMoon } from 'lucide-react';
-import { useState } from 'react';
-import { AppearanceDialog } from '@/components/appearance-dialog';
+import { Check, ChevronsUpDown, KeyRound, LogOut } from 'lucide-react';
 import { BrandMark } from '@/components/brand';
 import {
   DropdownMenu,
@@ -94,52 +92,44 @@ function SiteSwitcher() {
 function UserMenu() {
   const { user } = useSession();
   const navigate = useNavigate();
-  const [appearance, setAppearance] = useState(false);
   if (!user) return null;
   const initials = `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toLocaleUpperCase('tr');
 
   return (
-    <>
-      <AppearanceDialog open={appearance} onOpenChange={setAppearance} />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <SidebarMenuButton size="lg" aria-label="Kullanıcı menüsü">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-              {initials}
-            </div>
-            <div className="grid min-w-0 flex-1 text-left leading-tight">
-              <span className="truncate text-sm font-medium">
-                {user.firstName} {user.lastName}
-              </span>
-              <span className="truncate text-xs text-muted-foreground">
-                {user.email ?? user.phone}
-              </span>
-            </div>
-            <ChevronsUpDown className="ml-auto size-4" />
-          </SidebarMenuButton>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" className="w-56">
-          <DropdownMenuItem onSelect={() => setAppearance(true)}>
-            <SunMoon />
-            Görünüm ve yazı boyutu
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => void navigate({ to: '/sifre' })}>
-            <KeyRound />
-            Şifre değiştir
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onSelect={async () => {
-              await logout();
-              window.location.replace('/giris');
-            }}
-          >
-            <LogOut />
-            Çıkış yap
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuButton size="lg" aria-label="Kullanıcı menüsü">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+            {initials}
+          </div>
+          <div className="grid min-w-0 flex-1 text-left leading-tight">
+            <span className="truncate text-sm font-medium">
+              {user.firstName} {user.lastName}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              {user.email ?? user.phone}
+            </span>
+          </div>
+          <ChevronsUpDown className="ml-auto size-4" />
+        </SidebarMenuButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="start" className="w-56">
+        <DropdownMenuItem onSelect={() => void navigate({ to: '/sifre' })}>
+          <KeyRound />
+          Şifre değiştir
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={async () => {
+            await logout();
+            window.location.replace('/giris');
+          }}
+        >
+          <LogOut />
+          Çıkış yap
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

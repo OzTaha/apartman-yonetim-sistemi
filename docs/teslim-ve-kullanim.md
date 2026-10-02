@@ -12,8 +12,8 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 
 İlk girişte sistem yöneticisi şifrenizi değiştirin (sağ alttaki kullanıcı menüsü > Şifre değiştir).
 
-Her kullanıcı yazı boyutunu (Normal, Büyük, Çok büyük) ve açık/koyu görünümü kullanıcı menüsü > "Görünüm ve yazı
-boyutu" bölümünden kendi cihazı için seçebilir. Telefonda menüye alttaki çubuktan ulaşılır.
+Her kullanıcı yazı boyutunu (Normal, Büyük, Çok büyük) ve açık/koyu görünümü üst çubukta bildirim zilinin yanındaki
+güneş/ay düğmesinden kendi cihazı için seçebilir. Telefonda menüye alttaki çubuktan ulaşılır.
 
 ## Roller
 
