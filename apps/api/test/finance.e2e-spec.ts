@@ -154,6 +154,40 @@ describe('Kasa hesapları ve kategoriler', () => {
     categories.duesIncome = byCode('DUES_INCOME');
   });
 
+  it('kullanılmayan kategori silinir ve geri gelmez; kayıtlı olan ve aidat kategorisi silinemez', async () => {
+    const cats = await http().get('/api/finance-categories').set(A()).expect(200);
+    const insurance = cats.body.find((c: { code: string | null }) => c.code === 'INSURANCE');
+    await http().delete(`/api/finance-categories/${insurance.id}`).set(A()).expect(204);
+    const after = await http().get('/api/finance-categories').set(A()).expect(200);
+    expect(after.body.map((c: { id: string }) => c.id)).not.toContain(insurance.id);
+
+    const custom = await http()
+      .post('/api/finance-categories')
+      .set(A())
+      .send({ kind: 'EXPENSE', name: 'Bahçe bakımı' })
+      .expect(201);
+    const usedBy = await expense({ categoryId: custom.body.id }).expect(201);
+    await http()
+      .post(`/api/transactions/${usedBy.body.id}/cancel`)
+      .set(A())
+      .send({ reason: 'Deneme' })
+      .expect(200);
+    const used = await http()
+      .delete(`/api/finance-categories/${custom.body.id}`)
+      .set(A())
+      .expect(409);
+    expect(used.body.message).toContain('pasif');
+    await http()
+      .patch(`/api/finance-categories/${custom.body.id}`)
+      .set(A())
+      .send({ isActive: false })
+      .expect(200);
+
+    await http().delete(`/api/finance-categories/${categories.duesIncome}`).set(A()).expect(400);
+    await http().delete(`/api/finance-categories/${custom.body.id}`).set(B()).expect(404);
+    await http().delete(`/api/finance-categories/${custom.body.id}`).set(R()).expect(403);
+  });
+
   it('başka sitenin hesabına kayıt girilemez', async () => {
     await http().get('/api/cash-accounts').set(B()).expect(200);
     await expense({}, B()).expect(404);
@@ -374,6 +408,123 @@ describe('Yapılan işler, firmalar ve belgeler', () => {
   });
 });
 
+describe('Yapılan işin dairelere yansıtılması', () => {
+  let fixtureType: string;
+  const reflect = () => ({ chargeTypeId: fixtureType, issueDate: today, dueDate: today });
+  const workCharges = (workId: string) =>
+    prisma.charge.findMany({
+      where: { workId, cancelledAt: null },
+      orderBy: { amountKurus: 'desc' },
+    });
+
+  beforeAll(async () => {
+    const types = await http().get('/api/charge-types').set(A()).expect(200);
+    fixtureType = types.body.find((t: { code: string }) => t.code === 'FIXTURE').id;
+  });
+
+  it('iş kaydedilirken tutar dairelere eşit borç olarak yazılır; tutar değişince yeniden hesaplanır', async () => {
+    const work = await http()
+      .post('/api/works')
+      .set(A())
+      .send({ title: 'Asansör bakımı', agreedKurus: 10_001, reflect: reflect() })
+      .expect(201);
+    expect(work.body.reflection).toEqual({ chargeCount: 2, totalKurus: 10_001, paidKurus: 0 });
+    const first = await workCharges(work.body.id);
+    expect(first.map((c) => c.amountKurus)).toEqual([5_001, 5_000]);
+    expect(first[0]!.description).toBe('Asansör bakımı');
+
+    await expense({ workId: work.body.id, reflect: reflect() }).expect(409);
+
+    const updated = await http()
+      .patch(`/api/works/${work.body.id}`)
+      .set(A())
+      .send({
+        title: 'Asansör bakımı',
+        agreedKurus: 20_000,
+        status: 'PLANNED',
+        visibleToResidents: true,
+      })
+      .expect(200);
+    expect(updated.body.reflection).toMatchObject({ chargeCount: 2, totalKurus: 20_000 });
+    expect((await workCharges(work.body.id)).map((c) => c.amountKurus)).toEqual([10_000, 10_000]);
+    expect(
+      await prisma.charge.count({ where: { workId: work.body.id, cancelledAt: { not: null } } }),
+    ).toBe(2);
+  });
+
+  it('ödeme alınmış iş borçlarında tutar değiştirilemez, iş silinemez ve yansıtma geri alınamaz', async () => {
+    const work = await http()
+      .post('/api/works')
+      .set(A())
+      .send({ title: 'Çatı onarımı', agreedKurus: 8_000, reflect: reflect() })
+      .expect(201);
+    const [charge] = await workCharges(work.body.id);
+    await http()
+      .post('/api/payments')
+      .set(A())
+      .send({
+        unitId: charge!.unitId,
+        amountKurus: 1_000,
+        method: 'CASH',
+        paidAt: today,
+        allocations: [{ chargeId: charge!.id, amountKurus: 1_000 }],
+      })
+      .expect(201);
+
+    await http()
+      .patch(`/api/works/${work.body.id}`)
+      .set(A())
+      .send({
+        title: 'Çatı onarımı',
+        agreedKurus: 9_000,
+        status: 'PLANNED',
+        visibleToResidents: true,
+      })
+      .expect(409);
+    await http().delete(`/api/works/${work.body.id}/reflection`).set(A()).expect(409);
+    await http().delete(`/api/works/${work.body.id}`).set(A()).expect(409);
+  });
+
+  it('yansıtmadan kaydedilen iş sonradan yansıtılır, geri alınır ve borçlarıyla silinir', async () => {
+    const work = await http()
+      .post('/api/works')
+      .set(A())
+      .send({ title: 'Bahçe düzenlemesi', agreedKurus: 6_000 })
+      .expect(201);
+    expect(work.body.reflection).toBeNull();
+
+    const reflected = await http()
+      .post(`/api/works/${work.body.id}/reflect`)
+      .set(A())
+      .send(reflect())
+      .expect(200);
+    expect(reflected.body.reflection).toMatchObject({ chargeCount: 2, totalKurus: 6_000 });
+    await http().post(`/api/works/${work.body.id}/reflect`).set(A()).send(reflect()).expect(409);
+
+    const undone = await http()
+      .delete(`/api/works/${work.body.id}/reflection`)
+      .set(A())
+      .expect(200);
+    expect(undone.body.reflection).toBeNull();
+
+    await http().post(`/api/works/${work.body.id}/reflect`).set(A()).send(reflect()).expect(200);
+    await http().delete(`/api/works/${work.body.id}`).set(A()).expect(204);
+    expect(
+      await prisma.charge.count({
+        where: { siteId: ids.siteA, description: 'Bahçe düzenlemesi', cancelledAt: null },
+      }),
+    ).toBe(0);
+  });
+
+  it('tutarı olmayan iş yansıtılamaz', async () => {
+    await http()
+      .post('/api/works')
+      .set(A())
+      .send({ title: 'Keşif', reflect: reflect() })
+      .expect(400);
+  });
+});
+
 describe('Ay kapanışı ve raporlar', () => {
   it('kapanan ayda kayıt eklenemez ve ödeme iptal edilemez; ay yeniden açılabilir', async () => {
     await openCharge(ids.unitA2, 12_000, `${previous}-05`);
@@ -464,7 +615,9 @@ describe('Toplu iptal', () => {
       .query({ unitId: ids.unitA1, status: 'open' })
       .set(A())
       .expect(200);
-    const [a, b] = open.body as { id: string; amountKurus: number }[];
+    const list = open.body as { id: string; amountKurus: number }[];
+    const a = list.find((c) => c.amountKurus === 7_000);
+    const b = list.find((c) => c.amountKurus === 8_000);
     await http()
       .post('/api/payments')
       .set(A())

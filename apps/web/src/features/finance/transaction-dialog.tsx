@@ -213,6 +213,9 @@ export function TransactionDialog({
   const errors = form.formState.errors;
   const watchedBlockId = useWatch({ control: form.control, name: 'blockId' });
   const watchedWorkId = useWatch({ control: form.control, name: 'workId' });
+  const workReflected = Boolean(
+    watchedWorkId && (works.data ?? []).find((w) => w.id === watchedWorkId)?.reflection,
+  );
   const watchedAmount = tlAmountSchema.safeParse(
     useWatch({ control: form.control, name: 'amount' }),
   );
@@ -228,7 +231,7 @@ export function TransactionDialog({
   }
 
   async function submit(v: FormOutput) {
-    const withReflect = type === 'EXPENSE' && reflectOn;
+    const withReflect = type === 'EXPENSE' && reflectOn && !workReflected;
     const invalid = withReflect ? reflectError(reflect) : null;
     if (invalid) {
       toast.error(invalid);
@@ -462,17 +465,20 @@ export function TransactionDialog({
               <div className="flex items-start gap-2">
                 <Checkbox
                   id="tx-reflect"
-                  checked={reflectOn}
+                  disabled={workReflected}
+                  checked={reflectOn && !workReflected}
                   onCheckedChange={(v) => setReflectOn(v === true)}
                 />
                 <Label htmlFor="tx-reflect" className="grid gap-0.5 font-normal">
                   <span className="font-medium">Dairelere borç olarak yansıt</span>
                   <span className="text-xs text-muted-foreground">
-                    Gider {scopeLabel(blockName)} arasında paylaştırılıp borç olarak yazılır.
+                    {workReflected
+                      ? 'Bu iş dairelere zaten borç olarak yansıtıldı; ödemesi ayrıca yansıtılmaz.'
+                      : `Gider ${scopeLabel(blockName)} arasında paylaştırılıp borç olarak yazılır.`}
                   </span>
                 </Label>
               </div>
-              {reflectOn && (
+              {reflectOn && !workReflected && (
                 <ReflectFields
                   idPrefix="tx-rf"
                   value={reflect}

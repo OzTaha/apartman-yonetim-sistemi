@@ -54,3 +54,38 @@ test('sayfa yenilenince oturum sürer; oturum geçersizleşince tek denemeyle gi
   expect(refreshCalls).toBe(1);
   await expect(page).toHaveURL(/\/giris/);
 });
+
+test('kullanıcı adını hatırla işaretlenirse bir sonraki girişte kullanıcı adı dolu gelir', async ({
+  page,
+}) => {
+  const logout = async () => {
+    const menu = page.getByRole('button', { name: 'Kullanıcı menüsü' });
+    if (!(await menu.isVisible()))
+      await page.getByRole('button', { name: 'Menüyü aç/kapat' }).click();
+    await menu.click();
+    await page.getByRole('menuitem', { name: 'Çıkış yap' }).click();
+    await expect(page.getByRole('button', { name: 'Giriş yap' })).toBeVisible();
+  };
+
+  await page.goto('/giris');
+  await expect(page.locator('#remember')).not.toBeChecked();
+  await page.locator('#identifier').fill('yonetici@ornek.com');
+  await page.locator('#password').fill('Deneme123!');
+  await page.locator('#remember').check();
+  await page.getByRole('button', { name: 'Giriş yap' }).click();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible({ timeout: 20_000 });
+  await logout();
+
+  await page.reload();
+  await expect(page.locator('#identifier')).toHaveValue('yonetici@ornek.com');
+  await expect(page.locator('#remember')).toBeChecked();
+  await expect(page.locator('#password')).toHaveValue('');
+
+  await page.locator('#password').fill('Deneme123!');
+  await page.locator('#remember').uncheck();
+  await page.getByRole('button', { name: 'Giriş yap' }).click();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+  await logout();
+  await page.reload();
+  await expect(page.locator('#identifier')).toHaveValue('');
+});

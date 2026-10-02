@@ -10,7 +10,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PasswordInput } from '@/components/password-input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { apiFetch, errorMessage } from '@/lib/api';
 import { ensureSession, login } from '@/lib/auth';
 import { safeRedirect } from '@/lib/format';
@@ -25,20 +27,42 @@ export const Route = createFileRoute('/giris')({
   component: LoginPage,
 });
 
+const REMEMBER_KEY = 'apartman.rememberedIdentifier';
+
+function readRemembered(): string {
+  try {
+    return localStorage.getItem(REMEMBER_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function storeRemembered(identifier: string | null) {
+  try {
+    if (identifier) localStorage.setItem(REMEMBER_KEY, identifier);
+    else localStorage.removeItem(REMEMBER_KEY);
+  } catch {
+    return;
+  }
+}
+
 function LoginPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [forgot, setForgot] = useState(false);
+  const [remembered] = useState(readRemembered);
+  const [remember, setRemember] = useState(Boolean(remembered));
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { identifier: '', password: '' },
+    defaultValues: { identifier: remembered, password: '' },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
     try {
       await login(values);
+      storeRemembered(remember ? values.identifier : null);
       await navigate({ href: safeRedirect(search.redirect) });
     } catch (e) {
       setError(errorMessage(e));
@@ -69,7 +93,7 @@ function LoginPage() {
                 id="identifier"
                 autoComplete="username"
                 inputMode="email"
-                autoFocus
+                autoFocus={!remembered}
                 spellCheck={false}
                 autoCapitalize="none"
                 {...form.register('identifier', {
@@ -84,9 +108,20 @@ function LoginPage() {
               <PasswordInput
                 id="password"
                 autoComplete="current-password"
+                autoFocus={Boolean(remembered)}
                 {...form.register('password')}
               />
             </Field>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="remember"
+                checked={remember}
+                onCheckedChange={(v) => setRemember(v === true)}
+              />
+              <Label htmlFor="remember" className="font-normal">
+                Kullanıcı adımı hatırla
+              </Label>
+            </div>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               <LogIn />
               {form.formState.isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'}

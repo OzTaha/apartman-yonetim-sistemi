@@ -414,6 +414,7 @@ model Charge {
   chargeTypeId  String    @db.Uuid
   duesPlanId    String?   @db.Uuid
   transactionId String?   @db.Uuid
+  workId        String?   @db.Uuid
   period        String?
   description   String?
   amountKurus   Int
@@ -432,10 +433,12 @@ model Charge {
   chargeType  ChargeType          @relation(fields: [chargeTypeId, siteId], references: [id, siteId], onDelete: Restrict)
   duesPlan    DuesPlan?           @relation(fields: [duesPlanId], references: [id], onDelete: SetNull)
   transaction Transaction?        @relation(fields: [transactionId, siteId], references: [id, siteId], onDelete: Restrict)
+  work        Work?               @relation(fields: [workId, siteId], references: [id, siteId], onDelete: Restrict)
   allocations PaymentAllocation[]
 
   @@unique([id, siteId])
   @@index([transactionId])
+  @@index([workId])
   @@index([siteId, period])
   @@index([unitId, dueDate])
   @@map("charges")
@@ -569,6 +572,7 @@ model Work {
   startDate          DateTime?  @db.Date
   endDate            DateTime?  @db.Date
   agreedKurus        Int?
+  chargeMethod       DistributionMethod?
   status             WorkStatus @default(PLANNED)
   visibleToResidents Boolean    @default(true)
   createdById        String?    @db.Uuid
@@ -579,6 +583,7 @@ model Work {
   vendor       Vendor?       @relation(fields: [vendorId, siteId], references: [id, siteId], onDelete: Restrict)
   block        Block?        @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
   transactions Transaction[]
+  charges      Charge[]
   attachments  Attachment[]
 
   @@unique([id, siteId])

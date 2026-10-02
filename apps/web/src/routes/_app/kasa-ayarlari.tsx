@@ -11,11 +11,22 @@ import {
   type FinanceKind,
 } from '@apartman/shared';
 import { createFileRoute } from '@tanstack/react-router';
-import { Check, Pencil, Plus, Power, X } from 'lucide-react';
+import { cn } from 'cn';
+import { Check, CirclePause, CirclePlay, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { ManagerOnly } from '@/components/manager-only';
 import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -139,9 +150,10 @@ function AccountRow({
           size="icon"
           variant="ghost"
           aria-label={account.isActive ? `${account.name} pasif yap` : `${account.name} aktif yap`}
+          title={account.isActive ? 'Pasif yap' : 'Aktif yap'}
           onClick={() => save.mutate({ isActive: !account.isActive })}
         >
-          <Power />
+          {account.isActive ? <CirclePause /> : <CirclePlay />}
         </Button>
       </span>
     </li>
@@ -248,6 +260,11 @@ function CategoryRow({ category }: { category: FinanceCategoryDto }) {
       apiFetch<FinanceCategoryDto>(`/finance-categories/${category.id}`, { method: 'PATCH', body }),
     { success: 'Kategori güncellendi', onSuccess: () => setEditing(false) },
   );
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const remove = useApiMutation(
+    () => apiFetch<void>(`/finance-categories/${category.id}`, { method: 'DELETE' }),
+    { success: 'Kategori silindi', onSuccess: () => setConfirmDelete(false) },
+  );
   return (
     <li className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm">
       {editing ? (
@@ -274,15 +291,19 @@ function CategoryRow({ category }: { category: FinanceCategoryDto }) {
         </form>
       ) : (
         <>
-          <span className={category.isActive ? '' : 'text-muted-foreground line-through'}>
-            {category.name}
+          <span className="flex min-w-0 items-center gap-2">
+            <span className={cn('truncate', !category.isActive && 'text-muted-foreground')}>
+              {category.name}
+            </span>
+            {!category.isActive && <Badge variant="secondary">Pasif</Badge>}
           </span>
-          <span className="flex gap-1">
+          <span className="flex shrink-0 gap-1">
             <Button
               size="icon"
               variant="ghost"
               className="size-8"
               aria-label={`${category.name} düzenle`}
+              title="Düzenle"
               onClick={() => {
                 setName(category.name);
                 setEditing(true);
@@ -291,19 +312,61 @@ function CategoryRow({ category }: { category: FinanceCategoryDto }) {
               <Pencil />
             </Button>
             {!system && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-8"
-                aria-label={
-                  category.isActive ? `${category.name} pasif yap` : `${category.name} aktif yap`
-                }
-                onClick={() => save.mutate({ isActive: !category.isActive })}
-              >
-                <Power />
-              </Button>
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-8"
+                  aria-label={
+                    category.isActive ? `${category.name} pasif yap` : `${category.name} aktif yap`
+                  }
+                  title={
+                    category.isActive
+                      ? 'Pasif yap: yeni kayıtlarda görünmez, geçmiş kayıtlar korunur'
+                      : 'Aktif yap'
+                  }
+                  disabled={save.isPending}
+                  onClick={() => save.mutate({ isActive: !category.isActive })}
+                >
+                  {category.isActive ? <CirclePause /> : <CirclePlay />}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-8 text-destructive hover:text-destructive"
+                  aria-label={`${category.name} sil`}
+                  title="Sil"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 />
+                </Button>
+              </>
             )}
           </span>
+          <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>"{category.name}" silinsin mi?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Bu kategoride kayıt varsa silinemez; o durumda pasif yapabilirsiniz. Pasif
+                  kategori yeni kayıtlarda görünmez ama geçmiş raporlarda kalır.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                  disabled={remove.isPending}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    remove.mutate(undefined);
+                  }}
+                >
+                  Evet, sil
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
     </li>

@@ -44,8 +44,12 @@ export async function ensureFinanceDefaults(
     data: DEFAULT_ACCOUNTS.map((a) => ({ ...a, siteId })),
     skipDuplicates: true,
   });
+  const firstTime = (await db.financeCategory.count({ where: { siteId } })) === 0;
   await db.financeCategory.createMany({
-    data: DEFAULT_CATEGORIES.map((c) => ({ ...c, siteId })),
+    data: DEFAULT_CATEGORIES.filter((c) => firstTime || c.code === DUES_INCOME_CODE).map((c) => ({
+      ...c,
+      siteId,
+    })),
     skipDuplicates: true,
   });
 }

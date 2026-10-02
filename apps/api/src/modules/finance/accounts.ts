@@ -1,8 +1,11 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Injectable,
   NotFoundException,
   Param,
@@ -152,6 +155,30 @@ export class CategoriesService {
     });
     return toCategoryDto(category);
   }
+
+  async remove(id: string): Promise<void> {
+    const category = await this.tenant.db.financeCategory.findUnique({
+      where: { id },
+      include: { _count: { select: { transactions: true, budgetLines: true } } },
+    });
+    if (!category) throw new NotFoundException('Kategori bulunamadı');
+    if (category.code === DUES_INCOME_CODE) {
+      throw new BadRequestException('Aidat tahsilatı kategorisi silinemez');
+    }
+    const used = category._count.transactions + category._count.budgetLines;
+    if (used > 0) {
+      throw new ConflictException(
+        `Bu kategori ${used} kayıtta kullanılıyor; raporlar bozulmasın diye silinemez. Yeni kayıtlarda görünmemesi için pasif yapabilirsiniz.`,
+      );
+    }
+    await this.tenant.db.financeCategory.delete({ where: { id } });
+    await this.audit.record({
+      action: 'DELETE',
+      entityType: 'FinanceCategory',
+      entityId: id,
+      before: category,
+    });
+  }
 }
 
 function toCategoryDto(c: {
@@ -211,5 +238,11 @@ export class AccountsController {
     @Body() body: FinanceCategoryUpdateDto,
   ): Promise<FinanceCategoryDto> {
     return this.categories.update(id, body);
+  }
+
+  @Delete('finance-categories/:id')
+  @HttpCode(204)
+  removeCategory(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.categories.remove(id);
   }
 }

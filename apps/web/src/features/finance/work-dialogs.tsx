@@ -1,4 +1,5 @@
 import {
+  formatKurus,
   kurusToInput,
   optionalText,
   parseTlToKurus,
@@ -13,7 +14,9 @@ import {
 } from '@apartman/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { Controller, useForm } from 'react-hook-form';
+import { useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { Field } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
@@ -39,6 +42,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api';
 import { useApiMutation, useScopeBlocks, useVendors } from '@/lib/queries';
 import { blockScopeLabel } from '@/lib/unit-label';
+import { ReflectFields } from './reflect';
+import {
+  reflectError,
+  useReflectDefaults,
+  useScopeLabel,
+  type ReflectValue,
+} from './reflect-value';
 
 const NONE = 'none';
 
@@ -84,6 +94,11 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
   const vendors = useVendors();
   const scopeBlocks = useScopeBlocks();
   const navigate = useNavigate();
+  const reflectDefaults = useReflectDefaults();
+  const scopeLabel = useScopeLabel();
+  const [reflectOn, setReflectOn] = useState(true);
+  const [reflectValue, setReflectValue] = useState<ReflectValue | null>(null);
+  const reflect = reflectValue ?? reflectDefaults;
   const form = useForm<WorkFormInput, unknown, WorkFormOutput>({
     resolver: zodResolver(workFormSchema),
     values: {
@@ -99,6 +114,10 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
     },
   });
   const errors = form.formState.errors;
+  const watchedAgreed = toKurus(useWatch({ control: form.control, name: 'agreed' }) ?? '');
+  const watchedBlockId = useWatch({ control: form.control, name: 'blockId' }) || null;
+  const watchedBlockName = scopeBlocks.find((b) => b.id === watchedBlockId)?.name ?? null;
+  const withReflect = !work && reflectOn;
 
   const mutation = useApiMutation(
     (v: WorkFormOutput) => {
@@ -112,13 +131,19 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
         endDate: v.endDate || null,
         agreedKurus: v.agreed,
         visibleToResidents: v.visibleToResidents,
+        reflect: withReflect ? reflect : undefined,
       };
       return work
         ? apiFetch<WorkDetailDto>(`/works/${work.id}`, { method: 'PATCH', body })
         : apiFetch<WorkDetailDto>('/works', { method: 'POST', body });
     },
     {
-      success: work ? 'İş güncellendi' : 'İş eklendi',
+      success: (saved) =>
+        work
+          ? 'İş güncellendi'
+          : saved.reflection
+            ? `İş eklendi · ${saved.reflection.chargeCount} daireye toplam ${formatKurus(saved.reflection.totalKurus)} borç yazıldı`
+            : 'İş eklendi',
       onSuccess: (saved) => {
         onOpenChange(false);
         if (!work) void navigate({ to: '/isler/$workId', params: { workId: saved.id } });
@@ -140,7 +165,19 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
           id="work-form"
           className="grid gap-4 sm:grid-cols-2"
           noValidate
-          onSubmit={form.handleSubmit((v) => mutation.mutate(v))}
+          onSubmit={form.handleSubmit((v) => {
+            if (withReflect) {
+              if (!v.agreed) {
+                form.setError('agreed', {
+                  message: 'Dairelere yansıtmak için tutarı girin veya yansıtmayı kapatın',
+                });
+                return;
+              }
+              const invalid = reflectError(reflect);
+              if (invalid) return void toast.error(invalid);
+            }
+            mutation.mutate(v);
+          })}
         >
           <Field
             label="İşin adı"
@@ -235,7 +272,11 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
             label="Anlaşılan tutar (TL)"
             htmlFor="work-agreed"
             error={errors.agreed?.message}
-            hint="Girilirse kalan ödeme hesaplanır."
+            hint={
+              work?.reflection
+                ? 'Değişirse dairelere yazılan ödenmemiş borçlar yeniden hesaplanır.'
+                : 'Girilirse kalan ödeme hesaplanır.'
+            }
           >
             <Input id="work-agreed" inputMode="decimal" {...form.register('agreed')} />
           </Field>
@@ -267,6 +308,33 @@ export function WorkDialog({ open, onOpenChange, work }: DialogProps & { work?: 
               </div>
             )}
           />
+          {!work && (
+            <div className="grid gap-3 rounded-md border p-3 sm:col-span-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="work-reflect"
+                  checked={reflectOn}
+                  onCheckedChange={(v) => setReflectOn(v === true)}
+                />
+                <Label htmlFor="work-reflect" className="grid gap-0.5 font-normal">
+                  <span className="font-medium">Dairelere borç olarak yansıt</span>
+                  <span className="text-xs text-muted-foreground">
+                    Anlaşılan tutar {scopeLabel(watchedBlockName)} arasında paylaştırılıp doğrudan
+                    borç olarak yazılır. Kasadaki birikimden ödenecekse işareti kaldırın.
+                  </span>
+                </Label>
+              </div>
+              {reflectOn && (
+                <ReflectFields
+                  idPrefix="work-rf"
+                  value={reflect}
+                  onChange={setReflectValue}
+                  amountKurus={watchedAgreed}
+                  blockId={watchedBlockId}
+                />
+              )}
+            </div>
+          )}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

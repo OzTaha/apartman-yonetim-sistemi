@@ -4,7 +4,9 @@ import {
   formatKurus,
   splitTotal,
   type DistributionMethod,
+  type ExpenseReflectionDto,
   type TransactionDto,
+  type WorkDto,
 } from '@apartman/shared';
 import { useState } from 'react';
 import { Field } from '@/components/form-field';
@@ -145,10 +147,12 @@ export function ReflectFields({
 
 export function ReflectDialog({
   transaction,
+  work,
   open,
   onOpenChange,
 }: {
-  transaction: TransactionDto;
+  transaction?: TransactionDto;
+  work?: WorkDto;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -157,10 +161,25 @@ export function ReflectDialog({
   const [value, setValue] = useState<ReflectValue | null>(null);
   const current = value ?? defaults;
   const error = reflectError(current);
+  const source = transaction
+    ? {
+        path: `/transactions/${transaction.id}/reflect`,
+        amountKurus: transaction.amountKurus,
+        blockId: transaction.blockId,
+        blockName: transaction.blockName,
+        noun: 'gider',
+      }
+    : {
+        path: `/works/${work!.id}/reflect`,
+        amountKurus: work!.agreedKurus ?? 0,
+        blockId: work!.blockId,
+        blockName: work!.blockName,
+        noun: 'iş',
+      };
 
   const mutation = useApiMutation(
     (v: ReflectValue) =>
-      apiFetch<TransactionDto>(`/transactions/${transaction.id}/reflect`, {
+      apiFetch<{ reflection: ExpenseReflectionDto | null }>(source.path, {
         method: 'POST',
         body: v,
       }),
@@ -180,16 +199,16 @@ export function ReflectDialog({
         <DialogHeader>
           <DialogTitle>Dairelere yansıt</DialogTitle>
           <DialogDescription>
-            {formatKurus(transaction.amountKurus)} tutarındaki gider{' '}
-            {scopeLabel(transaction.blockName)} arasında paylaştırılıp borç olarak yazılır.
+            {formatKurus(source.amountKurus)} tutarındaki {source.noun}{' '}
+            {scopeLabel(source.blockName)} arasında paylaştırılıp borç olarak yazılır.
           </DialogDescription>
         </DialogHeader>
         <ReflectFields
           idPrefix="rf"
           value={current}
           onChange={setValue}
-          amountKurus={transaction.amountKurus}
-          blockId={transaction.blockId}
+          amountKurus={source.amountKurus}
+          blockId={source.blockId}
         />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

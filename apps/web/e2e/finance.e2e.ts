@@ -63,11 +63,18 @@ test('gider faturasıyla kaydedilir, işe taksit ödenir ve sakin şeffaflık sa
   const workDialog = page.getByRole('dialog');
   await workDialog.locator('#work-title').fill(`Çatı onarımı ${suffix}`);
   await workDialog.locator('#work-agreed').fill('10.000');
+  await expect(workDialog.locator('#work-reflect')).toBeChecked();
+  await expect(workDialog.getByText(/daireye .* borç yazılır/)).toBeVisible();
   await workDialog.getByRole('button', { name: 'Kaydet' }).click();
   await expect(page.getByRole('heading', { name: `Çatı onarımı ${suffix}` })).toBeVisible();
+  await expect(
+    page.getByText(/İş eklendi · \d+ daireye toplam ₺10\.000,00 borç yazıldı/),
+  ).toBeVisible();
+  await expect(page.getByText('Dairelere yansıtılan borç')).toBeVisible();
 
   await page.getByRole('button', { name: 'Ödeme ekle' }).click();
   const payDialog = page.getByRole('dialog');
+  await expect(payDialog.locator('#tx-reflect')).toBeDisabled();
   await payDialog.locator('#tx-amount').fill('4.000');
   await pick(page, '#tx-category', 'Bakım ve onarım');
   await payDialog.locator('#tx-desc').fill('Peşinat');

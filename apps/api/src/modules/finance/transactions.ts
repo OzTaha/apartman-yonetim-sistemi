@@ -16,10 +16,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
-  DistributionError,
   DUES_INCOME_CODE,
   SITE_WIDE,
-  splitTotal,
   type BulkCancelResultDto,
   type TransactionDto,
 } from '@apartman/shared';
@@ -36,10 +34,9 @@ import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditorReadable, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
-import { assertMethodAllowed, loadSiteSettings } from '../dues/site-settings';
-import { compareUnits } from '../residents/occupancy.mapper';
 import { assertDateOpen, lockedThrough } from './finance.ledger';
 import { toTransactionDto, transactionInclude } from './finance.mapper';
+import { planReflection } from './reflection';
 
 @Injectable()
 export class TransactionsService {
@@ -140,6 +137,7 @@ export class TransactionsService {
             amountKurus: input.amountKurus,
             categoryId: input.categoryId ?? null,
             description: input.description ?? null,
+            workId: input.type === 'EXPENSE' ? (input.workId ?? null) : null,
           },
           input.reflect,
         )
@@ -226,6 +224,19 @@ export class TransactionsService {
         }
         const work = await this.tenant.db.work.findUnique({ where: { id: input.workId } });
         if (!work) throw new NotFoundException('İş bulunamadı');
+        if (
+          input.workId !== before.workId &&
+          (await this.tenant.db.charge.count({
+            where: { transactionId: id, cancelledAt: null },
+          })) &&
+          (await this.tenant.db.charge.count({
+            where: { workId: input.workId, cancelledAt: null },
+          }))
+        ) {
+          throw new ConflictException(
+            'Hem bu gider hem iş dairelere yansıtılmış; bağlanırsa borç iki kez yazılmış olur.',
+          );
+        }
       }
     }
 
@@ -321,53 +332,32 @@ export class TransactionsService {
       amountKurus: number;
       categoryId: string | null;
       description: string | null;
+      workId: string | null;
     },
     input: ExpenseReflectDto,
   ) {
-    const type = await this.tenant.db.chargeType.findUnique({ where: { id: input.chargeTypeId } });
-    if (!type || !type.isActive) throw new NotFoundException('Borç türü bulunamadı');
-    assertMethodAllowed(await loadSiteSettings(this.prisma, this.tenant.siteId), input.method);
-
-    const units = (
-      await this.tenant.db.unit.findMany({
-        where: { archivedAt: null, ...(expense.blockId ? { blockId: expense.blockId } : {}) },
-        include: { block: { select: { name: true } } },
-      })
-    )
-      .map((u) => ({
-        id: u.id,
-        label: `${u.block.name}-${u.number}`,
-        areaM2: u.areaM2,
-        landShare: u.landShare,
-        blockName: u.block.name,
-        number: u.number,
-      }))
-      .sort(compareUnits);
-    if (units.length === 0) throw new BadRequestException('Borç yazılacak daire yok');
-
-    let amounts: number[];
-    try {
-      amounts = splitTotal(input.method, expense.amountKurus, units);
-    } catch (error) {
-      if (error instanceof DistributionError) throw new BadRequestException(error.message);
-      throw error;
+    if (
+      expense.workId &&
+      (await this.tenant.db.charge.count({ where: { workId: expense.workId, cancelledAt: null } }))
+    ) {
+      throw new ConflictException(
+        'Bu iş zaten dairelere borç olarak yansıtılmış. İşe yapılan ödeme ayrıca yansıtılamaz.',
+      );
     }
     const category =
       !input.description && !expense.description && expense.categoryId
         ? await this.tenant.db.financeCategory.findUnique({ where: { id: expense.categoryId } })
         : null;
-
-    return units
-      .map((u, i) => ({
-        unitId: u.id,
-        chargeTypeId: type.id,
-        amountKurus: amounts[i]!,
-        issueDate: dateOnly(input.issueDate),
-        dueDate: dateOnly(input.dueDate),
-        description: input.description ?? expense.description ?? category?.name ?? null,
-        createdById: this.tenant.userId ?? null,
-      }))
-      .filter((row) => row.amountKurus > 0);
+    return planReflection(
+      this.prisma,
+      this.tenant,
+      {
+        blockId: expense.blockId,
+        amountKurus: expense.amountKurus,
+        description: expense.description ?? category?.name ?? null,
+      },
+      input,
+    );
   }
 
   private async editable(id: string) {

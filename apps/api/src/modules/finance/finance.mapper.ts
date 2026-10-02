@@ -6,6 +6,7 @@ import {
 } from '@apartman/shared';
 import { toDateString } from '../../common/dates';
 import type { Prisma } from '../../generated/prisma/client';
+import { summarizeReflection } from './reflection';
 
 export const attachmentSelect = {
   id: true,
@@ -77,17 +78,7 @@ export function toTransactionDto(
     paymentId: t.paymentId,
     blockId: t.blockId,
     blockName: t.block?.name ?? null,
-    reflection:
-      t.charges.length === 0
-        ? null
-        : {
-            chargeCount: t.charges.length,
-            totalKurus: t.charges.reduce((sum, c) => sum + c.amountKurus, 0),
-            paidKurus: t.charges.reduce(
-              (sum, c) => sum + c.allocations.reduce((s, a) => s + a.amountKurus, 0),
-              0,
-            ),
-          },
+    reflection: summarizeReflection(t.charges),
     receiptNo: t.payment?.receiptNo ?? null,
     unitBlockName: t.payment?.unit.block.name ?? null,
     unitNumber: t.payment?.unit.number ?? null,
@@ -105,6 +96,10 @@ export function toTransactionDto(
 export const workInclude = {
   vendor: { select: { name: true } },
   block: { select: { name: true } },
+  charges: {
+    where: { cancelledAt: null },
+    select: { amountKurus: true, allocations: { select: { amountKurus: true } } },
+  },
   _count: { select: { attachments: true } },
 } satisfies Prisma.WorkInclude;
 
@@ -126,6 +121,7 @@ export function toWorkDto(w: WorkWithRelations, paidKurus: number): WorkDto {
     remainingKurus: w.agreedKurus === null ? null : w.agreedKurus - paidKurus,
     status: w.status,
     visibleToResidents: w.visibleToResidents,
+    reflection: summarizeReflection(w.charges),
     attachmentCount: w._count.attachments,
     createdAt: w.createdAt.toISOString(),
   };

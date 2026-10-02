@@ -205,8 +205,13 @@ export const workCreateSchema = workFields
   .extend({
     status: workStatusSchema.default('PLANNED'),
     visibleToResidents: z.boolean().default(true),
+    reflect: expenseReflectSchema.optional(),
   })
-  .refine(endAfterStart, endAfterStartIssue);
+  .refine(endAfterStart, endAfterStartIssue)
+  .refine((v) => !v.reflect || Boolean(v.agreedKurus), {
+    message: 'Dairelere yansıtmak için anlaşılan tutarı girin',
+    path: ['agreedKurus'],
+  });
 export type WorkInput = z.input<typeof workCreateSchema>;
 
 export const workUpdateSchema = workFields.refine(endAfterStart, endAfterStartIssue);
@@ -323,6 +328,7 @@ export interface WorkDto {
   remainingKurus: Kurus | null;
   status: WorkStatus;
   visibleToResidents: boolean;
+  reflection: ExpenseReflectionDto | null;
   attachmentCount: number;
   createdAt: string;
 }

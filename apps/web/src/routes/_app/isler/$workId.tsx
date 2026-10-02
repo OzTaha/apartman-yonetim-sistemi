@@ -1,12 +1,13 @@
 import { formatKurus } from '@apartman/shared';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Minus, Pencil, Paperclip, Trash2 } from 'lucide-react';
+import { ArrowLeft, Minus, Pencil, Paperclip, Split, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { ManagerOnly } from '@/components/manager-only';
 import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AttachmentList, AttachmentUploadButton } from '@/features/finance/attachments';
+import { ReflectDialog } from '@/features/finance/reflect';
 import { TransactionDialog } from '@/features/finance/transaction-dialog';
 import { TransactionDetailsDialog } from '@/features/finance/transaction-details';
 import { WorkDialog } from '@/features/finance/work-dialogs';
@@ -30,12 +31,16 @@ function WorkDetailPage() {
   const { workId } = Route.useParams();
   const navigate = useNavigate();
   const work = useWork(workId);
-  const [dialog, setDialog] = useState<'edit' | 'pay' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'pay' | 'reflect' | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const remove = useApiMutation(() => apiFetch<void>(`/works/${workId}`, { method: 'DELETE' }), {
     success: 'İş silindi',
     onSuccess: () => void navigate({ to: '/isler' }),
   });
+  const unreflect = useApiMutation(
+    () => apiFetch(`/works/${workId}/reflection`, { method: 'DELETE' }),
+    { success: 'Dairelere yazılan borçlar iptal edildi' },
+  );
 
   const back = (
     <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit">
@@ -119,6 +124,66 @@ function WorkDetailPage() {
         </CardContent>
       </Card>
 
+      {(w.reflection || (w.agreedKurus && !auditor)) && (
+        <Card>
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+            <CardTitle>Dairelere yansıtılan borç</CardTitle>
+            {!auditor &&
+              (w.reflection ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={unreflect.isPending || w.reflection.paidKurus > 0}
+                  title={
+                    w.reflection.paidKurus > 0
+                      ? 'Ödeme alınmış borçlar var; önce ilgili ödemeleri iptal edin'
+                      : undefined
+                  }
+                  onClick={() => {
+                    if (window.confirm('Bu iş için dairelere yazılan borçlar iptal edilsin mi?'))
+                      unreflect.mutate(undefined);
+                  }}
+                >
+                  <Undo2 />
+                  Yansıtmayı geri al
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setDialog('reflect')}>
+                  <Split />
+                  Dairelere yansıt
+                </Button>
+              ))}
+          </CardHeader>
+          <CardContent>
+            {w.reflection ? (
+              <dl className="grid grid-cols-3 gap-3 text-sm">
+                <div>
+                  <dt className="text-muted-foreground">Daire</dt>
+                  <dd className="font-medium">{w.reflection.chargeCount}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Yazılan borç</dt>
+                  <dd className="font-medium tabular-nums">
+                    {formatKurus(w.reflection.totalKurus)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Tahsil edilen</dt>
+                  <dd className="font-medium tabular-nums">
+                    {formatKurus(w.reflection.paidKurus)}
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Anlaşılan tutar henüz dairelere borç olarak yazılmadı. Kasadaki birikimden
+                ödenmeyecekse "Dairelere yansıt" ile eşit paylaştırın.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle>Ödemeler</CardTitle>
@@ -192,6 +257,9 @@ function WorkDetailPage() {
         open={dialog === 'pay'}
         onOpenChange={(o) => setDialog(o ? 'pay' : null)}
       />
+      {dialog === 'reflect' && (
+        <ReflectDialog work={w} open onOpenChange={(o) => setDialog(o ? 'reflect' : null)} />
+      )}
       <TransactionDetailsDialog
         transaction={selected}
         onOpenChange={(o) => !o && setSelectedId(null)}
