@@ -41,7 +41,12 @@ export function AppearanceMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Görünüm ve yazı boyutu">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Görünüm ve yazı boyutu"
+          data-tour="appearance"
+        >
           <Icon />
         </Button>
       </DropdownMenuTrigger>

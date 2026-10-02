@@ -1,5 +1,7 @@
 import { formatKurus } from '@apartman/shared';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Hammer } from 'lucide-react';
+import { InfoTip } from '@/components/info-tip';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -39,6 +41,15 @@ function TransparencyPage() {
     <div className="grid gap-6">
       <PageHeader
         title="Giderler ve işler"
+        info={
+          <InfoTip title="Giderler ve işler">
+            <p>
+              Aidatların nereye harcandığını gösterir: kasadaki para, yılın geliri ve gideri,
+              yapılan işler ve faturaları.
+            </p>
+            <p>Sitelerde ortak giderler ile yalnızca kendi bloğunuzun giderleri görünür.</p>
+          </InfoTip>
+        }
         description="Aidatların nereye harcandığı, yapılan işler, ödenen firmalar ve faturalar."
         actions={
           <Select
@@ -98,7 +109,11 @@ function TransparencyPage() {
           <section className="grid gap-3">
             <h2 className="text-lg font-semibold">Yapılan işler</h2>
             {d.works.length === 0 ? (
-              <EmptyState title="Paylaşılan iş kaydı yok" />
+              <EmptyState
+                icon={Hammer}
+                title="Paylaşılan iş kaydı yok"
+                description="Yönetim bir iş kaydını sakinlerle paylaştığında tutarı, firması ve faturasıyla burada görünür."
+              />
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {d.works.map((w) => (

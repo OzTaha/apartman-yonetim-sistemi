@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('toplam tutar dairelere eşit bölünür ve borçlar toplu iptal edilir', async ({ page }) => {
   await page.goto('/giris');

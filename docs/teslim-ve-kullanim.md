@@ -15,6 +15,12 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 Her kullanıcı yazı boyutunu (Normal, Büyük, Çok büyük) ve açık/koyu görünümü üst çubukta bildirim zilinin yanındaki
 güneş/ay düğmesinden kendi cihazı için seçebilir. Telefonda menüye alttaki çubuktan ulaşılır.
 
+Sakinler ilk girişte Dairem sayfasında kısa bir tanıtım turu görür (borç kartı, sık yapılan işler, yönetim iletişimi,
+yazı boyutu, menü). Tur bir kez çıkar; kullanıcı menüsündeki "Tanıtım turunu göster" ile tekrar açılır. Sayfa
+başlıklarının yanındaki "i" düğmesi o bölümün kısa açıklamasını gösterir. Dairem sayfasındaki "Yönetim" kartında site
+yöneticisi ile sakinin kendi bloğunun yöneticisinin adı ve telefonu görünür; telefon numarası kayıtlı değilse yalnızca
+adı gösterilir.
+
 ## Roller
 
 | Rol               | Neler yapabilir                                                                                                  |
@@ -64,7 +70,8 @@ güneş/ay düğmesinden kendi cihazı için seçebilir. Telefonda menüye altta
 - **Arıza ve talepler:** Sakinlerin bildirdiği arızalar "Arıza ve talepler" sayfasına ve bildirimlere düşer. Talebi
   açıp sakine yanıt yazın, "İşleme al", "Çözüldü" veya "Reddet" ile durumunu güncelleyin. "Görev oluştur" ile talebi
   bir çalışana verebilirsiniz; görev tamamlanınca talep de kapanır. Sakinler talep açmak için "Taleplerim" sayfasını
-  veya Dairem'deki "Arıza / talep bildir" düğmesini kullanır.
+  veya Dairem'deki "Arıza bildir" düğmesini kullanır. Yönetim henüz işlem yapmadıysa sakin talebini geri çekebilir;
+  geri çekme 6 saniye içinde "Geri al" ile iptal edilebilir.
 - **Çalışanlar:** Vardiya planı, görevler ve tekrarlayan görevler "Çalışan ve görev" menüsündedir.
 - **İşletme projesi:** Yıllık bütçeyi "İşletme projesi" sayfasında hazırlayın: önümüzdeki 12 ayın tahmini giderlerini
   kalem kalem girin, sistem daire başına düşen aylık avans aidatı hesaplar. PDF'i genel kurula sunun; kabul edilince

@@ -16,6 +16,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   officerAssignSchema,
   unitLabel,
+  type ContactDto,
   type OfficerCandidateDto,
   type OfficerDto,
   type OfficerRole,
@@ -183,6 +184,67 @@ export class OfficersService {
   }
 }
 
+@Injectable()
+export class ContactsService {
+  constructor(private readonly tenant: TenantContext) {}
+
+  async list(): Promise<ContactDto[]> {
+    const blockIds = this.tenant.isResident ? await this.tenant.residentBlockIds() : null;
+    const memberships = await this.tenant.db.siteMembership.findMany({
+      where: { role: { in: ['SITE_MANAGER', 'BLOCK_MANAGER'] } },
+      include: {
+        user: { select: { firstName: true, lastName: true, phone: true, isActive: true } },
+      },
+    });
+    const managed = await this.tenant.db.blockManager.findMany({
+      where: { userId: { in: memberships.map((m) => m.userId) } },
+      include: { block: { select: { name: true } } },
+    });
+    const kind = await this.tenant.siteKind();
+    return memberships
+      .filter((m) => m.user.isActive)
+      .map((m) => {
+        const own = managed.filter((b) => b.userId === m.userId);
+        return {
+          membership: m,
+          own,
+          visible:
+            m.role === 'SITE_MANAGER' ||
+            blockIds === null ||
+            own.some((b) => blockIds.includes(b.blockId)),
+        };
+      })
+      .filter((c) => c.visible)
+      .map(({ membership: m, own }) => ({
+        name: `${m.user.firstName} ${m.user.lastName}`,
+        role: m.role as ContactDto['role'],
+        blocks:
+          kind === 'APARTMENT'
+            ? []
+            : own
+                .map((b) => b.block.name)
+                .sort((a, b) => a.localeCompare(b, 'tr', { numeric: true })),
+        phone: m.user.phone,
+      }))
+      .sort(
+        (a, b) => a.role.localeCompare(b.role, 'en') * -1 || a.name.localeCompare(b.name, 'tr'),
+      );
+  }
+}
+
+@ApiTags('Yetkililer')
+@ApiBearerAuth()
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER', 'AUDITOR', 'RESIDENT')
+@Controller('contacts')
+export class ContactsController {
+  constructor(private readonly contacts: ContactsService) {}
+
+  @Get()
+  list(): Promise<ContactDto[]> {
+    return this.contacts.list();
+  }
+}
+
 @ApiTags('Yetkililer')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
@@ -213,7 +275,7 @@ export class OfficersController {
 }
 
 @Module({
-  controllers: [OfficersController],
-  providers: [OfficersService],
+  controllers: [OfficersController, ContactsController],
+  providers: [OfficersService, ContactsService],
 })
 export class OfficersModule {}

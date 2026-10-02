@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixtures';
 
 async function expectNoHorizontalScroll(page: Page) {
   const overflow = await page.evaluate(
@@ -77,7 +77,9 @@ test('yönetici duyuru yayınlar, SMS ile bildirir, borçlulara hatırlatma gön
 
 test('sakin okunmamış duyuruyu görür, açınca okundu olur', async ({ page }, info) => {
   await login(page, '05321000000');
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
   await expect(page.getByText(/okunmamış duyuru/)).toBeVisible();
   await expectNoHorizontalScroll(page);
   await page.getByRole('button', { name: 'Oku' }).click();

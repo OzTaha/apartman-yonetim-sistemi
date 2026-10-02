@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixtures';
 
 const PASSWORD = 'Deneme123!';
 
@@ -64,7 +64,9 @@ test('yönetici sakine şifre yenileme bağlantısı gönderir, sakin yeni şifr
   await resident.locator('#identifier').fill('05321000000');
   await resident.locator('#password').fill(PASSWORD);
   await resident.getByRole('button', { name: 'Giriş yap' }).click();
-  await expect(resident.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    resident.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
 
   await resident.goto(new URL(url).pathname);
   await expect(resident.getByText('Bu bağlantı zaten kullanılmış')).toBeVisible();

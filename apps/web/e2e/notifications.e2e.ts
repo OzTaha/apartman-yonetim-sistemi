@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixtures';
 
 async function login(page: Page, identifier: string) {
   await page.goto('/giris');

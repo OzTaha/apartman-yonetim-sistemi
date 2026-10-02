@@ -591,6 +591,45 @@ describe('Blok yöneticisi ve denetçi', () => {
     expect(membership.role).toBe('RESIDENT');
     expect(await prisma.blockManager.count({ where: { userId: userIds.residentA } })).toBe(0);
   });
+
+  it('sakin site yöneticisini ve yalnızca kendi bloğunun yöneticisini iletişim için görür', async () => {
+    const created = [];
+    for (const [name, block] of [
+      ['Ayla', 'A'],
+      ['Burak', 'B'],
+    ] as const) {
+      const user = await prisma.user.create({
+        data: {
+          firstName: name,
+          lastName: 'Yönetici',
+          phone: `+90532111000${name.length}${block === 'A' ? 1 : 2}`,
+          email: `${name}@blok.test`,
+          passwordHash: 'x',
+        },
+      });
+      await prisma.siteMembership.create({
+        data: { userId: user.id, siteId, role: 'BLOCK_MANAGER' },
+      });
+      await prisma.blockManager.create({
+        data: { userId: user.id, siteId, blockId: blocks[block]! },
+      });
+      created.push(user.id);
+    }
+    const res = await http().get('/api/contacts').set(BM()).expect(200);
+    expect(res.body).toEqual([
+      { name: 'Kişi 0', role: 'SITE_MANAGER', blocks: [], phone: null },
+      { name: 'Ayla Yönetici', role: 'BLOCK_MANAGER', blocks: ['A'], phone: expect.any(String) },
+    ]);
+    const all = await http().get('/api/contacts').set(M()).expect(200);
+    expect(all.body.map((c: { name: string }) => c.name)).toEqual([
+      'Kişi 0',
+      'Ayla Yönetici',
+      'Burak Yönetici',
+    ]);
+    await prisma.blockManager.deleteMany({ where: { userId: { in: created } } });
+    await prisma.siteMembership.deleteMany({ where: { userId: { in: created } } });
+    await prisma.user.deleteMany({ where: { id: { in: created } } });
+  });
 });
 
 describe('Yanlış girilen sakin kaydını silme', () => {

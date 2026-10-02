@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { EyeOff, Megaphone, Paperclip, Pin, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { InfoTip } from '@/components/info-tip';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,7 @@ function ManagerAnnouncements() {
         <ErrorState error={announcements.error} />
       ) : announcements.data.length === 0 ? (
         <EmptyState
+          icon={Megaphone}
           title="Henüz duyuru yok"
           description="Toplantı, kesinti veya bakım gibi bilgileri sakinlerle paylaşın."
         />
@@ -183,6 +185,15 @@ function ResidentAnnouncements() {
     <div className="grid gap-6">
       <PageHeader
         title="Duyurular"
+        info={
+          <InfoTip title="Duyurular">
+            <p>
+              Yönetimin paylaştığı haberler, kesinti ve bakım bilgileri ile genel kurul kararları
+              burada görünür.
+            </p>
+            <p>Okumadığınız duyurular kalın yazılır. Bir duyuruyu açtığınızda okundu sayılır.</p>
+          </InfoTip>
+        }
         description={unread > 0 ? `${unread} okunmamış duyuru` : 'Yönetimden gelen duyurular'}
       />
       {announcements.isPending ? (
@@ -191,8 +202,9 @@ function ResidentAnnouncements() {
         <ErrorState error={announcements.error} />
       ) : announcements.data.length === 0 ? (
         <EmptyState
-          title="Duyuru yok"
-          description="Yönetim duyuru yayınladığında burada görünür."
+          icon={Megaphone}
+          title="Henüz duyuru yok"
+          description="Yönetim bir duyuru yayınladığında burada görürsünüz. Okumadığınız duyurular Dairem sayfasında da gösterilir."
         />
       ) : (
         <div className="grid gap-3">

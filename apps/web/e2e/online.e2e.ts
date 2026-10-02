@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext, type Page, test } from '@playwright/test';
+import { expect, type APIRequestContext, type Page, test } from './fixtures';
 
 async function expectNoHorizontalScroll(page: Page) {
   const overflow = await page.evaluate(
@@ -53,9 +53,11 @@ test('sakin borcunu online öder, başarısız denemede borç açık kalır', as
 }, info) => {
   await addDebtForResident(request, 12_345);
   await login(page, '05321000000');
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Online öde' }).click();
+  await page.getByRole('button', { name: 'Borcumu öde' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText('Test modu: gerçek ödeme alınmaz.')).toBeVisible();
   await expectNoHorizontalScroll(page);
@@ -66,8 +68,10 @@ test('sakin borcunu online öder, başarısız denemede borç açık kalır', as
   await expect(page.getByText('Kart reddedildi')).toBeVisible();
   await page.getByRole('link', { name: 'Tekrar dene' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
-  await page.getByRole('button', { name: 'Online öde' }).click();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Borcumu öde' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Ödemeye geç' }).click();
   await page.getByRole('button', { name: 'Ödemeyi onayla' }).click();
   await expect(page.getByText('Ödendi', { exact: true })).toBeVisible();
@@ -82,7 +86,7 @@ test('sakin borcunu online öder, başarısız denemede borç açık kalır', as
 
   await page.getByRole('link', { name: "Dairem'e dön" }).click();
   await expect(page.getByText('Ödenmemiş borcunuz yok.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Online öde' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Borcumu öde' })).toHaveCount(0);
 });
 
 test('yönetici online ödeme ayarını görür', async ({ page }) => {

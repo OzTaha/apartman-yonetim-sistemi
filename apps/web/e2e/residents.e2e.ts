@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixtures';
 
 const MANAGER = { identifier: 'yonetici@ornek.com', password: 'Deneme123!' };
 
@@ -92,10 +92,14 @@ test('yönetici blok ve daire ekler, sakin davetle hesap açıp dairesini görü
   await residentPage.locator('#confirm').fill('SakinSifre123');
   await residentPage.getByRole('button', { name: 'Hesabımı oluştur' }).click();
 
-  await expect(residentPage.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    residentPage.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
   await expect(residentPage.getByText(`${blockName} Blok · Daire 1`)).toBeVisible();
   await residentPage.goto('/daireler');
-  await expect(residentPage.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    residentPage.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
   await expectNoHorizontalScroll(residentPage);
   await residentContext.close();
 

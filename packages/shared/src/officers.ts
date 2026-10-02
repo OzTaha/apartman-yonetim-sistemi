@@ -27,6 +27,15 @@ export interface OfficerDto {
   units: string[];
 }
 
+export type ContactRole = 'SITE_MANAGER' | 'BLOCK_MANAGER';
+
+export interface ContactDto {
+  name: string;
+  role: ContactRole;
+  blocks: string[];
+  phone: string | null;
+}
+
 export interface OfficerCandidateDto {
   userId: string;
   name: string;

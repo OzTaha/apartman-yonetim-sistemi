@@ -1,4 +1,5 @@
 import type {
+  ContactDto,
   DecisionDto,
   MeetingDetailDto,
   MeetingDto,
@@ -401,6 +402,14 @@ export const useMessageTemplates = () =>
   useSiteQuery<MessageTemplateDto[]>('message-templates', '/message-templates');
 export const useReminderSettings = () =>
   useSiteQuery<ReminderSettingsDto>('reminder-settings', '/reminder-settings');
+
+export function useContacts(siteId: string) {
+  return useQuery({
+    queryKey: ['contacts', siteId],
+    queryFn: () => apiFetch<ContactDto[]>('/contacts', { siteId }),
+    staleTime: 5 * 60_000,
+  });
+}
 
 export function useOnlineStatus(siteIdOverride?: string) {
   const { siteId: activeSiteId } = useSession();

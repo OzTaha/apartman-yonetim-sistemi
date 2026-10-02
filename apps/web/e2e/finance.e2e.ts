@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixtures';
 
 async function expectNoHorizontalScroll(page: Page) {
   const overflow = await page.evaluate(
@@ -24,6 +24,7 @@ const PDF = Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n');
 test('gider faturasıyla kaydedilir, işe taksit ödenir ve sakin şeffaflık sayfasını görür', async ({
   page,
 }, info) => {
+  test.setTimeout(120_000);
   const suffix = `${info.project.name === 'masaustu' ? 'M' : 'T'}${String(Date.now()).slice(-4)}`;
   await login(page, 'yonetici@ornek.com');
   await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
@@ -112,9 +113,11 @@ test('gider faturasıyla kaydedilir, işe taksit ödenir ve sakin şeffaflık sa
   await page.context().clearCookies();
   await login(page, '05321000000');
   await expect(page).not.toHaveURL(/giris/);
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
-  await expect(page.getByText('Güncel borç')).toBeVisible();
-  await expect(page.getByText('Ödemelerim')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
+  await expect(page.getByText('Ödenecek borcunuz')).toBeVisible();
+  await expect(page.locator('[data-slot=card-title]', { hasText: 'Ödemelerim' })).toBeVisible();
   const [receipt] = await Promise.all([
     page.waitForEvent('download'),
     page

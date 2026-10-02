@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Check, ChevronsUpDown, KeyRound, LogOut } from 'lucide-react';
+import { Check, ChevronsUpDown, CircleHelp, KeyRound, LogOut } from 'lucide-react';
 import { BrandMark } from '@/components/brand';
 import {
   DropdownMenu,
@@ -27,6 +27,7 @@ import { logout } from '@/lib/auth';
 import { useIsActivePath, useNavigation, type NavItem } from '@/lib/navigation';
 import { activeRole, session, useSession } from '@/lib/session';
 import { useSiteOptions } from '@/lib/site-options';
+import { restartTours } from '@/lib/tours';
 
 const roleLabels = {
   PLATFORM_ADMIN: 'Sistem yöneticisi',
@@ -114,6 +115,15 @@ function UserMenu() {
         </SidebarMenuButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-56">
+        <DropdownMenuItem
+          onSelect={() => {
+            restartTours(user.id);
+            void navigate({ to: '/' });
+          }}
+        >
+          <CircleHelp />
+          Tanıtım turunu göster
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void navigate({ to: '/sifre' })}>
           <KeyRound />
           Şifre değiştir
@@ -158,7 +168,7 @@ export function AppSidebar() {
     ));
 
   return (
-    <Sidebar>
+    <Sidebar data-tour="nav">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

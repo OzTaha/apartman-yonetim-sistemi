@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixtures';
 
 async function login(page: Page, identifier: string) {
   await page.goto('/giris');
@@ -86,7 +86,9 @@ test('yönetici bütçeden avans aidatı hesaplar, sonraki dönemi kopyalar; den
 
   await page.context().clearCookies();
   await login(page, '05321000000');
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
   await page.goto('/butce');
   await expect(page).not.toHaveURL(/butce/);
 });

@@ -2,7 +2,7 @@ import { OPEN_REQUEST_STATUSES } from '@apartman/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, Navigate, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Trash2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { apiFetch } from '@/lib/api';
 import { useApiMutation, useMyRequest } from '@/lib/queries';
 import { useHasUnitInSite } from '@/lib/session';
 import { labelUnit } from '@/lib/unit-label';
+import { withUndo } from '@/lib/undo';
 
 export const Route = createFileRoute('/_app/taleplerim/$requestId')({
   component: MyRequestGuard,
@@ -35,6 +36,8 @@ function MyRequestPage() {
     () => apiFetch<void>(`/requests/mine/${requestId}`, { method: 'DELETE' }),
     { success: 'Talep geri çekildi', onSuccess: () => void navigate({ to: '/taleplerim' }) },
   );
+
+  const [withdrawing, setWithdrawing] = useState(false);
 
   const back = (
     <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit">
@@ -74,11 +77,14 @@ function MyRequestPage() {
             <Button
               variant="outline"
               className="text-destructive"
-              disabled={withdraw.isPending}
+              disabled={withdraw.isPending || withdrawing}
               onClick={() => {
-                if (window.confirm('Talep geri çekilsin mi? Bu işlem geri alınamaz.')) {
-                  withdraw.mutate(undefined);
-                }
+                setWithdrawing(true);
+                withUndo({
+                  message: 'Talep geri çekiliyor',
+                  run: () => withdraw.mutate(undefined),
+                  onUndo: () => setWithdrawing(false),
+                });
               }}
             >
               <Trash2 />

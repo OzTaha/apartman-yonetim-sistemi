@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('girişte boşluk yazılamaz; çıkış yapınca giriş ekranı açılır ve oturum geri gelmez', async ({
   page,

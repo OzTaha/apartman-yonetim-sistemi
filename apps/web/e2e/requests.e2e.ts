@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixtures';
 
 async function login(page: Page, identifier: string) {
   await page.goto('/giris');
@@ -31,8 +31,10 @@ test('sakin fotoğraflı talep açar, yönetici görev verir, görev bitince tal
   const title = `Kapı zili çalmıyor ${info.project.name === 'masaustu' ? 'M' : 'T'}${String(Date.now()).slice(-5)}`;
 
   await login(page, '05321000000');
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
-  await page.getByRole('link', { name: 'Arıza / talep bildir' }).click();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Arıza bildir' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'Arıza / talep bildir' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Gönder' }).click();
@@ -85,7 +87,9 @@ test('sakin fotoğraflı talep açar, yönetici görev verir, görev bitince tal
 
   await page.context().clearCookies();
   await login(page, '05321000000');
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
   await page.goto('/taleplerim');
   const mine = page.locator('[data-slot="card"]', { hasText: title });
   await expect(mine.getByText('Yeni yanıt var')).toBeVisible();

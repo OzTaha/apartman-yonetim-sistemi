@@ -1,7 +1,8 @@
 import type { MyRequestDto } from '@apartman/shared';
 import { createFileRoute, Link, Navigate, useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { Plus, Wrench } from 'lucide-react';
 import { useState } from 'react';
+import { InfoTip } from '@/components/info-tip';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -66,6 +67,19 @@ function MyRequestsPage() {
     <div className="grid gap-6">
       <PageHeader
         title="Taleplerim"
+        info={
+          <InfoTip title="Taleplerim">
+            <p>
+              Arıza, temizlik, güvenlik veya öneri gibi konuları yönetime buradan iletirsiniz.
+              İsterseniz fotoğraf da ekleyebilirsiniz.
+            </p>
+            <p>
+              Talebin durumu Yeni, İşlemde, Çözüldü veya Reddedildi olarak görünür. Yönetim yanıt
+              yazdığında talebin yanında işaret çıkar.
+            </p>
+            <p>Yönetim henüz işlem yapmadıysa talebinizi geri çekebilirsiniz.</p>
+          </InfoTip>
+        }
         description="Arıza, temizlik, güvenlik gibi konuları yönetime bildirin ve durumunu takip edin."
         actions={
           <Button onClick={() => setCreating(true)}>
@@ -80,8 +94,15 @@ function MyRequestsPage() {
         <ErrorState error={requests.error} />
       ) : requests.data.length === 0 ? (
         <EmptyState
+          icon={Wrench}
           title="Henüz talebiniz yok"
-          description="Bir arıza veya sorun gördüğünüzde fotoğrafıyla birlikte bildirebilirsiniz."
+          description="Bir arıza veya sorun gördüğünüzde fotoğrafıyla birlikte yönetime bildirebilirsiniz. Durumunu buradan takip edersiniz."
+          action={
+            <Button size="lg" onClick={() => setCreating(true)}>
+              <Plus />
+              İlk talebimi bildir
+            </Button>
+          }
         />
       ) : (
         <div className="grid gap-3">

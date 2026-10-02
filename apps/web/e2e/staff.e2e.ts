@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from './fixtures';
 
 async function expectNoHorizontalScroll(page: Page) {
   const overflow = await page.evaluate(
@@ -123,8 +123,12 @@ test('yönetici çalışan ekler, vardiya ve görev planlar, maaş öder ve rapo
 
 test('sakin çalışan sayfalarına erişemez', async ({ page }) => {
   await login(page, '05321000000');
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
   await page.goto('/gorevler');
-  await expect(page.getByRole('heading', { name: 'Dairem' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /^(Günaydın|İyi günler|İyi akşamlar), / }),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Çalışanlar' })).toHaveCount(0);
 });
