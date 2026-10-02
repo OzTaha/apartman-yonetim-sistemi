@@ -8,7 +8,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Check, Copy, Link2 } from 'lucide-react';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { Field } from '@/components/form-field';
@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api';
-import { formatDate, formatPhone, fullName, todayIso } from '@/lib/format';
+import { formatDate, formatPhone, fullName, toNumberOrNull, todayIso } from '@/lib/format';
 import { useApiMutation, useUnits } from '@/lib/queries';
 import { labelUnit } from '@/lib/unit-label';
 
@@ -53,6 +53,8 @@ export function OccupancyFormDialog({
 }: DialogProps & { occupancy?: OccupancyDto; unitId?: string }) {
   const fixedUnitId = occupancy?.unitId ?? unitId;
   const units = useUnits({});
+  const unitLandShare = (id: string | undefined) =>
+    (units.data ?? []).find((u) => u.id === id)?.landShare ?? null;
   const form = useForm<OccupancyForm, unknown, OccupancyOutput>({
     resolver: zodResolver(occupancyCreateSchema),
     values: {
@@ -66,9 +68,12 @@ export function OccupancyFormDialog({
       isResponsibleForDues: occupancy?.isResponsibleForDues ?? true,
       contactConsent: occupancy?.contactConsent ?? false,
       notes: occupancy?.notes ?? '',
+      landShare: unitLandShare(fixedUnitId),
     },
     resetOptions: { keepDirtyValues: true },
   });
+  const type = useWatch({ control: form.control, name: 'type' });
+  const selectedUnitId = useWatch({ control: form.control, name: 'unitId' });
 
   const mutation = useApiMutation(
     ({ unitId: selectedUnit, ...rest }: OccupancyOutput) => {
@@ -166,7 +171,7 @@ export function OccupancyFormDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="OWNER">Malik</SelectItem>
+                    <SelectItem value="OWNER">Malik (ev sahibi)</SelectItem>
                     <SelectItem value="TENANT">Kiracı</SelectItem>
                   </SelectContent>
                 </Select>
@@ -181,6 +186,26 @@ export function OccupancyFormDialog({
           >
             <Input id="occ-start" type="date" {...form.register('startDate')} />
           </Field>
+          {type === 'OWNER' && (
+            <Field
+              label="Arsa payı"
+              htmlFor="occ-share"
+              error={errors.landShare?.message}
+              hint="Tapuda yazan arsa payı. Örneğin 24/480 ise 24 yazın. Genel kurulda yeter sayı hesabında kullanılır. Dairenin bilgisine kaydedilir."
+              className="sm:col-span-2"
+            >
+              <Input
+                id="occ-share"
+                inputMode="numeric"
+                placeholder={
+                  !fixedUnitId && unitLandShare(selectedUnitId) !== null
+                    ? `Kayıtlı: ${unitLandShare(selectedUnitId)}`
+                    : undefined
+                }
+                {...form.register('landShare', { setValueAs: toNumberOrNull })}
+              />
+            </Field>
+          )}
 
           <div className="grid gap-3 sm:col-span-2">
             <Controller

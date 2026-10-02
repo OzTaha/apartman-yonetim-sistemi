@@ -122,7 +122,22 @@ export class ResidentsService {
       entityId: occupancy.id,
       after: input,
     });
+    if (input.type === 'OWNER') await this.setLandShare(input.unitId, input.landShare);
     return toOccupancyDto(occupancy);
+  }
+
+  private async setLandShare(unitId: string, landShare: number | null | undefined) {
+    if (landShare == null) return;
+    const unit = await this.tenant.db.unit.findUniqueOrThrow({ where: { id: unitId } });
+    if (unit.landShare === landShare) return;
+    await this.tenant.db.unit.update({ where: { id: unitId }, data: { landShare } });
+    await this.audit.record({
+      action: 'UPDATE',
+      entityType: 'Unit',
+      entityId: unitId,
+      before: { landShare: unit.landShare },
+      after: { landShare },
+    });
   }
 
   async update(id: string, input: OccupancyUpdateDto): Promise<OccupancyDto> {
@@ -161,6 +176,7 @@ export class ResidentsService {
       before: toOccupancyDto(before),
       after: input,
     });
+    if (occupancy.type === 'OWNER') await this.setLandShare(occupancy.unitId, input.landShare);
     return toOccupancyDto(occupancy);
   }
 

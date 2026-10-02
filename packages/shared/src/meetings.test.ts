@@ -15,6 +15,7 @@ describe('meetingQuorum', () => {
       proxyUnits: 1,
       totalLandShare: 100,
       presentLandShare: 60,
+      missingLandShareUnits: 0,
       unitsMajority: false,
       landShareMajority: true,
       reached: false,
@@ -39,6 +40,7 @@ describe('meetingQuorum', () => {
       { landShare: 10, status: 'ABSENT' },
     ]);
     expect(q.totalLandShare).toBeNull();
+    expect(q.missingLandShareUnits).toBe(1);
     expect(q.landShareMajority).toBeNull();
     expect(q.reached).toBe(true);
   });

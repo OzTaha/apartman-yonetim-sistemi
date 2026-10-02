@@ -561,12 +561,14 @@ export class MeetingsService {
               'Katılım',
               `${q.totalUnits} bağımsız bölümden ${q.presentUnits} bölüm temsil edildi (${q.proxyUnits} vekaleten).`,
             ],
-            [
-              'Arsa payı',
-              q.totalLandShare === null
-                ? 'Arsa payı bilgisi eksik olduğundan hesaplanmadı.'
-                : `${q.totalLandShare} arsa payından ${q.presentLandShare} temsil edildi.`,
-            ],
+            ...(q.totalLandShare === null
+              ? []
+              : [
+                  [
+                    'Arsa payı',
+                    `${q.totalLandShare} arsa payından ${q.presentLandShare} temsil edildi.`,
+                  ],
+                ]),
             [
               'Toplantı yeter sayısı',
               detail.heldSession === 'SECOND'
@@ -617,6 +619,7 @@ export class MeetingsService {
     const kind = await this.tenant.siteKind();
     const right = { alignment: 'right' as const };
     const marked = detail.status === 'HELD' || detail.quorum.presentUnits > 0;
+    const shares = detail.attendance.some((a) => a.landShare != null);
     const content: Content[] = [
       ...this.header(site.name, site.place),
       { text: 'HAZİRUN CETVELİ', style: 'title', alignment: 'center', margin: [0, 20, 0, 2] },
@@ -628,12 +631,12 @@ export class MeetingsService {
       {
         table: {
           headerRows: 1,
-          widths: [70, '*', 45, ...(marked ? [60] : []), 110],
+          widths: [70, '*', ...(shares ? [45] : []), ...(marked ? [60] : []), 110],
           body: [
             [
               { text: 'Bağımsız bölüm', style: 'th' },
               { text: 'Kat maliki / temsilci', style: 'th' },
-              { text: 'Arsa payı', style: 'th', ...right },
+              ...(shares ? [{ text: 'Arsa payı', style: 'th', ...right }] : []),
               ...(marked ? [{ text: 'Durum', style: 'th' }] : []),
               { text: 'İmza', style: 'th' },
             ],
@@ -642,7 +645,7 @@ export class MeetingsService {
               a.status === 'PROXY' && a.name
                 ? `${a.owners}\nVekil: ${a.name}`
                 : a.name || a.owners || '—',
-              { text: a.landShare?.toString() ?? '—', ...right },
+              ...(shares ? [{ text: a.landShare?.toString() ?? '—', ...right }] : []),
               ...(marked ? [attendanceStatusLabels[a.status]] : []),
               { text: '', margin: [0, 10, 0, 10] as [number, number, number, number] },
             ]),

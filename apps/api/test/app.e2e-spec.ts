@@ -364,6 +364,55 @@ describe('Daire ve sakin yönetimi', () => {
 });
 
 describe('Davet akışı', () => {
+  it('malik kaydında girilen arsa payı daireye yazılır; kiracıda yazılmaz', async () => {
+    const token = await tokenFor('yonetici-a@test.com');
+    const tenant = await http()
+      .post('/api/residents')
+      .set(auth(token, ids.siteA))
+      .send({
+        unitId: ids.unitA2,
+        firstName: 'Kiracı',
+        lastName: 'Sakin',
+        type: 'TENANT',
+        startDate: '2025-01-01',
+        landShare: 99,
+      })
+      .expect(201);
+    expect((await prisma.unit.findUniqueOrThrow({ where: { id: ids.unitA2 } })).landShare).not.toBe(
+      99,
+    );
+
+    const owner = await http()
+      .post('/api/residents')
+      .set(auth(token, ids.siteA))
+      .send({
+        unitId: ids.unitA2,
+        firstName: 'Arsa',
+        lastName: 'Malik',
+        type: 'OWNER',
+        startDate: '2025-01-01',
+        landShare: 24,
+      })
+      .expect(201);
+    expect((await prisma.unit.findUniqueOrThrow({ where: { id: ids.unitA2 } })).landShare).toBe(24);
+
+    await http()
+      .patch(`/api/residents/${owner.body.id}`)
+      .set(auth(token, ids.siteA))
+      .send({ landShare: 30 })
+      .expect(200);
+    await http()
+      .patch(`/api/residents/${owner.body.id}`)
+      .set(auth(token, ids.siteA))
+      .send({ landShare: null })
+      .expect(200);
+    expect((await prisma.unit.findUniqueOrThrow({ where: { id: ids.unitA2 } })).landShare).toBe(30);
+
+    for (const id of [tenant.body.id, owner.body.id]) {
+      await prisma.occupancy.delete({ where: { id } });
+    }
+  });
+
   it('davetle hesap oluşturulur, davet ikinci kez kullanılamaz ve sakin giriş yapabilir', async () => {
     const token = await tokenFor('yonetici-a@test.com');
     const occupancy = await http()

@@ -92,7 +92,7 @@ const columns: ColumnDef<UnitDto>[] = [
   },
 ];
 
-const equalColumns = columns.filter((c) => c.id !== 'areaM2' && c.id !== 'landShare');
+const equalColumns = columns.filter((c) => c.id !== 'areaM2');
 
 function UnitCard({ unit, showArea }: { unit: UnitDto; showArea: boolean }) {
   return (
@@ -102,6 +102,7 @@ function UnitCard({ unit, showArea }: { unit: UnitDto; showArea: boolean }) {
         <span className="text-xs text-muted-foreground">
           {unit.floor !== null ? `${unit.floor}. kat` : ''}
           {showArea && unit.areaM2 !== null ? ` · ${unit.areaM2.toLocaleString('tr-TR')} m²` : ''}
+          {unit.landShare !== null ? ` · arsa payı ${unit.landShare}` : ''}
         </span>
       </div>
       <div className="text-sm">

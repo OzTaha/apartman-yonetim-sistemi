@@ -26,6 +26,8 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 
 1. **Daireler:** Daireler sayfasından "Toplu ekle" ile daireleri oluşturun (sitelerde önce bloklar eklenir).
 2. **Sakinler:** Her dairenin sayfasından malik veya kiracıyı ekleyin. Telefon ve iletişim onayı SMS için gereklidir.
+   Ev sahibi (malik) eklerken tapudaki arsa payını da girin (örneğin 24/480 ise 24); genel kurulda toplantı yeter
+   sayısı buna göre otomatik hesaplanır. Arsa payı hiç girilmezse genel kurul ekranlarında gösterilmez.
 3. **Davet:** Sakinin yanındaki menüden "Davet bağlantısı oluştur" ile bağlantı üretip sakine iletin; sakin kendi
    şifresini belirleyerek portala girer.
 4. **Aidat:** Aidat ayarlarından aylık tutarı ve son ödeme gününü girin. Aidat her ayın 1'inde kendiliğinden yazılır.

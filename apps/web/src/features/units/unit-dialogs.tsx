@@ -122,7 +122,7 @@ export function UnitFormDialog({
           <DialogDescription>
             {proportional
               ? 'Kat, alan ve arsa payı bilgileri aidat oranlı dağıtılmıyorsa isteğe bağlıdır.'
-              : 'Kat bilgisi isteğe bağlıdır.'}
+              : 'Kat ve arsa payı bilgileri isteğe bağlıdır.'}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -163,34 +163,33 @@ export function UnitFormDialog({
             />
           </Field>
           {proportional && (
-            <>
-              <Field
-                label="Alan (m²)"
-                htmlFor="unit-area"
-                error={errors.areaM2?.message}
-                required={duesSettings?.currentMethod === 'AREA'}
-              >
-                <Input
-                  id="unit-area"
-                  inputMode="decimal"
-                  {...form.register('areaM2', { setValueAs: toNumberOrNull })}
-                />
-              </Field>
-              <Field
-                label="Arsa payı"
-                htmlFor="unit-share"
-                error={errors.landShare?.message}
-                required={duesSettings?.currentMethod === 'LAND_SHARE'}
-                className="sm:col-span-2"
-              >
-                <Input
-                  id="unit-share"
-                  inputMode="numeric"
-                  {...form.register('landShare', { setValueAs: toNumberOrNull })}
-                />
-              </Field>
-            </>
+            <Field
+              label="Alan (m²)"
+              htmlFor="unit-area"
+              error={errors.areaM2?.message}
+              required={duesSettings?.currentMethod === 'AREA'}
+            >
+              <Input
+                id="unit-area"
+                inputMode="decimal"
+                {...form.register('areaM2', { setValueAs: toNumberOrNull })}
+              />
+            </Field>
           )}
+          <Field
+            label="Arsa payı"
+            htmlFor="unit-share"
+            error={errors.landShare?.message}
+            required={proportional && duesSettings?.currentMethod === 'LAND_SHARE'}
+            hint="Tapuda yazan arsa payı. Örneğin 24/480 ise 24 yazın. Genel kurulda yeter sayı hesabında kullanılır."
+            className="sm:col-span-2"
+          >
+            <Input
+              id="unit-share"
+              inputMode="numeric"
+              {...form.register('landShare', { setValueAs: toNumberOrNull })}
+            />
+          </Field>
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

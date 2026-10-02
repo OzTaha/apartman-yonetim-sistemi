@@ -185,6 +185,7 @@ const occupancyFields = z.object({
   isResponsibleForDues: z.boolean(),
   contactConsent: z.boolean(),
   notes: optionalText(500),
+  landShare: number().int('Arsa payı tam sayı olmalıdır').positive().nullish(),
 });
 
 export const occupancyCreateSchema = occupancyFields.extend({

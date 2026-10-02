@@ -26,8 +26,7 @@ import { labelUnit } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 import { DecisionBadge } from './parts';
 
-function Check({ ok, label }: { ok: boolean | null; label: string }) {
-  if (ok === null) return <li className="text-muted-foreground">{label}: bilgi eksik</li>;
+function Check({ ok, label }: { ok: boolean; label: string }) {
   const Icon = ok ? CircleCheck : CircleX;
   return (
     <li className="flex items-center gap-1.5">
@@ -56,8 +55,17 @@ export function QuorumSummary({ quorum }: { quorum: QuorumDto }) {
       </p>
       <ul className="grid gap-1">
         <Check ok={quorum.unitsMajority} label="Bağımsız bölüm sayısının yarısından fazlası" />
-        <Check ok={quorum.landShareMajority} label="Arsa payının yarısından fazlası" />
+        {quorum.landShareMajority !== null && (
+          <Check ok={quorum.landShareMajority} label="Arsa payının yarısından fazlası" />
+        )}
       </ul>
+      {quorum.missingLandShareUnits > 0 && quorum.missingLandShareUnits < quorum.totalUnits && (
+        <p className="text-muted-foreground">
+          {quorum.missingLandShareUnits} dairenin arsa payı girilmemiş. Arsa payı, sakin
+          bilgilerinde ev sahibi (malik) için girilir. Hepsi girildiğinde yeter sayı arsa payına
+          göre de kontrol edilir.
+        </p>
+      )}
       <p
         className={cn(
           'font-medium',

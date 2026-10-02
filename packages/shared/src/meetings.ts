@@ -152,6 +152,7 @@ export interface QuorumDto {
   proxyUnits: number;
   totalLandShare: number | null;
   presentLandShare: number | null;
+  missingLandShareUnits: number;
   unitsMajority: boolean;
   landShareMajority: boolean | null;
   reached: boolean;
@@ -170,6 +171,7 @@ export function meetingQuorum(units: QuorumUnit[]): QuorumDto {
     proxyUnits: units.filter((u) => u.status === 'PROXY').length,
     totalLandShare,
     presentLandShare,
+    missingLandShareUnits: units.filter((u) => !(u.landShare != null && u.landShare > 0)).length,
     unitsMajority,
     landShareMajority,
     reached: unitsMajority && landShareMajority !== false,
