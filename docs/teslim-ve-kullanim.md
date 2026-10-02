@@ -44,6 +44,13 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 - **Gider:** Kasa sayfasında "Gider ekle"; faturayı veya fotoğrafını ekleyebilirsiniz. Sitelerde giderin "Site geneli"
   mi yoksa bir bloğa mı ait olduğunu seçin; blok giderini yalnızca o bloğun sakinleri görür. "Dairelere borç olarak
   yansıt" ile gider ilgili dairelere borç olarak paylaştırılır.
+- **Yapılan işler:** Çatı onarımı, boya, asansör revizyonu gibi işleri "Yapılan işler" sayfasından ekleyin. Anlaşılan
+  tutar girildiğinde "Dairelere borç olarak yansıt" işaretli gelir ve tutar işin kapsamındaki dairelere eşit
+  paylaştırılıp doğrudan borç olarak yazılır; ayrıca borç girmeniz gerekmez. İş kasadaki birikimden ödenecekse işareti
+  kaldırın. Tutar değişirse ödenmemiş borçlar kendiliğinden yeniden hesaplanır. Firmaya yaptığınız ödemeleri işin
+  sayfasından "Ödeme ekle" ile kaydedin; bu ödemeler ikinci kez dairelere yansıtılmaz.
+- **Kasa ayarları:** Kullanılmayan gelir/gider kategorisini çöp kutusu simgesiyle silebilirsiniz. Kayıt girilmiş
+  kategori silinemez; yeni kayıtlarda görünmemesi için pasif yapın, geçmiş raporlarda kalmaya devam eder.
 - **Duyuru:** Duyurular sayfasından tüm sakinlere, bloklara veya seçili dairelere duyuru yayınlanır; kimin okuduğu
   görülür.
 - **Mesaj:** Mesajlar sayfasından borç hatırlatması, acil durum veya genel bilgi SMS/WhatsApp ile gönderilir.
@@ -66,6 +73,16 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 Parasal kayıtlar silinmez, iptal edilir. İptal edilen kayıtlar nedeniyle birlikte saklanır; bakiyelerden ve
 toplamlardan düşer. Yanlış girilen sakin kaydı ise sakinin menüsündeki "Kaydı sil" ile silinebilir; daireden taşınan
 sakin için "Taşındı olarak işaretle" kullanılır.
+
+## Apartman veya site silme
+
+Yalnızca sistem yöneticisi, "Apartman ve siteler" sayfasında ilgili kartın menüsünden "Sil" ile bir yeri silebilir.
+Silmeden önce "Verileri Excel olarak indir" ile daireler, sakinler, borçlar, tahsilatlar, gelir-gider, yapılan işler,
+firmalar, çalışanlar, talepler ve genel kurul kararları tek dosyada indirilir. Silmek için yerin adı yazılır ve sistem
+yöneticisinin e-posta/telefonu ile şifresi yeniden girilir.
+
+Silinen yer 15 gün boyunca aynı sayfadaki "Silinenler" bölümünde bekler ve "Geri getir" ile eski haline döner. Süre
+dolunca tüm verileri kalıcı olarak silinir; yalnızca o yere bağlı olan yönetici ve sakin hesapları da kaldırılır.
 
 ## Telefona uygulama olarak ekleme
 

@@ -43,6 +43,48 @@ const formatCell = (value: string | number | null, money: boolean | undefined): 
   return String(value);
 };
 
+function addReportSheet<T>(
+  workbook: InstanceType<typeof ExcelJS.Workbook>,
+  sheetName: string,
+  report: ReportDefinition<T>,
+) {
+  const sheet = workbook.addWorksheet(sheetName.slice(0, 31));
+  sheet.addRow([report.title]).font = { bold: true, size: 14 };
+  if (report.subtitle) sheet.addRow([report.subtitle]);
+  sheet.addRow([]);
+  const header = sheet.addRow(report.columns.map((c) => c.header));
+  header.font = { bold: true };
+  header.eachCell((cell) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
+  });
+  for (const row of report.rows) {
+    const excelRow = sheet.addRow(
+      report.columns.map((c) => {
+        const value = c.value(row);
+        return c.money && typeof value === 'number' ? value / 100 : (value ?? '');
+      }),
+    );
+    report.columns.forEach((c, i) => {
+      if (c.money) excelRow.getCell(i + 1).numFmt = '#,##0.00 "TL"';
+    });
+  }
+  if (report.summary?.length) {
+    sheet.addRow([]);
+    for (const [label, value] of report.summary) sheet.addRow([label, value]).font = { bold: true };
+  }
+  sheet.columns.forEach((column, i) => {
+    column.width = Math.max(12, Math.min(40, (report.columns[i]?.header.length ?? 10) + 6));
+  });
+}
+
+export interface WorkbookSheet {
+  write: (workbook: InstanceType<typeof ExcelJS.Workbook>) => void;
+}
+
+export function workbookSheet<T>(name: string, report: ReportDefinition<T>): WorkbookSheet {
+  return { write: (workbook) => addReportSheet(workbook, name, report) };
+}
+
 @Injectable()
 export class DocumentsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -90,37 +132,14 @@ export class DocumentsService {
     return this.render(content, report.columns.length > 6 ? 'landscape' : 'portrait');
   }
 
-  async reportXlsx<T>(report: ReportDefinition<T>): Promise<Buffer> {
+  reportXlsx<T>(report: ReportDefinition<T>): Promise<Buffer> {
+    return this.workbookXlsx([workbookSheet(report.title, report)]);
+  }
+
+  async workbookXlsx(sheets: WorkbookSheet[]): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = await appName(this.prisma);
-    const sheet = workbook.addWorksheet(report.title.slice(0, 31));
-    sheet.addRow([report.title]).font = { bold: true, size: 14 };
-    if (report.subtitle) sheet.addRow([report.subtitle]);
-    sheet.addRow([]);
-    const header = sheet.addRow(report.columns.map((c) => c.header));
-    header.font = { bold: true };
-    header.eachCell((cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
-    });
-    for (const row of report.rows) {
-      const excelRow = sheet.addRow(
-        report.columns.map((c) => {
-          const value = c.value(row);
-          return c.money && typeof value === 'number' ? value / 100 : (value ?? '');
-        }),
-      );
-      report.columns.forEach((c, i) => {
-        if (c.money) excelRow.getCell(i + 1).numFmt = '#,##0.00 "TL"';
-      });
-    }
-    if (report.summary?.length) {
-      sheet.addRow([]);
-      for (const [label, value] of report.summary)
-        sheet.addRow([label, value]).font = { bold: true };
-    }
-    sheet.columns.forEach((column, i) => {
-      column.width = Math.max(12, Math.min(40, (report.columns[i]?.header.length ?? 10) + 6));
-    });
+    for (const sheet of sheets) sheet.write(workbook);
     return Buffer.from(await workbook.xlsx.writeBuffer());
   }
 

@@ -1,6 +1,15 @@
 import { siteKindLabels, type PasswordResetLinkDto, type SiteDto } from '@apartman/shared';
 import { Navigate, createFileRoute, useNavigate } from '@tanstack/react-router';
-import { ArrowRight, KeyRound, MoreHorizontal, Pencil, Plus, UserCog, X } from 'lucide-react';
+import {
+  ArrowRight,
+  KeyRound,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  UserCog,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { PasswordResetDialog } from '@/components/password-reset-dialog';
@@ -21,11 +30,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ManagerAssignDialog, SiteFormDialog } from '@/features/sites/site-dialogs';
 import { apiFetch } from '@/lib/api';
 import { fullName } from '@/lib/format';
+import { DeleteSiteDialog, DeletedSites } from '@/features/sites/delete-site';
 import { useApiMutation, useSites } from '@/lib/queries';
 import { session, useSession } from '@/lib/session';
 
@@ -97,7 +108,7 @@ function ManagerChip({ site, manager }: { site: SiteDto; manager: SiteDto['manag
 
 function SiteCard({ site }: { site: SiteDto }) {
   const navigate = useNavigate();
-  const [dialog, setDialog] = useState<'edit' | 'manager' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'manager' | 'delete' | null>(null);
 
   return (
     <Card>
@@ -122,6 +133,11 @@ function SiteCard({ site }: { site: SiteDto }) {
             <DropdownMenuItem onSelect={() => setDialog('manager')}>
               <UserCog />
               Yönetici ata
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={() => setDialog('delete')}>
+              <Trash2 />
+              Sil
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -163,6 +179,11 @@ function SiteCard({ site }: { site: SiteDto }) {
         onOpenChange={(o) => setDialog(o ? 'manager' : null)}
         site={site}
       />
+      <DeleteSiteDialog
+        open={dialog === 'delete'}
+        onOpenChange={(o) => setDialog(o ? 'delete' : null)}
+        site={site}
+      />
     </Card>
   );
 }
@@ -196,6 +217,7 @@ function SitesPage() {
           ))}
         </div>
       )}
+      <DeletedSites />
       <SiteFormDialog open={creating} onOpenChange={setCreating} />
     </div>
   );

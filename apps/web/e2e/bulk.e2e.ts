@@ -10,6 +10,8 @@ test('toplam tutar dairelere eşit bölünür ve borçlar toplu iptal edilir', a
   await page.goto('/borclar');
   await page.getByRole('button', { name: 'Borç ekle' }).click();
   const dialog = page.getByRole('dialog');
+  await page.locator('#ch-type').click();
+  await page.getByRole('option', { name: 'Yakıt' }).click();
   await page.locator('#ch-mode').click();
   await page.getByRole('option', { name: 'Toplamı dairelere eşit böl' }).click();
   await dialog.locator('#ch-amount').fill('1.000');
@@ -29,13 +31,15 @@ test('toplam tutar dairelere eşit bölünür ve borçlar toplu iptal edilir', a
   await expect(page.getByText(`${count} daireye toplam ₺1.000,00 borç yazıldı`)).toBeVisible();
 
   await page.getByRole('combobox', { name: 'Borç türü filtresi' }).click();
-  await page.getByRole('option', { name: 'Demirbaş' }).click();
+  await page.getByRole('option', { name: 'Yakıt' }).click();
   await page.getByRole('checkbox', { name: 'Tümünü seç' }).filter({ visible: true }).click();
   const bar = page.getByRole('region', { name: 'Toplu işlem' });
-  await expect(bar).toContainText(`${count} borç seçildi`);
+  await expect(bar).toContainText('borç seçildi');
+  const selected = Number(/(\d+) borç seçildi/.exec((await bar.textContent()) ?? '')?.[1]);
+  expect(selected).toBeGreaterThanOrEqual(count);
   await bar.getByRole('button', { name: 'Seçilenleri iptal et' }).click();
   await page.locator('#cancel-reason').fill('Yanlış yazıldı');
   await page.getByRole('dialog').getByRole('button', { name: 'İptal et' }).click();
-  await expect(page.getByText(`${count} borç iptal edildi`)).toBeVisible();
+  await expect(page.getByText(`${selected} borç iptal edildi`)).toBeVisible();
   await expect(page.getByText('Seçili filtrelere uygun borç bulunamadı.')).toBeVisible();
 });

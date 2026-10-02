@@ -97,6 +97,15 @@ export type SiteCreateInput = z.input<typeof siteCreateSchema>;
 export const siteUpdateSchema = siteFields.partial();
 export type SiteUpdateInput = z.input<typeof siteUpdateSchema>;
 
+export const SITE_RESTORE_DAYS = 15;
+
+export const siteDeleteSchema = z.object({
+  confirmName: z.string().trim().min(1, 'Adı yazın'),
+  identifier: loginSchema.shape.identifier,
+  password: z.string().min(1, 'Şifre girin'),
+});
+export type SiteDeleteInput = z.input<typeof siteDeleteSchema>;
+
 export const siteManagerAssignSchema = z
   .object({
     firstName: nameSchema,

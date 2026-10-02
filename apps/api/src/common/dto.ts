@@ -10,6 +10,7 @@ import {
   residentListQuerySchema,
   siteCreateSchema,
   siteManagerAssignSchema,
+  siteDeleteSchema,
   siteUpdateSchema,
   unitCreateSchema,
   unitListQuerySchema,
@@ -23,6 +24,7 @@ export class AcceptInviteDto extends createZodDto(acceptInviteSchema) {}
 
 export class SiteCreateDto extends createZodDto(siteCreateSchema) {}
 export class SiteUpdateDto extends createZodDto(siteUpdateSchema) {}
+export class SiteDeleteDto extends createZodDto(siteDeleteSchema) {}
 export class SiteManagerAssignDto extends createZodDto(siteManagerAssignSchema) {}
 
 export class BlockDto extends createZodDto(blockSchema) {}

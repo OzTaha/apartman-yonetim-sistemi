@@ -86,11 +86,12 @@ export class AuthService {
       where: { id: userId },
       include: {
         memberships: {
+          where: { site: { deletedAt: null } },
           include: { site: { select: { name: true, kind: true } } },
           orderBy: { createdAt: 'asc' },
         },
         occupancies: {
-          where: activeOn(),
+          where: { ...activeOn(), site: { deletedAt: null } },
           include: {
             site: { select: { name: true, kind: true } },
             unit: { select: { number: true, block: { select: { name: true } } } },

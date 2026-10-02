@@ -96,7 +96,7 @@ export class RemindersService implements OnApplicationBootstrap {
 
   async runAllSites(today: string): Promise<void> {
     const sites = await this.prisma.site.findMany({
-      where: { settings: { path: ['reminder', 'enabled'], equals: true } },
+      where: { deletedAt: null, settings: { path: ['reminder', 'enabled'], equals: true } },
       select: { id: true, name: true },
     });
     for (const site of sites) {

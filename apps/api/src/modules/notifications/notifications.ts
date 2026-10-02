@@ -65,6 +65,8 @@ function toDto(n: Row): NotificationDto {
     : { ...base, type: n.type, data: n.data as unknown as PasswordResetRequestData };
 }
 
+const liveSite = { OR: [{ siteId: null }, { site: { deletedAt: null } }] };
+
 @Injectable()
 export class NotificationHub {
   private readonly events = new Subject<{ userId: string; event: NotificationEventDto }>();
@@ -102,7 +104,7 @@ export class NotificationsService {
 
   async list(userId: string, onlyUnread: boolean): Promise<NotificationDto[]> {
     const rows = await this.prisma.notification.findMany({
-      where: { userId, ...(onlyUnread ? { readAt: null } : {}) },
+      where: { userId, ...liveSite, ...(onlyUnread ? { readAt: null } : {}) },
       include: { site: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
       take: 200,
@@ -111,7 +113,11 @@ export class NotificationsService {
   }
 
   async count(userId: string): Promise<NotificationCountDto> {
-    return { unread: await this.prisma.notification.count({ where: { userId, readAt: null } }) };
+    return {
+      unread: await this.prisma.notification.count({
+        where: { userId, readAt: null, ...liveSite },
+      }),
+    };
   }
 
   async markRead(userId: string, id: string): Promise<void> {

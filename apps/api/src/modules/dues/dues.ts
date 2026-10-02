@@ -229,7 +229,7 @@ export class DuesService implements OnApplicationBootstrap {
 
   async accrueAllSites(period: string): Promise<void> {
     const sites = await this.prisma.site.findMany({
-      where: { duesPlans: { some: { validFrom: { lte: period } } } },
+      where: { deletedAt: null, duesPlans: { some: { validFrom: { lte: period } } } },
       select: { id: true, name: true },
     });
     for (const site of sites) {

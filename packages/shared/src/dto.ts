@@ -73,6 +73,15 @@ export interface SiteDto {
   managers: { id: string; firstName: string; lastName: string }[];
 }
 
+export interface DeletedSiteDto {
+  id: string;
+  name: string;
+  kind: SiteKind;
+  unitCount: number;
+  deletedAt: string;
+  purgeAt: string;
+}
+
 export interface BlockDto {
   id: string;
   name: string;

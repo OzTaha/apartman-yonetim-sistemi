@@ -50,7 +50,10 @@ export class SitesService {
 
   async list(user: AuthUser): Promise<SiteDto[]> {
     const sites = await this.prisma.site.findMany({
-      where: user.isPlatformAdmin ? {} : { memberships: { some: { userId: user.id } } },
+      where: {
+        deletedAt: null,
+        ...(user.isPlatformAdmin ? {} : { memberships: { some: { userId: user.id } } }),
+      },
       include: siteInclude,
       orderBy: { name: 'asc' },
     });
@@ -144,7 +147,7 @@ export class SitesService {
   }
 
   async assignManager(siteId: string, input: SiteManagerAssignDto): Promise<SiteDto> {
-    await this.prisma.site.findUniqueOrThrow({ where: { id: siteId } });
+    await this.assertNotDeleted(siteId);
 
     const or = [
       ...(input.email ? [{ email: input.email }] : []),
@@ -185,6 +188,7 @@ export class SitesService {
   }
 
   async removeManager(siteId: string, userId: string): Promise<void> {
+    await this.assertNotDeleted(siteId);
     const membership = await this.prisma.siteMembership.findUnique({
       where: { siteId_userId: { siteId, userId } },
     });
@@ -210,7 +214,16 @@ export class SitesService {
     });
   }
 
+  private async assertNotDeleted(siteId: string) {
+    const site = await this.prisma.site.findUnique({
+      where: { id: siteId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!site) throw new NotFoundException('Site bulunamadı');
+  }
+
   private async assertAccess(user: AuthUser, siteId: string, requireManager: boolean) {
+    await this.assertNotDeleted(siteId);
     if (user.isPlatformAdmin) return;
     const membership = await this.prisma.siteMembership.findUnique({
       where: { siteId_userId: { siteId, userId: user.id } },

@@ -59,7 +59,7 @@ export class TenantGuard implements CanActivate {
 
     if (user.isPlatformAdmin) {
       const site = await this.prisma.site.findUnique({
-        where: { id: siteId },
+        where: { id: siteId, deletedAt: null },
         select: { id: true },
       });
       if (!site) throw new NotFoundException('Site bulunamadı');
@@ -70,9 +70,11 @@ export class TenantGuard implements CanActivate {
 
     const membership = await this.prisma.siteMembership.findUnique({
       where: { siteId_userId: { siteId, userId: user.id } },
-      select: { role: true },
+      select: { role: true, site: { select: { deletedAt: true } } },
     });
-    if (!membership) throw new ForbiddenException('Bu siteye erişim yetkiniz yok');
+    if (!membership || membership.site.deletedAt) {
+      throw new ForbiddenException('Bu siteye erişim yetkiniz yok');
+    }
 
     const role = this.effectiveRole(context, membership.role, allowedRoles);
     if (!role) throw new ForbiddenException('Bu işlem için yetkiniz yok');

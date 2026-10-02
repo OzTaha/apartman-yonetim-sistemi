@@ -175,7 +175,7 @@ export class RecurringTasksService implements OnApplicationBootstrap {
 
   async generateAllSites(date: string): Promise<void> {
     const sites = await this.prisma.site.findMany({
-      where: { recurringTasks: { some: { isActive: true } } },
+      where: { deletedAt: null, recurringTasks: { some: { isActive: true } } },
       select: { id: true, name: true },
     });
     for (const site of sites) {

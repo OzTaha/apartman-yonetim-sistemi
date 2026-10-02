@@ -161,14 +161,16 @@ model User {
 }
 
 model Site {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  name      String
-  kind      SiteKind @default(SITE)
-  address   String?
-  city      String?
-  settings  Json     @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(uuid(7)) @db.Uuid
+  name        String
+  kind        SiteKind  @default(SITE)
+  address     String?
+  city        String?
+  settings    Json      @default("{}")
+  deletedAt   DateTime?
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   memberships       SiteMembership[]
   blocks            Block[]
@@ -563,21 +565,21 @@ model Vendor {
 }
 
 model Work {
-  id                 String     @id @default(uuid(7)) @db.Uuid
-  siteId             String     @db.Uuid
+  id                 String              @id @default(uuid(7)) @db.Uuid
+  siteId             String              @db.Uuid
   title              String
   description        String?
-  vendorId           String?    @db.Uuid
-  blockId            String?    @db.Uuid
-  startDate          DateTime?  @db.Date
-  endDate            DateTime?  @db.Date
+  vendorId           String?             @db.Uuid
+  blockId            String?             @db.Uuid
+  startDate          DateTime?           @db.Date
+  endDate            DateTime?           @db.Date
   agreedKurus        Int?
   chargeMethod       DistributionMethod?
-  status             WorkStatus @default(PLANNED)
-  visibleToResidents Boolean    @default(true)
-  createdById        String?    @db.Uuid
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  status             WorkStatus          @default(PLANNED)
+  visibleToResidents Boolean             @default(true)
+  createdById        String?             @db.Uuid
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   site         Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   vendor       Vendor?       @relation(fields: [vendorId, siteId], references: [id, siteId], onDelete: Restrict)
