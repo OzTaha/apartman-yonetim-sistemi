@@ -8,7 +8,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useState } from 'react';
 import { DataTable } from '@/components/data-table';
-import { ManagerOnly } from '@/components/manager-only';
+import { AdminOnly } from '@/components/manager-only';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -42,9 +42,9 @@ export const Route = createFileRoute('/_app/islem-gecmisi')({
     kisi: typeof s['kisi'] === 'string' ? s['kisi'] : undefined,
   }),
   component: () => (
-    <ManagerOnly allow={['AUDITOR']}>
+    <AdminOnly>
       <AuditPage />
-    </ManagerOnly>
+    </AdminOnly>
   ),
 });
 

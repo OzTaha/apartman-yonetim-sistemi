@@ -828,7 +828,7 @@ export class MeetingsController {
 
 @ApiTags('Genel kurul')
 @ApiBearerAuth()
-@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER', 'AUDITOR', 'RESIDENT')
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER', 'AUDITOR')
 @Controller('assemblies')
 export class AssembliesController {
   constructor(private readonly meetings: MeetingsService) {}

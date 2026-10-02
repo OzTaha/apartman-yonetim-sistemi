@@ -9,7 +9,8 @@ import {
 import { createZodDto } from 'nestjs-zod';
 import { dateOnly, toDateString } from '../../common/dates';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AuditorReadable, SiteScoped, TenantContext } from '../../tenancy/tenancy';
+import { PlatformAdminOnly } from '../../common/platform-admin.guard';
+import { SiteScoped, TenantContext } from '../../tenancy/tenancy';
 
 class AuditQueryDto extends createZodDto(auditQuerySchema) {}
 
@@ -92,7 +93,7 @@ export class AuditLogService {
 @ApiTags('İşlem geçmişi')
 @ApiBearerAuth()
 @SiteScoped('SITE_MANAGER')
-@AuditorReadable()
+@PlatformAdminOnly()
 @Controller('audit-logs')
 export class AuditLogController {
   constructor(private readonly logs: AuditLogService) {}

@@ -7,6 +7,15 @@ async function login(page: Page, identifier: string) {
   await page.getByRole('button', { name: 'Giriş yap' }).click();
 }
 
+async function switchPlace(page: Page, name: string) {
+  const switcher = page.getByRole('button', { name: 'Site değiştir' });
+  if (!(await switcher.isVisible())) {
+    await page.getByRole('button', { name: 'Menüyü aç/kapat' }).click();
+  }
+  await switcher.click();
+  await page.getByRole('menuitem', { name }).click();
+}
+
 async function expectNoHorizontalScroll(page: Page) {
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -63,6 +72,14 @@ test('borç durum yazısı iner, banka havalesi tahsilata dönüşür, işlem ge
   await page.screenshot({ path: info.outputPath('banka.png'), fullPage: true });
 
   await page.goto('/islem-gecmisi');
+  await expect(page).not.toHaveURL(/islem-gecmisi/);
+  await expect(page.getByRole('link', { name: 'İşlem geçmişi' })).toHaveCount(0);
+
+  await page.context().clearCookies();
+  await login(page, 'admin@ornek.com');
+  await expect(page).not.toHaveURL(/giris/, { timeout: 20_000 });
+  await switchPlace(page, 'Örnek Sitesi');
+  await page.goto('/islem-gecmisi');
   await expect(page.getByRole('heading', { name: 'İşlem geçmişi' })).toBeVisible();
   const row = page
     .getByText(/İçe aktarma/)
@@ -79,7 +96,7 @@ test('borç durum yazısı iner, banka havalesi tahsilata dönüşür, işlem ge
   await login(page, '05321000012');
   await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
   await page.goto('/islem-gecmisi');
-  await expect(page.getByRole('heading', { name: 'İşlem geçmişi' })).toBeVisible();
+  await expect(page).not.toHaveURL(/islem-gecmisi/);
   await page.goto('/banka-hareketleri');
   await expect(page).not.toHaveURL(/banka-hareketleri/);
 });

@@ -20,7 +20,7 @@ let app: NestExpressApplication;
 let prisma: PrismaService;
 let siteId: string;
 const units = {} as Record<'A1' | 'A2' | 'B1', string>;
-const tokens = {} as Record<'manager' | 'auditor' | 'blockManager' | 'resident', string>;
+const tokens = {} as Record<'admin' | 'manager' | 'auditor' | 'blockManager' | 'resident', string>;
 let bankId: string;
 
 const http = () => request(app.getHttpServer());
@@ -74,6 +74,15 @@ beforeAll(async () => {
       }),
     ),
   );
+  await prisma.user.create({
+    data: {
+      firstName: 'admin',
+      lastName: 'Kişi',
+      email: 'admin@ek.test',
+      passwordHash,
+      isPlatformAdmin: true,
+    },
+  });
   const site = await prisma.site.create({ data: { name: 'Ek Sitesi', kind: 'SITE' } });
   siteId = site.id;
   const blockA = await prisma.block.create({ data: { siteId, name: 'A' } });
@@ -110,6 +119,7 @@ beforeAll(async () => {
   await occupant(units.A2, 'Mehmet', 'Kaya');
   await occupant(units.B1, 'Can', 'Demir');
 
+  tokens.admin = await login('admin@ek.test');
   tokens.manager = await login('yonetici@ek.test');
   tokens.auditor = await login('denetci@ek.test');
   tokens.blockManager = await login('blok@ek.test');
@@ -312,11 +322,11 @@ describe('Banka hareketleri', () => {
 });
 
 describe('İşlem geçmişi', () => {
-  it('yönetici ve denetçi değişiklikleri kişi ve önce/sonra bilgisiyle görür', async () => {
+  it('sistem yöneticisi değişiklikleri kişi ve önce/sonra bilgisiyle görür', async () => {
     const res = await http()
       .get('/api/audit-logs')
       .query({ from: today, to: today })
-      .set(as(tokens.auditor))
+      .set(as(tokens.admin))
       .expect(200);
     const actions = res.body.items.map(
       (i: { entityType: string; action: string }) => `${i.entityType}:${i.action}`,
@@ -331,14 +341,14 @@ describe('İşlem geçmişi', () => {
     const filtered = await http()
       .get('/api/audit-logs')
       .query({ from: today, to: today, entityType: 'Clearance' })
-      .set(M())
+      .set(as(tokens.admin))
       .expect(200);
     expect(
       filtered.body.items.every((i: { entityType: string }) => i.entityType === 'Clearance'),
     ).toBe(true);
   });
 
-  it('şifre ve anahtar alanlarını göstermez; başka rollere kapalıdır', async () => {
+  it('şifre ve anahtar alanlarını göstermez; site yöneticisi dahil başka rollere kapalıdır', async () => {
     await prisma.auditLog.create({
       data: {
         siteId,
@@ -351,15 +361,17 @@ describe('İşlem geçmişi', () => {
     const res = await http()
       .get('/api/audit-logs')
       .query({ from: today, to: today, entityType: 'User' })
-      .set(M())
+      .set(as(tokens.admin))
       .expect(200);
     expect(res.body.items[0].after).toEqual({ nested: { name: 'Ali' } });
 
-    await http()
-      .get('/api/audit-logs')
-      .query({ from: today, to: today })
-      .set(as(tokens.blockManager))
-      .expect(403);
+    for (const token of [tokens.manager, tokens.auditor, tokens.blockManager]) {
+      await http()
+        .get('/api/audit-logs')
+        .query({ from: today, to: today })
+        .set(as(token))
+        .expect(403);
+    }
     await http()
       .get('/api/audit-logs')
       .query({ from: today, to: today })

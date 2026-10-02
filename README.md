@@ -114,9 +114,10 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
 - Bildirimler: yöneticilerde üst çubukta zil ve sol menüde okunmamış sayısıyla "Bildirimler" sayfası. Yeni bildirimler açık sekmeye anında gelir
   (Server-Sent Events, `/api/notifications/stream`).
 - Oturum: 15 dakikalık erişim token'ı (yalnızca bellekte) ve 30 günlük refresh token (httpOnly cookie).
-  Refresh token her kullanımda yenilenir. Eski bir token tekrar kullanılırsa kullanıcının tüm oturumları kapatılır.
-- Önemli değişiklikler `audit_logs` tablosuna kim/ne zaman/önce/sonra bilgisiyle yazılır. Site yöneticisi, sistem
-  yöneticisi ve denetçi bunları "İşlem geçmişi" sayfasında tarih, kayıt türü, işlem ve kişiye göre süzerek görür;
+  Refresh token her kullanımda yenilenir. Yenilemeden sonraki 30 saniye içinde eski token gelirse (sayfa yenileme, iki
+  sekme) yeni oturum verilir; daha sonra tekrar kullanılırsa kullanıcının tüm oturumları kapatılır.
+- Önemli değişiklikler `audit_logs` tablosuna kim/ne zaman/önce/sonra bilgisiyle yazılır. Yalnızca sistem yöneticisi
+  bunları "İşlem geçmişi" sayfasında tarih, kayıt türü, işlem ve kişiye göre süzerek görür;
   şifre ve anahtar alanları gösterilmez.
 
 ## Apartman ve site
@@ -204,8 +205,9 @@ Testler geliştirme verisine dokunmaz: her çalıştırmada sıfırlanan `apartm
   tamamlanınca kabul ve ret kararları site genelinde sıra numarası alır (karar defteri); hazirun ve kararlar kilitlenir.
   Bütçeye bağlı madde kabul edilirse bütçe "genel kurulda onaylandı" olarak işaretlenir.
 - PDF: toplantı tutanağı, imza sütunlu hazirun cetveli ve karar defteri.
-- Site yöneticisi yönetir, denetçi görür. Sakinler ve blok yöneticileri çağrısı yapılmış ve tamamlanmış toplantıları,
-  gündemi, kararları ve tutanağı "Genel kurul" sayfasında görür; hazirun cetvelini göremez.
+- Site yöneticisi yönetir, denetçi görür. Blok yöneticileri çağrısı yapılmış ve tamamlanmış toplantıları, gündemi,
+  kararları ve tutanağı "Genel kurul" sayfasında görür; hazirun cetvelini göremez. Sakinlerde bu menü yoktur, toplantı
+  çağrısını duyurulardan görürler.
 
 ## Çalışan ve görev takibi
 

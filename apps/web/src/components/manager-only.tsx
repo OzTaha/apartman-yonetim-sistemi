@@ -14,3 +14,9 @@ export function ManagerOnly({
   if (!(canManage(role) || allow.includes(role)) || !s.siteId) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
+
+export function AdminOnly({ children }: { children: ReactNode }) {
+  const s = useSession();
+  if (!s.user?.isPlatformAdmin || !s.siteId) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}

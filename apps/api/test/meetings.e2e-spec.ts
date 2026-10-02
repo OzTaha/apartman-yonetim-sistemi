@@ -20,7 +20,7 @@ let prisma: PrismaService;
 let siteId: string;
 let budgetId: string;
 const units = {} as Record<'A1' | 'A2' | 'B1' | 'B2', string>;
-const tokens = {} as Record<'manager' | 'auditor' | 'resident', string>;
+const tokens = {} as Record<'manager' | 'auditor' | 'resident' | 'blockManager', string>;
 
 const http = () => request(app.getHttpServer());
 const as = (token: string) => ({ Authorization: `Bearer ${token}`, 'X-Site-Id': siteId });
@@ -63,8 +63,8 @@ beforeAll(async () => {
 
   await prisma.$executeRawUnsafe('TRUNCATE TABLE users, sites CASCADE');
   const passwordHash = await hashPassword(PASSWORD);
-  const [manager, auditor, resident] = await Promise.all(
-    ['yonetici', 'denetci', 'sakin'].map((name) =>
+  const [manager, auditor, resident, blockManager] = await Promise.all(
+    ['yonetici', 'denetci', 'sakin', 'blok'].map((name) =>
       prisma.user.create({
         data: { firstName: name, lastName: 'Kişi', email: `${name}@kurul.test`, passwordHash },
       }),
@@ -87,7 +87,11 @@ beforeAll(async () => {
       { siteId, userId: manager!.id, role: 'SITE_MANAGER' },
       { siteId, userId: auditor!.id, role: 'AUDITOR' },
       { siteId, userId: resident!.id, role: 'RESIDENT' },
+      { siteId, userId: blockManager!.id, role: 'BLOCK_MANAGER' },
     ],
+  });
+  await prisma.blockManager.create({
+    data: { siteId, blockId: blockA.id, userId: blockManager!.id },
   });
   for (const [unitId, firstName, userId] of [
     [units.A1, 'Ayşe', resident!.id],
@@ -110,6 +114,7 @@ beforeAll(async () => {
   tokens.manager = await login('yonetici@kurul.test');
   tokens.auditor = await login('denetci@kurul.test');
   tokens.resident = await login('sakin@kurul.test');
+  tokens.blockManager = await login('blok@kurul.test');
 
   const budget = await http()
     .post('/api/budgets')
@@ -178,8 +183,9 @@ describe('Genel kurul', () => {
     await http().delete(`/api/budgets/${budgetId}`).set(M()).expect(409);
   });
 
-  it('çağrı sabitlenmiş duyuru olarak yayınlanır ve sakinler toplantıyı görür', async () => {
-    const before = await http().get('/api/assemblies').set(as(tokens.resident)).expect(200);
+  it('çağrı sabitlenmiş duyuru olarak yayınlanır; blok yöneticisi toplantıyı görür, sakinin genel kurul ekranı yoktur', async () => {
+    await http().get('/api/assemblies').set(as(tokens.resident)).expect(403);
+    const before = await http().get('/api/assemblies').set(as(tokens.blockManager)).expect(200);
     expect(before.body).toEqual([]);
     await http().get('/api/meetings').set(as(tokens.resident)).expect(403);
 
@@ -205,7 +211,7 @@ describe('Genel kurul', () => {
     await http().post(`/api/meetings/${meetingId}/call`).set(M()).send({}).expect(409);
     await http().delete(`/api/meetings/${meetingId}`).set(M()).expect(409);
 
-    const visible = await http().get('/api/assemblies').set(as(tokens.resident)).expect(200);
+    const visible = await http().get('/api/assemblies').set(as(tokens.blockManager)).expect(200);
     expect(visible.body).toHaveLength(1);
     expect(visible.body[0].items[0]).toMatchObject({
       title: 'Açılış ve yönetim raporu',
@@ -338,14 +344,14 @@ describe('Genel kurul', () => {
     const sheet = await pdf(`/api/meetings/${meetingId}/attendance.pdf`);
     expect(sheet.headers['content-disposition']).toContain('hazirun-cetveli');
 
-    const resident = await http().get('/api/assemblies').set(as(tokens.resident)).expect(200);
+    const resident = await http().get('/api/assemblies').set(as(tokens.blockManager)).expect(200);
     expect(resident.body[0]).toMatchObject({ status: 'HELD', heldSession: 'FIRST' });
     expect(resident.body[0].items[1]).toMatchObject({
       result: 'ACCEPTED',
       decisionNo: 1,
       resolution: 'İşletme projesi aynen kabul edildi.',
     });
-    await pdf(`/api/assemblies/${meetingId}/minutes.pdf`, tokens.resident);
+    await pdf(`/api/assemblies/${meetingId}/minutes.pdf`, tokens.blockManager);
     await http()
       .get(`/api/meetings/${meetingId}/attendance.pdf`)
       .set(as(tokens.resident))
@@ -394,7 +400,7 @@ describe('Genel kurul', () => {
       .expect(200);
     expect(cancelled.body.status).toBe('CANCELLED');
 
-    const resident = await http().get('/api/assemblies').set(as(tokens.resident)).expect(200);
+    const resident = await http().get('/api/assemblies').set(as(tokens.blockManager)).expect(200);
     expect(resident.body.map((m: { id: string }) => m.id)).toEqual([meetingId]);
 
     const info = await http().get(`/api/units/${units.A1}/removal`).set(M()).expect(200);

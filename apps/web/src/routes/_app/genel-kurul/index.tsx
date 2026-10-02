@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_app/genel-kurul/')({
 function AssemblyRoute() {
   const { siteId } = useSession();
   const role = useRole();
-  if (!siteId || !role) return <Navigate to="/" replace />;
+  if (!siteId || !role || role === 'RESIDENT') return <Navigate to="/" replace />;
   return canManage(role) || role === 'AUDITOR' ? <MeetingsPage /> : <ResidentMeetingsPage />;
 }
 

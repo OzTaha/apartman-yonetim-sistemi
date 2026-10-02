@@ -237,7 +237,7 @@ export function AppSidebar() {
     items.push({ to: '/sakinler', label: 'Sakinler', icon: Users });
   }
   if (manager) items.push({ to: '/yetkililer', label: 'Yetkililer', icon: ShieldCheck });
-  if (manager || auditor) {
+  if (s.user?.isPlatformAdmin && hasSite) {
     items.push({ to: '/islem-gecmisi', label: 'İşlem geçmişi', icon: History });
   }
   if (notifications) items.push({ to: '/bildirimler', label: 'Bildirimler', icon: Bell });
@@ -247,7 +247,9 @@ export function AppSidebar() {
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
   if (hasUnit) items.push({ to: '/taleplerim', label: 'Taleplerim', icon: MessageSquareWarning });
-  if (hasSite) items.push({ to: '/genel-kurul', label: 'Genel kurul', icon: Gavel });
+  if (hasSite && role !== 'RESIDENT') {
+    items.push({ to: '/genel-kurul', label: 'Genel kurul', icon: Gavel });
+  }
   if ((role === 'RESIDENT' || auditor) && hasSite) {
     items.push({ to: '/duyurular', label: 'Duyurular', icon: Megaphone });
   }
