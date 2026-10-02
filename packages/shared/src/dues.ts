@@ -54,6 +54,7 @@ export const duesPlanSchema = z.object({
   method: distributionMethodSchema,
   amountKurus: amountKurusSchema,
   validFrom: periodSchema,
+  updateUnpaid: z.boolean().optional(),
 });
 export type DuesPlanInput = z.input<typeof duesPlanSchema>;
 
@@ -185,6 +186,16 @@ export interface DuesSettingsDto {
 export interface ChargeCreateResultDto {
   created: number;
   totalKurus: Kurus;
+}
+
+export interface DuesPlanImpactDto {
+  periods: string[];
+  unpaidCount: number;
+  paidCount: number;
+}
+
+export interface DuesPlanCreateResultDto extends DuesPlanDto {
+  updatedCount: number;
 }
 
 export interface AccrualResultDto {

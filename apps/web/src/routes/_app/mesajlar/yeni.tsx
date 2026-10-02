@@ -229,7 +229,7 @@ function ComposePage() {
             />
           </Field>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <VariableButtons onInsert={insert} />
+            <VariableButtons text={text} onInsert={insert} />
             <SmsCounter text={text} channel={channel} />
           </div>
           <Button className="w-fit" disabled={checking} onClick={() => void review()}>

@@ -45,8 +45,9 @@ test('yönetici duyuru yayınlar, SMS ile bildirir, borçlulara hatırlatma gön
   await page.goto('/mesajlar/yeni');
   await expect(page.getByRole('heading', { name: 'Mesaj gönder' })).toBeVisible();
   await expect(page.locator('#msg-target')).toHaveText('Gecikmiş borcu olan daireler');
-  await page.getByRole('button', { name: '{borc}' }).click();
+  await page.getByRole('button', { name: 'Dairenin güncel borcu ekle' }).click();
   await expect(page.locator('#msg-body')).toHaveValue(/Yönetimi\{borc\}$/);
+  await expect(page.getByText("Örnek: Ayşe Yılmaz'a şöyle gider")).toBeVisible();
   await expectNoHorizontalScroll(page);
   await page.getByRole('button', { name: 'Devam' }).click();
   const confirm = page.getByRole('alertdialog');

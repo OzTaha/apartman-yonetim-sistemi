@@ -9,19 +9,33 @@ import {
   type AccrualResultDto,
   type ChargeTypeDto,
   type DistributionMethod,
+  type DuesPlanCreateResultDto,
   type DuesPlanDto,
+  type DuesPlanImpactDto,
   type DuesSettingsDto,
 } from '@apartman/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createFileRoute } from '@tanstack/react-router';
-import { CalendarPlus, Plus } from 'lucide-react';
+import { CalendarPlus, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { Field } from '@/components/form-field';
+import { InfoTip } from '@/components/info-tip';
 import { ManagerOnly } from '@/components/manager-only';
 import { LoadingRows, PageHeader } from '@/components/page';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,7 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, errorMessage } from '@/lib/api';
 import { todayIso } from '@/lib/format';
 import {
   useApiMutation,
@@ -114,26 +128,80 @@ function PlanCard() {
     }
   }, [amount.success, amount.data, units.data, w.method]);
 
+  const [pending, setPending] = useState<{ values: PlanOutput; impact: DuesPlanImpactDto } | null>(
+    null,
+  );
+  const [checking, setChecking] = useState(false);
+  const [removing, setRemoving] = useState<DuesPlanDto | null>(null);
+
   const create = useApiMutation(
-    (v: PlanOutput) =>
-      apiFetch<DuesPlanDto>('/dues/plans', {
+    (v: PlanOutput & { updateUnpaid: boolean }) =>
+      apiFetch<DuesPlanCreateResultDto>('/dues/plans', {
         method: 'POST',
-        body: { method: v.method, amountKurus: v.amount, validFrom: v.validFrom },
+        body: {
+          method: v.method,
+          amountKurus: v.amount,
+          validFrom: v.validFrom,
+          updateUnpaid: v.updateUnpaid,
+        },
       }),
     {
-      success: (p) => `Yeni aidat ${periodLabel(p.validFrom)} itibarıyla geçerli`,
-      onSuccess: () => form.reset({ method: 'EQUAL', amount: '', validFrom: currentPeriod() }),
+      success: (p) =>
+        p.updatedCount > 0
+          ? `Yeni aidat ${periodLabel(p.validFrom)} itibarıyla geçerli; ${p.updatedCount} dairenin ödenmemiş aidatı yeni tutara güncellendi`
+          : `Yeni aidat ${periodLabel(p.validFrom)} itibarıyla geçerli`,
+      onSuccess: () => {
+        setPending(null);
+        form.reset({ method: 'EQUAL', amount: '', validFrom: currentPeriod() });
+      },
     },
   );
+  const remove = useApiMutation(
+    (p: DuesPlanDto) => apiFetch<void>(`/dues/plans/${p.id}`, { method: 'DELETE' }),
+    { success: 'Aidat tanımı silindi', onSuccess: () => setRemoving(null) },
+  );
+
+  async function submit(values: PlanOutput) {
+    if (values.validFrom > currentPeriod()) {
+      return create.mutate({ ...values, updateUnpaid: false });
+    }
+    setChecking(true);
+    try {
+      const impact = await apiFetch<DuesPlanImpactDto>(
+        `/dues/plans/impact?validFrom=${values.validFrom}`,
+      );
+      if (impact.unpaidCount > 0) setPending({ values, impact });
+      else create.mutate({ ...values, updateUnpaid: false });
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setChecking(false);
+    }
+  }
 
   const current = plans.data?.find((p) => p.isCurrent);
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Aylık aidat</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle>Aylık aidat</CardTitle>
+          <InfoTip title="Aidat nasıl yazılır?" className="text-primary">
+            <p>
+              Buraya bir kez aidat tutarını yazarsınız. Sonra her ayın 1'inde gece, sistem bu tutarı
+              her daireye kendiliğinden borç olarak yazar. Sizin her ay bir şey yapmanız gerekmez.
+            </p>
+            <p>
+              Aidat artarsa yeni tutarı ve hangi aydan başlayacağını yazıp kaydedin. Eski aylar
+              değişmez, yeni tutar o aydan itibaren yazılır.
+            </p>
+            <p>
+              Yanlış bir tutar girdiyseniz aşağıdaki listeden çöp kutusu düğmesiyle silebilirsiniz.
+            </p>
+          </InfoTip>
+        </div>
         <CardDescription>
-          Aidat her ayın 1'inde tüm dairelere otomatik yazılır. Tutarı değiştirmek için yeni bir
-          tanım ekleyin; eski aylar etkilenmez.
+          Aidat her ayın 1'inde tüm dairelere kendiliğinden yazılır. Tutar değişirse yeni tutarı ve
+          başlayacağı ayı girin; eski aylar etkilenmez.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5">
@@ -158,7 +226,7 @@ function PlanCard() {
         <form
           className={cn('grid gap-4', proportional ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}
           noValidate
-          onSubmit={form.handleSubmit((v) => create.mutate(v))}
+          onSubmit={form.handleSubmit((v) => void submit(v))}
         >
           {proportional && (
             <Field label="Dağıtım" htmlFor="plan-method">
@@ -217,7 +285,10 @@ function PlanCard() {
             </p>
           )}
           <div className="sm:col-span-full">
-            <Button type="submit" disabled={create.isPending || Boolean(preview?.error)}>
+            <Button
+              type="submit"
+              disabled={create.isPending || checking || Boolean(preview?.error)}
+            >
               <Plus />
               Aidatı kaydet
             </Button>
@@ -226,7 +297,7 @@ function PlanCard() {
 
         {(plans.data?.length ?? 0) > 0 && (
           <div className="grid gap-2">
-            <p className="text-sm font-medium">Geçmiş tanımlar</p>
+            <p className="text-sm font-semibold">Girilen aidat tanımları</p>
             <ul className="divide-y rounded-md border text-sm">
               {plans.data!.map((p) => (
                 <li
@@ -237,6 +308,15 @@ function PlanCard() {
                   <span className="flex items-center gap-2 text-muted-foreground">
                     {periodLabel(p.validFrom)} itibarıyla
                     {p.isCurrent && <Badge>Geçerli</Badge>}
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-destructive"
+                      aria-label={`${planAmountText(p)}, ${periodLabel(p.validFrom)} tanımını sil`}
+                      onClick={() => setRemoving(p)}
+                    >
+                      <Trash2 />
+                    </Button>
                   </span>
                 </li>
               ))}
@@ -244,6 +324,88 @@ function PlanCard() {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bu ayın aidatı da değişsin mi?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="grid gap-2">
+                <p>
+                  {pending &&
+                    `${pending.impact.periods.map(periodLabel).join(', ')} aidatı dairelere daha önce eski tutarla yazıldı.`}
+                </p>
+                <p>
+                  "Evet" derseniz henüz ödenmemiş{' '}
+                  <strong className="text-foreground">
+                    {pending?.impact.unpaidCount} dairenin
+                  </strong>{' '}
+                  aidatı yeni tutara göre düzeltilir.
+                  {(pending?.impact.paidCount ?? 0) > 0 &&
+                    ` Ödemesi yapılmış ${pending!.impact.paidCount} dairenin aidatı değişmez.`}
+                </p>
+                <p>"Hayır" derseniz yeni tutar yalnızca bundan sonraki aylarda kullanılır.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <Button
+              variant="outline"
+              disabled={create.isPending}
+              onClick={() => pending && create.mutate({ ...pending.values, updateUnpaid: false })}
+            >
+              Hayır, sonraki aylar
+            </Button>
+            <AlertDialogAction
+              disabled={create.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (pending) create.mutate({ ...pending.values, updateUnpaid: true });
+              }}
+            >
+              Evet, güncelle
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bu aidat tanımı silinsin mi?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="grid gap-2">
+                <p>
+                  {removing &&
+                    `${planAmountText(removing)}, ${periodLabel(removing.validFrom)} itibarıyla`}
+                </p>
+                <p>
+                  Silinen tanım bundan sonra kullanılmaz; yerine bir önceki tanım geçerli olur. Bu
+                  tanımla daha önce dairelere yazılmış aidatlar silinmez, olduğu gibi kalır.
+                </p>
+                <p>
+                  Yanlış yazılmış bir aidatı Borçlar sayfasından iptal edebilir, doğru tutarı yine
+                  Borçlar sayfasından "Borç ekle" ile yazabilirsiniz.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={remove.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (removing) remove.mutate(removing);
+              }}
+            >
+              Evet, sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
@@ -320,10 +482,26 @@ function AccrueCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Aidatı şimdi oluştur</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle>Aidatı şimdi oluştur</CardTitle>
+          <InfoTip title="Bu düğme ne işe yarar?" className="text-primary">
+            <p>
+              Normalde aidat her ayın 1'inde kendiliğinden yazılır; bu düğmeye basmanız gerekmez.
+            </p>
+            <p>
+              Şu durumlarda kullanılır: sistemi ayın ortasında kullanmaya başladınız ve bu ayın
+              aidatını hemen yazmak istiyorsunuz, ya da ay içinde yeni daire eklediniz ve o daireye
+              de bu ayın aidatını yazmak istiyorsunuz.
+            </p>
+            <p>
+              Bir daireye aynı ayın aidatı iki kez yazılmaz, bu yüzden yanlışlıkla basmak sorun
+              olmaz.
+            </p>
+          </InfoTip>
+        </div>
         <CardDescription>
-          Otomatik oluşturma beklenmeden bir ayın aidatını yazar. Aynı daireye aynı ay iki kez
-          yazılmaz; sonradan eklenen daireleri borçlandırmak için de kullanılabilir.
+          Ayın 1'ini beklemeden seçtiğiniz ayın aidatını yazar. Bir daireye aynı ay iki kez
+          yazılmaz; ay içinde eklenen daireleri borçlandırmak için de kullanılabilir.
         </CardDescription>
       </CardHeader>
       <CardContent>

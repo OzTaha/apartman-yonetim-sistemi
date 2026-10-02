@@ -39,7 +39,11 @@ adı gösterilir.
    sayısı buna göre otomatik hesaplanır. Arsa payı hiç girilmezse genel kurul ekranlarında gösterilmez.
 3. **Davet:** Sakinin yanındaki menüden "Davet bağlantısı oluştur" ile bağlantı üretip sakine iletin; sakin kendi
    şifresini belirleyerek portala girer.
-4. **Aidat:** Aidat ayarlarından aylık tutarı ve son ödeme gününü girin. Aidat her ayın 1'inde kendiliğinden yazılır.
+4. **Aidat:** Aidat ayarlarından aylık tutarı ve son ödeme gününü girin. Aidat her ayın 1'inde gece tüm dairelere
+   kendiliğinden yazılır; her ay bir şey yapmanız gerekmez. Tutar değişince yeni tutarı ve başlayacağı ayı girin. Yeni
+   tutar içinde bulunulan ay için girilirse, bu ayın henüz ödenmemiş aidatlarının da güncellenip güncellenmeyeceği
+   sorulur; ödenmiş aidatlar değişmez. Yanlış girilen bir aidat tanımı listeden silinebilir; o tanımla daha önce yazılmış
+   aidatlar olduğu gibi kalır, gerekirse Borçlar sayfasından iptal edilir veya yeni borç eklenir.
 5. **Kasa:** Kasa ayarlarından hesaplarınızın açılış bakiyelerini girin.
 6. **Yetkililer (isteğe bağlı):** "Yetkililer" sayfasından blok yöneticisi ve denetçi atayın. Kişinin önce sakin olarak
    eklenmiş ve davet bağlantısıyla hesabını açmış olması gerekir.
@@ -66,7 +70,9 @@ adı gösterilir.
 - **Duyuru:** Duyurular sayfasından tüm sakinlere, bloklara veya seçili dairelere duyuru yayınlanır; kimin okuduğu
   görülür.
 - **Mesaj:** Mesajlar sayfasından borç hatırlatması, acil durum veya genel bilgi SMS/WhatsApp ile gönderilir.
-  İletişim onayı vermemiş sakinlere mesaj gönderilmez.
+  İletişim onayı vermemiş sakinlere mesaj gönderilmez. Mesaja "Kişiye özel bilgi ekle" düğmeleriyle {ad}, {daire},
+  {borc} ve {site} eklenebilir; her sakine kendi adı, dairesi ve borcuyla gider. Ekranda örnek bir sakine nasıl
+  gideceği gösterilir.
 - **Arıza ve talepler:** Sakinlerin bildirdiği arızalar "Arıza ve talepler" sayfasına ve bildirimlere düşer. Talebi
   açıp sakine yanıt yazın, "İşleme al", "Çözüldü" veya "Reddet" ile durumunu güncelleyin. "Görev oluştur" ile talebi
   bir çalışana verebilirsiniz; görev tamamlanınca talep de kapanır. Sakinler talep açmak için "Taleplerim" sayfasını

@@ -2,13 +2,18 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Injectable,
   Logger,
+  NotFoundException,
   type OnApplicationBootstrap,
+  Param,
+  ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
@@ -18,8 +23,11 @@ import {
   DistributionError,
   dueDateFor,
   periodLabel,
+  duesPlanSchema,
   type AccrualResultDto,
+  type DuesPlanCreateResultDto,
   type DuesPlanDto,
+  type DuesPlanImpactDto,
   type DuesSettingsDto,
   unitLabel,
 } from '@apartman/shared';
@@ -121,25 +129,105 @@ export class DuesService implements OnApplicationBootstrap {
     }));
   }
 
-  async createPlan(input: DuesPlanBody): Promise<DuesPlanDto> {
-    assertMethodAllowed(await loadSiteSettings(this.prisma, this.tenant.siteId), input.method);
-    const units = await this.distributableUnits();
-    if (units.length > 0) this.amountsOrThrow(input, units);
+  private async affectedPeriods(validFrom: string): Promise<string[]> {
+    const now = currentPeriod();
+    if (validFrom > now) return [];
+    const later = await this.tenant.db.duesPlan.findFirst({
+      where: { validFrom: { gt: validFrom, lte: now } },
+      orderBy: { validFrom: 'asc' },
+      select: { validFrom: true },
+    });
+    const rows = await this.tenant.db.charge.findMany({
+      where: {
+        accrualKey: { not: null },
+        cancelledAt: null,
+        period: { gte: validFrom, lte: now, ...(later ? { lt: later.validFrom } : {}) },
+      },
+      distinct: ['period'],
+      select: { period: true },
+      orderBy: { period: 'asc' },
+    });
+    return rows.map((r) => r.period!);
+  }
 
-    const plan = await this.tenant.db.duesPlan.create({
-      data: {
-        siteId: this.tenant.siteId,
-        method: input.method,
-        amountKurus: input.amountKurus,
-        validFrom: input.validFrom,
-        createdById: this.tenant.userId ?? null,
+  private accruedCharges(periods: string[]) {
+    return this.tenant.db.charge.findMany({
+      where: { accrualKey: { not: null }, cancelledAt: null, period: { in: periods } },
+      select: {
+        id: true,
+        unitId: true,
+        amountKurus: true,
+        _count: { select: { allocations: true } },
       },
     });
+  }
+
+  async planImpact(validFrom: string): Promise<DuesPlanImpactDto> {
+    const periods = await this.affectedPeriods(validFrom);
+    const charges = periods.length > 0 ? await this.accruedCharges(periods) : [];
+    const paidCount = charges.filter((c) => c._count.allocations > 0).length;
+    return { periods, unpaidCount: charges.length - paidCount, paidCount };
+  }
+
+  async createPlan(input: DuesPlanBody): Promise<DuesPlanCreateResultDto> {
+    assertMethodAllowed(await loadSiteSettings(this.prisma, this.tenant.siteId), input.method);
+    const units = await this.distributableUnits();
+    const amounts = units.length > 0 ? this.amountsOrThrow(input, units) : [];
+    const periods = input.updateUnpaid ? await this.affectedPeriods(input.validFrom) : [];
+
+    const { plan, updatedCount } = await this.tenant.db.$transaction(async (tx) => {
+      const plan = await tx.duesPlan.create({
+        data: {
+          siteId: this.tenant.siteId,
+          method: input.method,
+          amountKurus: input.amountKurus,
+          validFrom: input.validFrom,
+          createdById: this.tenant.userId ?? null,
+        },
+      });
+      if (periods.length === 0) return { plan, updatedCount: 0 };
+      await tx.$queryRaw`
+        SELECT id FROM units WHERE "siteId" = ${this.tenant.siteId}::uuid FOR UPDATE`;
+      const byUnit = new Map(units.map((u, i) => [u.id, amounts[i]!]));
+      const charges = await tx.charge.findMany({
+        where: { accrualKey: { not: null }, cancelledAt: null, period: { in: periods } },
+        select: {
+          id: true,
+          unitId: true,
+          amountKurus: true,
+          _count: { select: { allocations: true } },
+        },
+      });
+      let updatedCount = 0;
+      for (const c of charges) {
+        const amount = byUnit.get(c.unitId);
+        if (c._count.allocations > 0 || amount === undefined) continue;
+        if (amount === 0) {
+          await tx.charge.update({
+            where: { id: c.id },
+            data: {
+              cancelledAt: new Date(),
+              cancelReason: 'Aidat tanımı değişti',
+              cancelledById: this.tenant.userId ?? null,
+              duesPlanId: plan.id,
+            },
+          });
+        } else {
+          await tx.charge.update({
+            where: { id: c.id },
+            data: { amountKurus: amount, duesPlanId: plan.id },
+          });
+        }
+        updatedCount++;
+      }
+      return { plan, updatedCount };
+    });
+
     await this.audit.record({
       action: 'CREATE',
       entityType: 'DuesPlan',
       entityId: plan.id,
-      after: input,
+      after: { ...input, updatedCount },
     });
     return {
       id: plan.id,
@@ -148,7 +236,20 @@ export class DuesService implements OnApplicationBootstrap {
       validFrom: plan.validFrom,
       createdAt: plan.createdAt.toISOString(),
       isCurrent: plan.validFrom <= currentPeriod(),
+      updatedCount,
     };
+  }
+
+  async deletePlan(id: string): Promise<void> {
+    const plan = await this.tenant.db.duesPlan.findFirst({ where: { id } });
+    if (!plan) throw new NotFoundException('Aidat tanımı bulunamadı');
+    await this.tenant.db.duesPlan.delete({ where: { id } });
+    await this.audit.record({
+      action: 'DELETE',
+      entityType: 'DuesPlan',
+      entityId: id,
+      before: { method: plan.method, amountKurus: plan.amountKurus, validFrom: plan.validFrom },
+    });
   }
 
   async accrue(period: string): Promise<AccrualResultDto> {
@@ -305,9 +406,22 @@ export class DuesController {
     return this.dues.listPlans();
   }
 
+  @Get('plans/impact')
+  planImpact(@Query('validFrom') validFrom: string): Promise<DuesPlanImpactDto> {
+    const parsed = duesPlanSchema.shape.validFrom.safeParse(validFrom);
+    if (!parsed.success) throw new BadRequestException('Geçerli bir ay seçin');
+    return this.dues.planImpact(parsed.data);
+  }
+
   @Post('plans')
-  createPlan(@Body() body: DuesPlanBody): Promise<DuesPlanDto> {
+  createPlan(@Body() body: DuesPlanBody): Promise<DuesPlanCreateResultDto> {
     return this.dues.createPlan(body);
+  }
+
+  @Delete('plans/:id')
+  @HttpCode(204)
+  deletePlan(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.dues.deletePlan(id);
   }
 
   @Post('accrue')

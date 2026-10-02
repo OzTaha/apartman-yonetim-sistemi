@@ -9,7 +9,7 @@ async function login(page: Page, identifier: string) {
 
 async function switchPlace(page: Page, name: string) {
   const switcher = page.getByRole('button', { name: 'Site değiştir' });
-  if (!(await switcher.isVisible())) {
+  if ((page.viewportSize()?.width ?? 0) < 768) {
     await page.getByRole('button', { name: 'Menüyü aç/kapat' }).click();
   }
   await switcher.click();

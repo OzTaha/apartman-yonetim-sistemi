@@ -11,6 +11,7 @@ import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Field } from '@/components/form-field';
 import { ManagerOnly } from '@/components/manager-only';
+import { InfoTip } from '@/components/info-tip';
 import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -123,7 +124,7 @@ function ReminderForm({ settings }: { settings: ReminderSettingsDto }) {
         <Textarea id="rem-body" rows={4} value={body} onChange={(e) => setBody(e.target.value)} />
       </Field>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <VariableButtons onInsert={(v) => setBody((b) => `${b}${v}`)} />
+        <VariableButtons text={body} onInsert={(v) => setBody((b) => `${b}${v}`)} />
         <SmsCounter text={body} channel={channel} />
       </div>
       <Button type="submit" className="w-fit" disabled={save.isPending}>
@@ -151,12 +152,30 @@ function MessageSettingsPage() {
           Mesajlar
         </Link>
       </Button>
-      <PageHeader title="Şablonlar ve hatırlatma" />
+      <PageHeader
+        title="Şablonlar ve hatırlatma"
+        description="Sık gönderdiğiniz mesajları hazır tutun, borç hatırlatmasını otomatiğe bağlayın."
+      />
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Otomatik borç hatırlatması</CardTitle>
-          <CardDescription>Varsayılan olarak kapalıdır.</CardDescription>
+          <div className="flex items-center gap-2">
+            <CardTitle>Otomatik borç hatırlatması</CardTitle>
+            <InfoTip title="Otomatik hatırlatma nedir?" className="text-primary">
+              <p>
+                Açarsanız, son ödeme günü geçtiği hâlde aidatını ödemeyen sakinlere sistem
+                kendiliğinden bir hatırlatma mesajı gönderir. Sizin tek tek mesaj atmanız gerekmez.
+              </p>
+              <p>
+                "Kaç gün sonra" kısmına, son ödeme gününden kaç gün sonra gönderileceğini yazın.
+                Örneğin son ödeme günü ayın 10'u ise ve 3 yazarsanız mesaj ayın 13'ünde gider.
+              </p>
+              <p>Mesaj yalnızca iletişim izni ve telefon numarası olan sakinlere gider.</p>
+            </InfoTip>
+          </div>
+          <CardDescription>
+            Kapalıyken hiçbir mesaj kendiliğinden gönderilmez. Varsayılan olarak kapalıdır.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {reminder.isPending ? (
@@ -170,10 +189,28 @@ function MessageSettingsPage() {
       </Card>
 
       <Card className="max-w-2xl">
-        <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="grid gap-1.5">
-            <CardTitle>Mesaj şablonları</CardTitle>
-            <CardDescription>Mesaj gönderirken hazır metin olarak seçilir.</CardDescription>
+            <div className="flex items-center gap-2">
+              <CardTitle>Mesaj şablonları</CardTitle>
+              <InfoTip title="Şablon nedir?" className="text-primary">
+                <p>
+                  Şablon, sık gönderdiğiniz bir mesajın önceden yazılmış hâlidir. Örneğin her ay
+                  gönderdiğiniz aidat hatırlatmasını bir kez yazıp şablon olarak kaydedersiniz.
+                </p>
+                <p>
+                  Mesaj gönderirken şablonu seçmeniz yeterli olur; metni her seferinde yeniden
+                  yazmazsınız. İsterseniz göndermeden önce değiştirebilirsiniz.
+                </p>
+                <p>
+                  Metnin içine "Kişiye özel bilgi ekle" düğmeleriyle sakinin adını, dairesini veya
+                  borcunu ekleyebilirsiniz. Her sakine kendi bilgisiyle gider.
+                </p>
+              </InfoTip>
+            </div>
+            <CardDescription>
+              Mesaj gönderirken hazır metin olarak seçilir; her seferinde yeniden yazmanız gerekmez.
+            </CardDescription>
           </div>
           <Button size="sm" onClick={() => setCreating(true)}>
             <Plus />

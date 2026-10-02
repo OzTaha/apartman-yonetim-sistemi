@@ -509,3 +509,62 @@ describe('Ekstre ve raporlar', () => {
     await http().get('/api/reports/debts.docx').set(A()).expect(404);
   });
 });
+
+describe('Aidat tanımını düzeltme', () => {
+  it('yeni tutar bu ayın ödenmemiş aidatlarına uygulanır, ödenmiş aidata dokunulmaz; tanım silinir', async () => {
+    const blockB = await prisma.block.findFirstOrThrow({ where: { siteId: ids.siteB } });
+    const unitB2 = await prisma.unit.create({
+      data: { siteId: ids.siteB, blockId: blockB.id, number: '2' },
+    });
+    const first = await http()
+      .post('/api/dues/plans')
+      .set(B())
+      .send({ method: 'EQUAL', amountKurus: 100_000, validFrom: current })
+      .expect(201);
+    await http().post('/api/dues/accrue').set(B()).send({ period: current }).expect(200);
+    await http()
+      .post('/api/payments')
+      .set(B())
+      .send({ unitId: unitB2.id, amountKurus: 40_000, method: 'CASH', paidAt: today })
+      .expect(201);
+
+    const impact = await http()
+      .get(`/api/dues/plans/impact?validFrom=${current}`)
+      .set(B())
+      .expect(200);
+    expect(impact.body).toEqual({ periods: [current], unpaidCount: 1, paidCount: 1 });
+    await http().get('/api/dues/plans/impact?validFrom=2026-13').set(B()).expect(400);
+    const future = await http()
+      .get(`/api/dues/plans/impact?validFrom=${addMonths(current, 1)}`)
+      .set(B())
+      .expect(200);
+    expect(future.body).toEqual({ periods: [], unpaidCount: 0, paidCount: 0 });
+
+    const second = await http()
+      .post('/api/dues/plans')
+      .set(B())
+      .send({ method: 'EQUAL', amountKurus: 150_000, validFrom: current, updateUnpaid: true })
+      .expect(201);
+    expect(second.body.updatedCount).toBe(1);
+    const charges = await prisma.charge.findMany({
+      where: { siteId: ids.siteB, period: current, cancelledAt: null },
+    });
+    const amountOf = (unitId: string) => charges.find((c) => c.unitId === unitId)!.amountKurus;
+    expect(amountOf(ids.unitB1)).toBe(150_000);
+    expect(amountOf(unitB2.id)).toBe(100_000);
+
+    await http().delete(`/api/dues/plans/${first.body.id}`).set(A()).expect(404);
+    await http().delete(`/api/dues/plans/${second.body.id}`).set(B()).expect(204);
+    const plans = await http().get('/api/dues/plans').set(B()).expect(200);
+    expect(plans.body.map((p: { id: string }) => p.id)).toEqual([first.body.id]);
+    expect(
+      await prisma.charge.count({
+        where: { siteId: ids.siteB, period: current, cancelledAt: null },
+      }),
+    ).toBe(2);
+    const log = await prisma.auditLog.findFirst({
+      where: { entityType: 'DuesPlan', entityId: second.body.id, action: 'DELETE' },
+    });
+    expect(log).not.toBeNull();
+  });
+});

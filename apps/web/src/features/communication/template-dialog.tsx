@@ -115,6 +115,7 @@ export function TemplateDialog({
           </Field>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <VariableButtons
+              text={body}
               onInsert={(v) => form.setValue('body', `${body}${v}`, { shouldDirty: true })}
             />
             <SmsCounter text={body} channel="SMS" />
