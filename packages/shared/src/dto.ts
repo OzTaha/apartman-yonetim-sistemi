@@ -1,12 +1,13 @@
 import type { OccupancyType } from './schemas';
 
-export type SiteRole = 'SITE_MANAGER' | 'BLOCK_MANAGER' | 'AUDITOR' | 'RESIDENT';
+export type SiteRole = 'SITE_MANAGER' | 'BLOCK_MANAGER' | 'AUDITOR' | 'RESIDENT' | 'STAFF';
 
 export const siteRoleLabels: Record<SiteRole, string> = {
   SITE_MANAGER: 'Site yöneticisi',
   BLOCK_MANAGER: 'Blok yöneticisi',
   AUDITOR: 'Denetçi',
   RESIDENT: 'Sakin',
+  STAFF: 'Görevli',
 };
 
 export type SiteKind = 'APARTMENT' | 'SITE';
@@ -154,12 +155,13 @@ export interface InvitationDto {
 }
 
 export interface InvitationInfoDto {
+  kind: 'RESIDENT' | 'STAFF';
   firstName: string;
   lastName: string;
   siteName: string;
   siteKind: SiteKind;
-  blockName: string;
-  unitNumber: string;
+  blockName: string | null;
+  unitNumber: string | null;
   hasExistingAccount: boolean;
 }
 

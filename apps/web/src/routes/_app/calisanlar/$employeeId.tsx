@@ -10,6 +10,7 @@ import { ArrowLeft, ListPlus, Minus, Pencil, Power, Trash2 } from 'lucide-react'
 import { useState } from 'react';
 import { ManagerOnly } from '@/components/manager-only';
 import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
+import { EmployeeAccountCard } from '@/features/door/employee-account-card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -155,6 +156,12 @@ function EmployeeDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <EmployeeAccountCard
+        employeeId={e.id}
+        name={`${e.firstName} ${e.lastName}`}
+        hasPhone={Boolean(e.phone)}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="min-w-0">

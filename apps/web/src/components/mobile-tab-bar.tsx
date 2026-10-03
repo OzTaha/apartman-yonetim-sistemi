@@ -11,6 +11,7 @@ const preferred: Record<string, Path[]> = {
   SITE_MANAGER: ['/panel', '/aidat', '/tahsilatlar', '/talepler'],
   BLOCK_MANAGER: ['/daireler', '/tahsilatlar', '/talepler', '/duyurular'],
   AUDITOR: ['/panel', '/kasa', '/raporlar', '/duyurular'],
+  STAFF: ['/islerim', '/kapi'],
   NONE: ['/siteler', '/marka'],
 };
 
@@ -21,6 +22,7 @@ const shortLabels: Partial<Record<Path, string>> = {
   '/giderler': 'Giderler',
   '/siteler': 'Siteler',
   '/marka': 'Marka',
+  '/kapi': 'Kapı',
 };
 
 export function MobileTabBar() {

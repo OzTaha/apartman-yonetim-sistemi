@@ -97,6 +97,11 @@ adı gösterilir.
   bir çalışana verebilirsiniz; görev tamamlanınca talep de kapanır. Sakinler talep açmak için "Taleplerim" sayfasını
   veya Dairem'deki "Arıza bildir" düğmesini kullanır. Yönetim henüz işlem yapmadıysa sakin talebini geri çekebilir;
   geri çekme 6 saniye içinde "Geri al" ile iptal edilebilir.
+- **Görevli hesabı:** Çalışan sayfasındaki "Giriş hesabı" kartından davet bağlantısı oluşturup kapıcı, temizlikçi
+  veya bahçıvana gönderin (çalışanın telefonu kayıtlı olmalı). Görevli girişte yalnızca kendi işlerini ve çalışma
+  saatlerini görür, işi bitirince "Bitirdim" der. "Kapı sayfasını kullanabilir" işaretliyse gelen kargoları ve
+  misafirleri kaydeder; sakinlere telefon bildirimi gider. Sakinler Dairem sayfasından bekledikleri misafiri bildirir.
+  Kapı kayıtları kişisel veri olduğu için 6 ay sonra kendiliğinden silinir. "Hesabı kapat" ile erişim kaldırılır.
 - **Çalışanlar:** Vardiya planı, görevler ve tekrarlayan görevler "Çalışan ve görev" menüsündedir.
 - **İşletme projesi:** Yıllık bütçeyi "İşletme projesi" sayfasında hazırlayın: önümüzdeki 12 ayın tahmini giderlerini
   kalem kalem girin, sistem daire başına düşen aylık avans aidatı hesaplar. PDF'i genel kurula sunun; kabul edilince

@@ -34,11 +34,13 @@ import {
   FileSpreadsheet,
   Gavel,
   Vote,
+  ClipboardCheck,
+  DoorClosed,
   MessageSquareWarning,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { useCanReceiveNotifications, useNotificationCount } from '@/lib/notifications';
-import { useMyRequests } from '@/lib/queries';
+import { useMyRequests, useStaffMe } from '@/lib/queries';
 import { activeRole, canManage, useHasUnitInSite, useSession } from '@/lib/session';
 
 export interface NavItem {
@@ -48,6 +50,8 @@ export interface NavItem {
     | '/sakinler'
     | '/excel-aktarma'
     | '/anketler'
+    | '/islerim'
+    | '/kapi'
     | '/dairem'
     | '/siteler'
     | '/aidat'
@@ -103,7 +107,13 @@ export function useNavigation() {
   const manager = canManage(role) && hasSite;
   const blockManager = role === 'BLOCK_MANAGER' && hasSite;
   const auditor = role === 'AUDITOR' && hasSite;
+  const staff = role === 'STAFF' && hasSite;
+  const staffMe = useStaffMe(staff);
   const items: NavItem[] = [];
+  if (staff) {
+    items.push({ to: '/islerim', label: 'İşlerim', icon: ClipboardCheck });
+    if (staffMe.data?.doorAccess) items.push({ to: '/kapi', label: 'Kapı', icon: DoorClosed });
+  }
   if (manager || auditor) items.push({ to: '/panel', label: 'Panel', icon: LayoutDashboard });
   if (manager || blockManager) {
     items.push({ to: '/daireler', label: 'Daireler', icon: DoorOpen });
@@ -183,8 +193,11 @@ export function useNavigation() {
         { to: '/gorevler', label: 'Görevler', icon: ListChecks },
         { to: '/tekrarlayan-gorevler', label: 'Tekrarlayan görevler', icon: Repeat },
         { to: '/calisan-raporu', label: 'Çalışan raporu', icon: ClipboardList },
+        { to: '/kapi', label: 'Kapı (kargo, misafir)', icon: DoorClosed },
       ]
-    : [];
+    : blockManager
+      ? [{ to: '/kapi', label: 'Kapı (kargo, misafir)', icon: DoorClosed }]
+      : [];
   const contactItems: NavItem[] = [
     ...(manager || blockManager
       ? ([

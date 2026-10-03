@@ -301,6 +301,22 @@ const help: Record<string, PageHelp> = {
       '"Anketi bitir" ile oylamayı kapatın, sonra "Sonucu duyuru olarak paylaş" ile herkese duyurun.',
     ],
   },
+  '/islerim': {
+    title: 'İşlerim nedir?',
+    body: [
+      'Yöneticinin size verdiği işler ve çalışma saatleriniz bu sayfadadır.',
+      'Bir işe başladığınızda "Başladım", bitirdiğinizde "Bitirdim" düğmesine basın. Yönetici işin bittiğini hemen görür.',
+    ],
+  },
+  '/kapi': {
+    title: 'Kapı sayfası nedir?',
+    body: [
+      'Binaya gelen kargoları ve misafirleri buradan kaydedersiniz. Kayıt yapınca dairede oturanların telefonuna bildirim gider.',
+      'Kargo gelince "Kargo geldi"ye basın, daireyi seçin. Sakin kargoyu aldığında "Teslim et" deyin.',
+      'Sakinler beklediği misafiri önceden bildirebilir; "Beklenen misafirler" listesinde görünür. Misafir gelince "Geldi"ye basın.',
+      'Kişisel bilgi olduğu için kayıtlar 6 ay sonra kendiliğinden silinir.',
+    ],
+  },
   '/siteler': {
     title: 'Apartman ve siteler nedir?',
     body: [

@@ -15,5 +15,7 @@ export function useBranding(): BrandingDto {
     queryFn: () => apiFetch<BrandingDto>('/branding', { noRetry: true }),
     staleTime: 5 * 60_000,
   });
-  return branding.data ?? { appName: DEFAULT_APP_NAME, logoUrl: null, themeColor: storedThemeColor() };
+  return (
+    branding.data ?? { appName: DEFAULT_APP_NAME, logoUrl: null, themeColor: storedThemeColor() }
+  );
 }

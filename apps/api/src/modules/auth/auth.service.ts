@@ -130,16 +130,32 @@ export class AuthService {
 
   async getInvitation(token: string): Promise<InvitationInfoDto> {
     const invitation = await this.findValidInvitation(token);
-    const { occupancy } = invitation;
-    const existing = await this.findUserForOccupancy(occupancy);
+    const target = this.inviteTarget(invitation);
+    const existing = await this.findUserForOccupancy(target);
     return {
-      firstName: occupancy.firstName,
-      lastName: occupancy.lastName,
-      siteName: occupancy.site.name,
-      siteKind: occupancy.site.kind,
-      blockName: occupancy.unit.block.name,
-      unitNumber: occupancy.unit.number,
+      kind: invitation.employee ? 'STAFF' : 'RESIDENT',
+      firstName: target.firstName,
+      lastName: target.lastName,
+      siteName: target.site.name,
+      siteKind: target.site.kind,
+      blockName: invitation.occupancy?.unit.block.name ?? null,
+      unitNumber: invitation.occupancy?.unit.number ?? null,
       hasExistingAccount: Boolean(existing?.passwordHash),
+    };
+  }
+
+  private inviteTarget(invitation: Awaited<ReturnType<AuthService['findValidInvitation']>>) {
+    const target = invitation.occupancy ?? invitation.employee;
+    if (!target) throw new NotFoundException('Davet bağlantısı geçersiz');
+    return {
+      id: target.id,
+      siteId: target.siteId,
+      userId: target.userId,
+      firstName: target.firstName,
+      lastName: target.lastName,
+      email: invitation.occupancy?.email ?? null,
+      phone: target.phone,
+      site: target.site,
     };
   }
 
@@ -149,8 +165,9 @@ export class AuthService {
     meta: ClientMeta,
   ): Promise<{ result: AcceptInviteResultDto; refreshToken?: string }> {
     const invitation = await this.findValidInvitation(token);
-    const { occupancy } = invitation;
-    const existingBefore = await this.findUserForOccupancy(occupancy);
+    const target = this.inviteTarget(invitation);
+    const staff = Boolean(invitation.employee);
+    const existingBefore = await this.findUserForOccupancy(target);
     if (!existingBefore?.passwordHash && !input.password) {
       throw new BadRequestException('Hesabınız için bir şifre belirleyin');
     }
@@ -163,7 +180,7 @@ export class AuthService {
       });
       if (count !== 1) throw new GoneException('Bu davet bağlantısı zaten kullanılmış');
 
-      const existing = await this.findUserForOccupancy(occupancy, tx);
+      const existing = await this.findUserForOccupancy(target, tx);
       let userId: string;
       let status: AcceptInviteResultDto['status'];
 
@@ -179,10 +196,10 @@ export class AuthService {
       } else {
         const created = await tx.user.create({
           data: {
-            firstName: occupancy.firstName,
-            lastName: occupancy.lastName,
-            email: occupancy.email,
-            phone: occupancy.phone,
+            firstName: target.firstName,
+            lastName: target.lastName,
+            email: target.email,
+            phone: target.phone,
             passwordHash,
           },
         });
@@ -190,20 +207,34 @@ export class AuthService {
         status = 'ACTIVATED';
       }
 
-      await tx.occupancy.update({ where: { id: occupancy.id }, data: { userId } });
-      await tx.siteMembership.upsert({
-        where: { siteId_userId: { siteId: occupancy.siteId, userId } },
-        create: { siteId: occupancy.siteId, userId, role: 'RESIDENT' },
-        update: {},
-      });
+      if (staff) {
+        await tx.employee.update({ where: { id: target.id }, data: { userId } });
+        const membership = await tx.siteMembership.findUnique({
+          where: { siteId_userId: { siteId: target.siteId, userId } },
+        });
+        if (!membership) {
+          await tx.siteMembership.create({
+            data: { siteId: target.siteId, userId, role: 'STAFF' },
+          });
+        } else if (membership.role === 'RESIDENT') {
+          await tx.siteMembership.update({ where: { id: membership.id }, data: { role: 'STAFF' } });
+        }
+      } else {
+        await tx.occupancy.update({ where: { id: target.id }, data: { userId } });
+        await tx.siteMembership.upsert({
+          where: { siteId_userId: { siteId: target.siteId, userId } },
+          create: { siteId: target.siteId, userId, role: 'RESIDENT' },
+          update: {},
+        });
+      }
       return { userId, status };
     });
 
     await this.audit.record({
       action: 'INVITATION_ACCEPTED',
-      entityType: 'Occupancy',
-      entityId: occupancy.id,
-      siteId: occupancy.siteId,
+      entityType: staff ? 'Employee' : 'Occupancy',
+      entityId: target.id,
+      siteId: target.siteId,
       after: { userId: outcome.userId, status: outcome.status },
     });
 
@@ -241,6 +272,7 @@ export class AuthService {
             unit: { select: { number: true, block: { select: { name: true } } } },
           },
         },
+        employee: { include: { site: { select: { name: true, kind: true } } } },
       },
     });
     if (!invitation) throw new NotFoundException('Davet bağlantısı geçersiz');

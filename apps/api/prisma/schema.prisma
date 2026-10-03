@@ -18,6 +18,7 @@ enum SiteRole {
   BLOCK_MANAGER
   AUDITOR
   RESIDENT
+  STAFF
 }
 
 enum OccupancyType {
@@ -155,6 +156,7 @@ model User {
   passwordResets    PasswordReset[]
   notifications     Notification[]
   pushSubscriptions PushSubscription[]
+  employees         Employee[]
   managedBlocks     BlockManager[]
   serviceRequests   ServiceRequest[]
 
@@ -199,6 +201,8 @@ model Site {
   recurringTasks    RecurringTask[]
   announcements     Announcement[]
   polls             Poll[]
+  packages          Package[]
+  visitors          Visitor[]
   announcementReads AnnouncementRead[]
   messageTemplates  MessageTemplate[]
   campaigns         MessageCampaign[]
@@ -284,6 +288,8 @@ model Unit {
   occupancies Occupancy[]
   charges     Charge[]
   pollVotes   PollVote[]
+  packages    Package[]
+  visitors    Visitor[]
   payments    Payment[]
   intents     PaymentIntent[]
   requests    ServiceRequest[]
@@ -329,17 +335,20 @@ model Occupancy {
 model Invitation {
   id          String    @id @default(uuid(7)) @db.Uuid
   siteId      String    @db.Uuid
-  occupancyId String    @db.Uuid
+  occupancyId String?   @db.Uuid
+  employeeId  String?   @db.Uuid
   tokenHash   String    @unique
   expiresAt   DateTime
   usedAt      DateTime?
   createdById String?   @db.Uuid
   createdAt   DateTime  @default(now())
 
-  site      Site      @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  occupancy Occupancy @relation(fields: [occupancyId, siteId], references: [id, siteId], onDelete: Cascade)
+  site      Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  occupancy Occupancy? @relation(fields: [occupancyId, siteId], references: [id, siteId], onDelete: Cascade)
+  employee  Employee?  @relation(fields: [employeeId, siteId], references: [id, siteId], onDelete: Cascade)
 
   @@index([occupancyId])
+  @@index([employeeId])
   @@map("invitations")
 }
 
@@ -688,25 +697,30 @@ model MonthClosing {
 }
 
 model Employee {
-  id        String       @id @default(uuid(7)) @db.Uuid
-  siteId    String       @db.Uuid
-  firstName String
-  lastName  String
-  role      EmployeeRole
-  phone     String?
-  startDate DateTime?    @db.Date
-  notes     String?
-  isActive  Boolean      @default(true)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id         String       @id @default(uuid(7)) @db.Uuid
+  siteId     String       @db.Uuid
+  firstName  String
+  lastName   String
+  role       EmployeeRole
+  phone      String?
+  startDate  DateTime?    @db.Date
+  notes      String?
+  isActive   Boolean      @default(true)
+  userId     String?      @db.Uuid
+  doorAccess Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
   site           Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  invitations    Invitation[]
   shifts         Shift[]
   tasks          Task[]
   recurringTasks RecurringTask[]
   transactions   Transaction[]
 
   @@unique([id, siteId])
+  @@unique([siteId, userId])
   @@index([siteId])
   @@map("employees")
 }
@@ -1318,4 +1332,48 @@ model PollVote {
 
   @@unique([pollId, unitId])
   @@map("poll_votes")
+}
+
+model Package {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  siteId        String    @db.Uuid
+  unitId        String    @db.Uuid
+  carrier       String?
+  note          String?
+  receivedAt    DateTime  @default(now())
+  receivedById  String?   @db.Uuid
+  deliveredAt   DateTime?
+  deliveredById String?   @db.Uuid
+  deliveredTo   String?
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  unit Unit @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Cascade)
+
+  @@unique([id, siteId])
+  @@index([siteId, deliveredAt])
+  @@index([unitId])
+  @@map("packages")
+}
+
+model Visitor {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  siteId            String    @db.Uuid
+  unitId            String    @db.Uuid
+  name              String
+  plate             String?
+  note              String?
+  expectedOn        DateTime? @db.Date
+  arrivedAt         DateTime?
+  createdById       String?   @db.Uuid
+  createdByResident Boolean   @default(false)
+  arrivalById       String?   @db.Uuid
+  createdAt         DateTime  @default(now())
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  unit Unit @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Cascade)
+
+  @@unique([id, siteId])
+  @@index([siteId, expectedOn])
+  @@index([unitId])
+  @@map("visitors")
 }

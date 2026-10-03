@@ -24,6 +24,8 @@ import { Route as AppFirmalarRouteImport } from './routes/_app/firmalar'
 import { Route as AppGelirGiderRouteImport } from './routes/_app/gelir-gider'
 import { Route as AppGiderlerRouteImport } from './routes/_app/giderler'
 import { Route as AppIslemGecmisiRouteImport } from './routes/_app/islem-gecmisi'
+import { Route as AppIslerimRouteImport } from './routes/_app/islerim'
+import { Route as AppKapiRouteImport } from './routes/_app/kapi'
 import { Route as AppKasaRouteImport } from './routes/_app/kasa'
 import { Route as AppKasaAyarlariRouteImport } from './routes/_app/kasa-ayarlari'
 import { Route as AppMarkaRouteImport } from './routes/_app/marka'
@@ -136,6 +138,16 @@ const AppGiderlerRoute = AppGiderlerRouteImport.update({
 const AppIslemGecmisiRoute = AppIslemGecmisiRouteImport.update({
   id: '/islem-gecmisi',
   path: '/islem-gecmisi',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIslerimRoute = AppIslerimRouteImport.update({
+  id: '/islerim',
+  path: '/islerim',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKapiRoute = AppKapiRouteImport.update({
+  id: '/kapi',
+  path: '/kapi',
   getParentRoute: () => AppRoute,
 } as any)
 const AppKasaRoute = AppKasaRouteImport.update({
@@ -350,6 +362,8 @@ export interface FileRoutesByFullPath {
   '/gelir-gider': typeof AppGelirGiderRoute
   '/giderler': typeof AppGiderlerRoute
   '/islem-gecmisi': typeof AppIslemGecmisiRoute
+  '/islerim': typeof AppIslerimRoute
+  '/kapi': typeof AppKapiRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/marka': typeof AppMarkaRoute
@@ -404,6 +418,8 @@ export interface FileRoutesByTo {
   '/gelir-gider': typeof AppGelirGiderRoute
   '/giderler': typeof AppGiderlerRoute
   '/islem-gecmisi': typeof AppIslemGecmisiRoute
+  '/islerim': typeof AppIslerimRoute
+  '/kapi': typeof AppKapiRoute
   '/kasa': typeof AppKasaRoute
   '/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/marka': typeof AppMarkaRoute
@@ -461,6 +477,8 @@ export interface FileRoutesById {
   '/_app/gelir-gider': typeof AppGelirGiderRoute
   '/_app/giderler': typeof AppGiderlerRoute
   '/_app/islem-gecmisi': typeof AppIslemGecmisiRoute
+  '/_app/islerim': typeof AppIslerimRoute
+  '/_app/kapi': typeof AppKapiRoute
   '/_app/kasa': typeof AppKasaRoute
   '/_app/kasa-ayarlari': typeof AppKasaAyarlariRoute
   '/_app/marka': typeof AppMarkaRoute
@@ -519,6 +537,8 @@ export interface FileRouteTypes {
     | '/gelir-gider'
     | '/giderler'
     | '/islem-gecmisi'
+    | '/islerim'
+    | '/kapi'
     | '/kasa'
     | '/kasa-ayarlari'
     | '/marka'
@@ -573,6 +593,8 @@ export interface FileRouteTypes {
     | '/gelir-gider'
     | '/giderler'
     | '/islem-gecmisi'
+    | '/islerim'
+    | '/kapi'
     | '/kasa'
     | '/kasa-ayarlari'
     | '/marka'
@@ -629,6 +651,8 @@ export interface FileRouteTypes {
     | '/_app/gelir-gider'
     | '/_app/giderler'
     | '/_app/islem-gecmisi'
+    | '/_app/islerim'
+    | '/_app/kapi'
     | '/_app/kasa'
     | '/_app/kasa-ayarlari'
     | '/_app/marka'
@@ -783,6 +807,20 @@ declare module '@tanstack/react-router' {
       path: '/islem-gecmisi'
       fullPath: '/islem-gecmisi'
       preLoaderRoute: typeof AppIslemGecmisiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/islerim': {
+      id: '/_app/islerim'
+      path: '/islerim'
+      fullPath: '/islerim'
+      preLoaderRoute: typeof AppIslerimRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/kapi': {
+      id: '/_app/kapi'
+      path: '/kapi'
+      fullPath: '/kapi'
+      preLoaderRoute: typeof AppKapiRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/kasa': {
@@ -1074,6 +1112,8 @@ interface AppRouteChildren {
   AppGelirGiderRoute: typeof AppGelirGiderRoute
   AppGiderlerRoute: typeof AppGiderlerRoute
   AppIslemGecmisiRoute: typeof AppIslemGecmisiRoute
+  AppIslerimRoute: typeof AppIslerimRoute
+  AppKapiRoute: typeof AppKapiRoute
   AppKasaRoute: typeof AppKasaRoute
   AppKasaAyarlariRoute: typeof AppKasaAyarlariRoute
   AppMarkaRoute: typeof AppMarkaRoute
@@ -1127,6 +1167,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppGelirGiderRoute: AppGelirGiderRoute,
   AppGiderlerRoute: AppGiderlerRoute,
   AppIslemGecmisiRoute: AppIslemGecmisiRoute,
+  AppIslerimRoute: AppIslerimRoute,
+  AppKapiRoute: AppKapiRoute,
   AppKasaRoute: AppKasaRoute,
   AppKasaAyarlariRoute: AppKasaAyarlariRoute,
   AppMarkaRoute: AppMarkaRoute,

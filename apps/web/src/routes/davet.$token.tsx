@@ -93,7 +93,10 @@ function InvitationPage() {
   }
 
   const invitation = info.data;
-  const unitText = `${invitation.siteName} · ${unitLabel(invitation.siteKind, invitation.blockName, invitation.unitNumber)}`;
+  const unitText =
+    invitation.kind === 'STAFF' || !invitation.unitNumber
+      ? `${invitation.siteName} · Görevli`
+      : `${invitation.siteName} · ${unitLabel(invitation.siteKind, invitation.blockName ?? '', invitation.unitNumber)}`;
 
   if (linked) {
     return (

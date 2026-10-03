@@ -1,5 +1,10 @@
 import type {
   ContactDto,
+  DoorOverviewDto,
+  DoorUnitDto,
+  EmployeeAccountDto,
+  MyDoorDto,
+  StaffMeDto,
   PollDetailDto,
   PollDto,
   ResidentPollDto,
@@ -295,6 +300,11 @@ export const useStaffReport = (from: string, to: string) =>
 const SITE_SCOPED = new Set([
   'blocks',
   'polls',
+  'staff-me',
+  'door',
+  'door-units',
+  'my-door',
+  'employee-account',
   'poll',
   'my-polls',
   'contacts',
@@ -411,6 +421,14 @@ export const useMessageTemplates = () =>
 export const useReminderSettings = () =>
   useSiteQuery<ReminderSettingsDto>('reminder-settings', '/reminder-settings');
 
+export const useStaffMe = (enabled = true) =>
+  useSiteQuery<StaffMeDto>('staff-me', '/staff/me', null, enabled);
+export const useDoor = () => useSiteQuery<DoorOverviewDto>('door', '/door');
+export const useDoorUnits = () => useSiteQuery<DoorUnitDto[]>('door-units', '/door/units');
+export const useMyDoor = (enabled = true) =>
+  useSiteQuery<MyDoorDto>('my-door', '/door/mine', null, enabled);
+export const useEmployeeAccount = (id: string) =>
+  useSiteQuery<EmployeeAccountDto>('employee-account', `/employees/${id}/account`, id);
 export const usePolls = () => useSiteQuery<PollDto[]>('polls', '/polls');
 export const usePoll = (id: string) => useSiteQuery<PollDetailDto>('poll', `/polls/${id}`, id);
 export const useMyPolls = () => useSiteQuery<ResidentPollDto[]>('my-polls', '/polls/mine');

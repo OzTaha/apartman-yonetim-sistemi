@@ -42,6 +42,8 @@ export const TENANT_MODELS: ReadonlySet<string> = new Set([
   'Poll',
   'PollOption',
   'PollVote',
+  'Package',
+  'Visitor',
 ]);
 
 const WHERE_OPERATIONS = new Set([

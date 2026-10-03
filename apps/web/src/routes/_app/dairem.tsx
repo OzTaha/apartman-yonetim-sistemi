@@ -25,6 +25,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { InfoTip } from '@/components/info-tip';
 import { PushPrompt } from '@/components/push-settings';
+import { MyDoorCard } from '@/features/door/my-door-card';
 import { EmptyState, PageHeader } from '@/components/page';
 import { Tour, type TourStep } from '@/components/tour';
 import { Button } from '@/components/ui/button';
@@ -539,6 +540,9 @@ function MyUnitsPage() {
               <UnitDetails occupancy={o} />
             </section>
           ))}
+          <MyDoorCard
+            occupancies={occupancies.filter((o) => o.siteId === occupancies[0]!.siteId)}
+          />
           {sites.map(([siteId, s]) => (
             <Contacts key={siteId} siteId={siteId} siteName={s.name} kind={s.kind} />
           ))}
