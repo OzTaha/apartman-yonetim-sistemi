@@ -45,6 +45,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import type { TenantClient } from '../../tenancy/tenant-extension';
 import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
+import { PushService } from '../push/push';
 import { cleanFileName, FileTooLargeFilter, type UploadedFileData } from '../finance/attachments';
 import { nextCounter } from '../finance/finance.ledger';
 import { FinanceModule } from '../finance/finance.module';
@@ -164,6 +165,7 @@ export class RequestsService {
     private readonly audit: AuditService,
     private readonly storage: FileStorage,
     private readonly notifications: NotificationsService,
+    private readonly push: PushService,
   ) {}
 
   async mine(): Promise<MyRequestDto[]> {
@@ -418,11 +420,17 @@ export class RequestsService {
       before: { status: row.status },
       after: input,
     });
+    this.push.send([row.createdById], {
+      title: 'Talebiniz güncellendi',
+      body: `"${row.title}" talebinizin durumu: ${requestStatusLabels[input.status]}`,
+      url: `/taleplerim/${id}`,
+      tag: `request-${id}`,
+    });
     return this.get(id);
   }
 
   async staffComment(id: string, input: RequestCommentDto): Promise<ServiceRequestDetailDto> {
-    await this.findScoped(id);
+    const row = await this.findScoped(id);
     await this.tenant.db.$transaction(async (tx) => {
       await tx.serviceRequestEvent.create({
         data: this.staffEvent(id, { kind: 'COMMENT', note: input.note }),
@@ -435,6 +443,12 @@ export class RequestsService {
       entityType: 'ServiceRequest',
       entityId: id,
       after: input,
+    });
+    this.push.send([row.createdById], {
+      title: 'Yönetim talebinize yanıt yazdı',
+      body: input.note.length > 140 ? `${input.note.slice(0, 137)}…` : input.note,
+      url: `/taleplerim/${id}`,
+      tag: `request-${id}`,
     });
     return this.get(id);
   }

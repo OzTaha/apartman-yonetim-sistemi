@@ -24,6 +24,7 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { InfoTip } from '@/components/info-tip';
+import { PushPrompt } from '@/components/push-settings';
 import { EmptyState, PageHeader } from '@/components/page';
 import { Tour, type TourStep } from '@/components/tour';
 import { Button } from '@/components/ui/button';
@@ -519,6 +520,7 @@ function MyUnitsPage() {
           {occupancies.map((o, i) => (
             <MyUnit key={o.occupancyId} occupancy={o} first={i === 0} />
           ))}
+          <PushPrompt />
           {sites.map(([siteId, s]) => (
             <UnreadAnnouncements key={siteId} siteId={siteId} siteName={s.name} />
           ))}

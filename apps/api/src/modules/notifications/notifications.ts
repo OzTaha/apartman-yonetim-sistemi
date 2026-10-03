@@ -28,6 +28,7 @@ import {
   type ServiceRequestNotificationData,
 } from '@apartman/shared';
 import { createZodDto } from 'nestjs-zod';
+import { PushService } from '../push/push';
 import { filter, interval, map, merge, type Observable, Subject } from 'rxjs';
 import { type AuthUser, CurrentUser, Public } from '../../common/auth-user';
 import { activeOn } from '../../common/dates';
@@ -100,7 +101,27 @@ export class NotificationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly hub: NotificationHub,
+    private readonly push: PushService,
   ) {}
+
+  private pushRows(
+    rows: {
+      userId: string;
+      title: string;
+      body: string;
+      subjectKey: string;
+      site: { name: string } | null;
+    }[],
+  ) {
+    for (const row of rows) {
+      this.push.send([row.userId], {
+        title: row.site ? `${row.title} · ${row.site.name}` : row.title,
+        body: row.body,
+        url: '/bildirimler',
+        tag: row.subjectKey,
+      });
+    }
+  }
 
   async list(userId: string, onlyUnread: boolean): Promise<NotificationDto[]> {
     const rows = await this.prisma.notification.findMany({
@@ -205,6 +226,7 @@ export class NotificationsService {
     for (const row of rows) {
       this.hub.emit(row.userId, { kind: 'created', notification: toDto(row) });
     }
+    this.pushRows(rows);
   }
 
   async discard(subjectKey: string): Promise<void> {
@@ -345,6 +367,7 @@ export class NotificationsService {
       for (const row of rows) {
         this.hub.emit(row.userId, { kind: 'created', notification: toDto(row) });
       }
+      this.pushRows(rows);
     }
     return {
       message: 'Talebiniz yönetime iletildi. Yönetim size şifre yenileme bağlantısı gönderecek.',

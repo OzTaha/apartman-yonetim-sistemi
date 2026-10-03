@@ -154,6 +154,7 @@ model User {
   paymentIntents    PaymentIntent[]
   passwordResets    PasswordReset[]
   notifications     Notification[]
+  pushSubscriptions PushSubscription[]
   managedBlocks     BlockManager[]
   serviceRequests   ServiceRequest[]
 
@@ -1231,4 +1232,28 @@ model MeetingAttendance {
 
   @@unique([meetingId, unitId])
   @@map("meeting_attendance")
+}
+
+model PushSubscription {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  userId        String    @db.Uuid
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  userAgent     String?
+  createdAt     DateTime  @default(now())
+  lastSuccessAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model AppSecret {
+  key       String   @id
+  value     String
+  createdAt DateTime @default(now())
+
+  @@map("app_secrets")
 }

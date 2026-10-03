@@ -46,6 +46,7 @@ import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditorReadable, SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
+import { PushService } from '../push/push';
 import {
   assertDateOpen,
   defaultAccountFor,
@@ -66,6 +67,7 @@ export class PaymentsService {
     private readonly tenant: TenantContext,
     private readonly audit: AuditService,
     private readonly documents: DocumentsService,
+    private readonly push: PushService,
   ) {}
 
   async list(query: PaymentListQueryDto): Promise<PaymentDto[]> {
@@ -161,6 +163,19 @@ export class PaymentsService {
       entityId: paymentId,
       after: dto,
     });
+    const residents = await this.tenant.db.occupancy.findMany({
+      where: { unitId: input.unitId, userId: { not: null }, ...activeOn() },
+      select: { userId: true },
+    });
+    this.push.send(
+      residents.map((r) => r.userId!),
+      {
+        title: 'Ödemeniz alındı',
+        body: `${formatKurusTl(dto.amountKurus)} ödemeniz kaydedildi. Makbuzunuz Dairem sayfasında.`,
+        url: '/dairem',
+        tag: `payment-${paymentId}`,
+      },
+    );
     return dto;
   }
 

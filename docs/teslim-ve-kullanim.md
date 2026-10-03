@@ -15,6 +15,12 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 Her kullanıcı yazı boyutunu (Normal, Büyük, Çok büyük) ve açık/koyu görünümü üst çubukta bildirim zilinin yanındaki
 güneş/ay düğmesinden kendi cihazı için seçebilir. Telefonda menüye alttaki çubuktan ulaşılır.
 
+**Telefon bildirimleri:** Kullanıcılar Dairem veya Panel sayfasındaki "Bildirimleri aç" kartıyla ya da kullanıcı
+menüsü > "Telefon bildirimleri" bölümünden telefonlarına ücretsiz bildirim alabilir. Sakinlere yeni duyuru, alınan
+ödeme ve talep yanıtları; yöneticilere yeni arıza talepleri ve şifre talepleri bildirilir. iPhone'da bildirim için
+uygulama önce Safari'de Paylaş > "Ana Ekrana Ekle" ile eklenmeli ve ana ekrandan açılmalıdır (iOS 16.4 ve sonrası).
+Bildirim anahtarı sunucuda ilk açılışta kendiliğinden üretilir ve veritabanında saklanır.
+
 Her rol (sistem yöneticisi, site yöneticisi, blok yöneticisi, denetçi) ilk girişte kendi açılış sayfasında kısa bir
 tanıtım turu görür. Tüm sayfaların başlığındaki "i" düğmesi o sayfanın ne işe yaradığını örnekle anlatır. Yöneticinin
 panelindeki "Bugün yapılacaklar" kartı bekleyen işleri (geciken borçlar, yeni talepler, günü gelen görevler, bugün

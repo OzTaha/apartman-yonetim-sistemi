@@ -26,12 +26,14 @@ import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SiteRoles, SiteScoped, TenantContext } from '../../tenancy/tenancy';
 import { AuditService } from '../audit/audit.service';
+import { PushService } from '../push/push';
 import { attachmentSelect, toAttachmentDto } from '../finance/finance.mapper';
 import { FileStorage } from '../finance/storage';
 import { compareUnits } from '../residents/occupancy.mapper';
 import {
   announcementStats,
   audienceOf,
+  type AudienceTarget,
   portalMembers,
   residentAnnouncementWhere,
 } from './audience';
@@ -57,6 +59,7 @@ export class AnnouncementsService {
     private readonly audit: AuditService,
     private readonly storage: FileStorage,
     private readonly campaigns: CampaignsService,
+    private readonly push: PushService,
   ) {}
 
   async list(): Promise<AnnouncementDto[]> {
@@ -119,7 +122,28 @@ export class AnnouncementsService {
         { announcementId: created.id },
       );
     }
+    await this.pushToAudience(created.title, {
+      audience: input.audience,
+      blockIds: input.blockIds ?? [],
+      unitIds: input.unitIds ?? [],
+    });
     return this.one(created.id);
+  }
+
+  private async pushToAudience(title: string, target: AudienceTarget) {
+    const [members, site] = await Promise.all([
+      portalMembers(this.tenant),
+      this.prisma.site.findUnique({ where: { id: this.tenant.siteId }, select: { name: true } }),
+    ]);
+    this.push.send(
+      audienceOf(target, members).map((m) => m.userId),
+      {
+        title: `Yeni duyuru · ${site?.name ?? ''}`,
+        body: title,
+        url: '/duyurular',
+        tag: 'announcement',
+      },
+    );
   }
 
   async update(id: string, input: AnnouncementUpdateDto): Promise<AnnouncementDto> {

@@ -4,6 +4,7 @@ import { ArrowRight, HandCoins, Minus } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ManagerOnly } from '@/components/manager-only';
 import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
+import { PushPrompt } from '@/components/push-settings';
 import { Tour } from '@/components/tour';
 import { TodayCard } from '@/features/dashboard/today-card';
 import { auditorTour, managerTour } from '@/features/dashboard/tours';
@@ -155,6 +156,7 @@ function DashboardPage() {
       ) : d ? (
         <>
           {full && <TodayCard dashboard={d} canSeeStaff={full} />}
+          <PushPrompt />
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3" data-tour="stats">
             <Stat label="Toplam daire" value={String(d.unitCount)} to="/daireler" />
             <Stat
