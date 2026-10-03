@@ -23,3 +23,4 @@ export * from './budget';
 export * from './meetings';
 export * from './imports';
 export * from './push';
+export * from './polls';

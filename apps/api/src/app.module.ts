@@ -14,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CommunicationModule } from './modules/communication/communication.module';
 import { BankImportModule } from './modules/finance/bank-import';
 import { DataImportModule } from './modules/imports/data-import';
+import { PollsModule } from './modules/polls/polls';
 import { PushModule } from './modules/push/push';
 import { BlocksModule } from './modules/blocks/blocks';
 import { BrandingModule } from './modules/branding/branding';
@@ -63,6 +64,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     BankImportModule,
     DataImportModule,
     PushModule,
+    PollsModule,
     StaffModule,
     CommunicationModule,
     OnlinePaymentsModule,

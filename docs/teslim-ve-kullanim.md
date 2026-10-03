@@ -85,6 +85,9 @@ adı gösterilir.
   kategori silinemez; yeni kayıtlarda görünmemesi için pasif yapın, geçmiş raporlarda kalmaya devam eder.
 - **Duyuru:** Duyurular sayfasından tüm sakinlere, bloklara veya seçili dairelere duyuru yayınlanır; kimin okuduğu
   görülür.
+- **Anket:** İletişim menüsündeki "Anketler" sayfasından soru ve 2–6 seçenekle anket açın; isterseniz yalnızca bazı
+  bloklara. Her daire bir oy verir ve oyunu bitiş tarihine kadar değiştirebilir. Yönetici hangi dairenin oy verdiğini
+  görür, kimin neye oy verdiğini göremez. Anketi bitirince sonucu tek düğmeyle duyuru olarak paylaşabilirsiniz.
 - **Mesaj:** Mesajlar sayfasından borç hatırlatması, acil durum veya genel bilgi SMS/WhatsApp ile gönderilir.
   İletişim onayı vermemiş sakinlere mesaj gönderilmez. Mesaja "Kişiye özel bilgi ekle" düğmeleriyle {ad}, {daire},
   {borc} ve {site} eklenebilir; her sakine kendi adı, dairesi ve borcuyla gider. Ekranda örnek bir sakine nasıl

@@ -1,5 +1,8 @@
 import type {
   ContactDto,
+  PollDetailDto,
+  PollDto,
+  ResidentPollDto,
   DecisionDto,
   MeetingDetailDto,
   MeetingDto,
@@ -291,6 +294,11 @@ export const useStaffReport = (from: string, to: string) =>
 
 const SITE_SCOPED = new Set([
   'blocks',
+  'polls',
+  'poll',
+  'my-polls',
+  'contacts',
+  'quick-search-units',
   'units',
   'unit',
   'residents',
@@ -402,6 +410,10 @@ export const useMessageTemplates = () =>
   useSiteQuery<MessageTemplateDto[]>('message-templates', '/message-templates');
 export const useReminderSettings = () =>
   useSiteQuery<ReminderSettingsDto>('reminder-settings', '/reminder-settings');
+
+export const usePolls = () => useSiteQuery<PollDto[]>('polls', '/polls');
+export const usePoll = (id: string) => useSiteQuery<PollDetailDto>('poll', `/polls/${id}`, id);
+export const useMyPolls = () => useSiteQuery<ResidentPollDto[]>('my-polls', '/polls/mine');
 
 export function useContacts(siteId: string) {
   return useQuery({

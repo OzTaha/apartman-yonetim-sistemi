@@ -198,6 +198,7 @@ model Site {
   taskEvents        TaskEvent[]
   recurringTasks    RecurringTask[]
   announcements     Announcement[]
+  polls             Poll[]
   announcementReads AnnouncementRead[]
   messageTemplates  MessageTemplate[]
   campaigns         MessageCampaign[]
@@ -282,6 +283,7 @@ model Unit {
   block       Block               @relation(fields: [blockId, siteId], references: [id, siteId], onDelete: Restrict)
   occupancies Occupancy[]
   charges     Charge[]
+  pollVotes   PollVote[]
   payments    Payment[]
   intents     PaymentIntent[]
   requests    ServiceRequest[]
@@ -1256,4 +1258,64 @@ model AppSecret {
   createdAt DateTime @default(now())
 
   @@map("app_secrets")
+}
+
+enum PollAudience {
+  ALL
+  BLOCKS
+}
+
+model Poll {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  siteId         String       @db.Uuid
+  question       String
+  endsOn         DateTime     @db.Date
+  audience       PollAudience
+  blockIds       String[]     @db.Uuid
+  closedAt       DateTime?
+  sharedAt       DateTime?
+  announcementId String?      @db.Uuid
+  createdById    String?      @db.Uuid
+  createdAt      DateTime     @default(now())
+
+  site    Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  options PollOption[]
+  votes   PollVote[]
+
+  @@unique([id, siteId])
+  @@index([siteId, createdAt])
+  @@map("polls")
+}
+
+model PollOption {
+  id       String @id @default(uuid(7)) @db.Uuid
+  siteId   String @db.Uuid
+  pollId   String @db.Uuid
+  label    String
+  position Int
+
+  poll  Poll       @relation(fields: [pollId, siteId], references: [id, siteId], onDelete: Cascade)
+  votes PollVote[]
+
+  @@unique([id, pollId])
+  @@index([pollId])
+  @@map("poll_options")
+}
+
+model PollVote {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  siteId    String   @db.Uuid
+  pollId    String   @db.Uuid
+  optionId  String   @db.Uuid
+  unitId    String   @db.Uuid
+  userId    String?  @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  poll   Poll       @relation(fields: [pollId, siteId], references: [id, siteId], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId, pollId], references: [id, pollId], onDelete: Cascade)
+  unit   Unit       @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Cascade)
+
+  @@unique([pollId, unitId])
+  @@map("poll_votes")
 }

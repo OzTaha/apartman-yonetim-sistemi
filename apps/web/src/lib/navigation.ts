@@ -33,6 +33,7 @@ import {
   Calculator,
   FileSpreadsheet,
   Gavel,
+  Vote,
   MessageSquareWarning,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -46,6 +47,7 @@ export interface NavItem {
     | '/daireler'
     | '/sakinler'
     | '/excel-aktarma'
+    | '/anketler'
     | '/dairem'
     | '/siteler'
     | '/aidat'
@@ -127,6 +129,9 @@ export function useNavigation() {
   if ((role === 'RESIDENT' || auditor) && hasSite) {
     items.push({ to: '/duyurular', label: 'Duyurular', icon: Megaphone });
   }
+  if (role === 'RESIDENT' && hasSite) {
+    items.push({ to: '/anketler', label: 'Anketler', icon: Vote });
+  }
   if ((role === 'RESIDENT' || auditor || blockManager) && hasSite) {
     items.push({ to: '/giderler', label: 'Giderler ve işler', icon: Scale });
   }
@@ -187,6 +192,7 @@ export function useNavigation() {
           { to: '/mesajlar', label: 'Mesajlar', icon: MessageSquare },
         ] as NavItem[])
       : []),
+    ...(manager ? ([{ to: '/anketler', label: 'Anketler', icon: Vote }] as NavItem[]) : []),
     ...(manager
       ? ([
           { to: '/mesaj-ayarlari', label: 'Şablonlar ve hatırlatma', icon: MessageSquareText },

@@ -286,6 +286,21 @@ const help: Record<string, PageHelp> = {
       'Otomatik hatırlatmayı açarsanız, borcunu geciktiren sakinlere sistem kendiliğinden hatırlatma gönderir.',
     ],
   },
+  '/anketler': {
+    title: 'Anketler nedir?',
+    body: [
+      'Anket, yönetimin sakinlere bir soru sorup görüşlerini öğrenmesidir. Örneğin "Bahçeye çocuk oyun alanı yapılsın mı?"',
+      'Her daire bir oy verir. Oyunuzu son güne kadar değiştirebilirsiniz. Oy verdikten sonra o ana kadarki sonucu görürsünüz.',
+      'Yönetici hangi dairenin oy verdiğini görür ama kimin neye oy verdiğini göremez. Anket bitince sonuç duyuru olarak paylaşılabilir.',
+    ],
+  },
+  '/anketler/*': {
+    title: 'Anket sayfası',
+    body: [
+      'Seçeneklerin kaç oy aldığını ve hangi dairelerin henüz oy vermediğini burada görürsünüz.',
+      '"Anketi bitir" ile oylamayı kapatın, sonra "Sonucu duyuru olarak paylaş" ile herkese duyurun.',
+    ],
+  },
   '/siteler': {
     title: 'Apartman ve siteler nedir?',
     body: [

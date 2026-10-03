@@ -39,6 +39,8 @@ import { Route as AppVardiyalarRouteImport } from './routes/_app/vardiyalar'
 import { Route as AppYetkililerRouteImport } from './routes/_app/yetkililer'
 import { Route as DavetTokenRouteImport } from './routes/davet.$token'
 import { Route as SifreYenileTokenRouteImport } from './routes/sifre-yenile.$token'
+import { Route as AppAnketlerIndexRouteImport } from './routes/_app/anketler/index'
+import { Route as AppAnketlerPollIdRouteImport } from './routes/_app/anketler/$pollId'
 import { Route as AppButceIndexRouteImport } from './routes/_app/butce/index'
 import { Route as AppButceBudgetIdRouteImport } from './routes/_app/butce/$budgetId'
 import { Route as AppCalisanlarIndexRouteImport } from './routes/_app/calisanlar/index'
@@ -211,6 +213,16 @@ const SifreYenileTokenRoute = SifreYenileTokenRouteImport.update({
   path: '/sifre-yenile/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAnketlerIndexRoute = AppAnketlerIndexRouteImport.update({
+  id: '/anketler/',
+  path: '/anketler/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnketlerPollIdRoute = AppAnketlerPollIdRouteImport.update({
+  id: '/anketler/$pollId',
+  path: '/anketler/$pollId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppButceIndexRoute = AppButceIndexRouteImport.update({
   id: '/butce/',
   path: '/butce/',
@@ -353,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/yetkililer': typeof AppYetkililerRoute
   '/davet/$token': typeof DavetTokenRoute
   '/sifre-yenile/$token': typeof SifreYenileTokenRoute
+  '/anketler/$pollId': typeof AppAnketlerPollIdRoute
   '/butce/$budgetId': typeof AppButceBudgetIdRoute
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
@@ -365,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/odeme/sonuc': typeof AppOdemeSonucRoute
   '/talepler/$requestId': typeof AppTaleplerRequestIdRoute
   '/taleplerim/$requestId': typeof AppTaleplerimRequestIdRoute
+  '/anketler/': typeof AppAnketlerIndexRoute
   '/butce/': typeof AppButceIndexRoute
   '/calisanlar/': typeof AppCalisanlarIndexRoute
   '/daireler/': typeof AppDairelerIndexRoute
@@ -406,6 +420,7 @@ export interface FileRoutesByTo {
   '/davet/$token': typeof DavetTokenRoute
   '/sifre-yenile/$token': typeof SifreYenileTokenRoute
   '/': typeof AppIndexRoute
+  '/anketler/$pollId': typeof AppAnketlerPollIdRoute
   '/butce/$budgetId': typeof AppButceBudgetIdRoute
   '/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/daireler/$unitId': typeof AppDairelerUnitIdRoute
@@ -418,6 +433,7 @@ export interface FileRoutesByTo {
   '/odeme/sonuc': typeof AppOdemeSonucRoute
   '/talepler/$requestId': typeof AppTaleplerRequestIdRoute
   '/taleplerim/$requestId': typeof AppTaleplerimRequestIdRoute
+  '/anketler': typeof AppAnketlerIndexRoute
   '/butce': typeof AppButceIndexRoute
   '/calisanlar': typeof AppCalisanlarIndexRoute
   '/daireler': typeof AppDairelerIndexRoute
@@ -461,6 +477,7 @@ export interface FileRoutesById {
   '/davet/$token': typeof DavetTokenRoute
   '/sifre-yenile/$token': typeof SifreYenileTokenRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/anketler/$pollId': typeof AppAnketlerPollIdRoute
   '/_app/butce/$budgetId': typeof AppButceBudgetIdRoute
   '/_app/calisanlar/$employeeId': typeof AppCalisanlarEmployeeIdRoute
   '/_app/daireler/$unitId': typeof AppDairelerUnitIdRoute
@@ -473,6 +490,7 @@ export interface FileRoutesById {
   '/_app/odeme/sonuc': typeof AppOdemeSonucRoute
   '/_app/talepler/$requestId': typeof AppTaleplerRequestIdRoute
   '/_app/taleplerim/$requestId': typeof AppTaleplerimRequestIdRoute
+  '/_app/anketler/': typeof AppAnketlerIndexRoute
   '/_app/butce/': typeof AppButceIndexRoute
   '/_app/calisanlar/': typeof AppCalisanlarIndexRoute
   '/_app/daireler/': typeof AppDairelerIndexRoute
@@ -516,6 +534,7 @@ export interface FileRouteTypes {
     | '/yetkililer'
     | '/davet/$token'
     | '/sifre-yenile/$token'
+    | '/anketler/$pollId'
     | '/butce/$budgetId'
     | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
@@ -528,6 +547,7 @@ export interface FileRouteTypes {
     | '/odeme/sonuc'
     | '/talepler/$requestId'
     | '/taleplerim/$requestId'
+    | '/anketler/'
     | '/butce/'
     | '/calisanlar/'
     | '/daireler/'
@@ -569,6 +589,7 @@ export interface FileRouteTypes {
     | '/davet/$token'
     | '/sifre-yenile/$token'
     | '/'
+    | '/anketler/$pollId'
     | '/butce/$budgetId'
     | '/calisanlar/$employeeId'
     | '/daireler/$unitId'
@@ -581,6 +602,7 @@ export interface FileRouteTypes {
     | '/odeme/sonuc'
     | '/talepler/$requestId'
     | '/taleplerim/$requestId'
+    | '/anketler'
     | '/butce'
     | '/calisanlar'
     | '/daireler'
@@ -623,6 +645,7 @@ export interface FileRouteTypes {
     | '/davet/$token'
     | '/sifre-yenile/$token'
     | '/_app/'
+    | '/_app/anketler/$pollId'
     | '/_app/butce/$budgetId'
     | '/_app/calisanlar/$employeeId'
     | '/_app/daireler/$unitId'
@@ -635,6 +658,7 @@ export interface FileRouteTypes {
     | '/_app/odeme/sonuc'
     | '/_app/talepler/$requestId'
     | '/_app/taleplerim/$requestId'
+    | '/_app/anketler/'
     | '/_app/butce/'
     | '/_app/calisanlar/'
     | '/_app/daireler/'
@@ -866,6 +890,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SifreYenileTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/anketler/': {
+      id: '/_app/anketler/'
+      path: '/anketler'
+      fullPath: '/anketler/'
+      preLoaderRoute: typeof AppAnketlerIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/anketler/$pollId': {
+      id: '/_app/anketler/$pollId'
+      path: '/anketler/$pollId'
+      fullPath: '/anketler/$pollId'
+      preLoaderRoute: typeof AppAnketlerPollIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/butce/': {
       id: '/_app/butce/'
       path: '/butce'
@@ -1050,6 +1088,7 @@ interface AppRouteChildren {
   AppVardiyalarRoute: typeof AppVardiyalarRoute
   AppYetkililerRoute: typeof AppYetkililerRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAnketlerPollIdRoute: typeof AppAnketlerPollIdRoute
   AppButceBudgetIdRoute: typeof AppButceBudgetIdRoute
   AppCalisanlarEmployeeIdRoute: typeof AppCalisanlarEmployeeIdRoute
   AppDairelerUnitIdRoute: typeof AppDairelerUnitIdRoute
@@ -1062,6 +1101,7 @@ interface AppRouteChildren {
   AppOdemeSonucRoute: typeof AppOdemeSonucRoute
   AppTaleplerRequestIdRoute: typeof AppTaleplerRequestIdRoute
   AppTaleplerimRequestIdRoute: typeof AppTaleplerimRequestIdRoute
+  AppAnketlerIndexRoute: typeof AppAnketlerIndexRoute
   AppButceIndexRoute: typeof AppButceIndexRoute
   AppCalisanlarIndexRoute: typeof AppCalisanlarIndexRoute
   AppDairelerIndexRoute: typeof AppDairelerIndexRoute
@@ -1101,6 +1141,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppVardiyalarRoute: AppVardiyalarRoute,
   AppYetkililerRoute: AppYetkililerRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAnketlerPollIdRoute: AppAnketlerPollIdRoute,
   AppButceBudgetIdRoute: AppButceBudgetIdRoute,
   AppCalisanlarEmployeeIdRoute: AppCalisanlarEmployeeIdRoute,
   AppDairelerUnitIdRoute: AppDairelerUnitIdRoute,
@@ -1113,6 +1154,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOdemeSonucRoute: AppOdemeSonucRoute,
   AppTaleplerRequestIdRoute: AppTaleplerRequestIdRoute,
   AppTaleplerimRequestIdRoute: AppTaleplerimRequestIdRoute,
+  AppAnketlerIndexRoute: AppAnketlerIndexRoute,
   AppButceIndexRoute: AppButceIndexRoute,
   AppCalisanlarIndexRoute: AppCalisanlarIndexRoute,
   AppDairelerIndexRoute: AppDairelerIndexRoute,

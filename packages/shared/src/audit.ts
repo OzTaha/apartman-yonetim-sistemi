@@ -55,6 +55,7 @@ export const auditEntityLabels: Record<string, string> = {
   OnlinePaymentSettings: 'Online ödeme ayarı',
   Payment: 'Tahsilat',
   PaymentIntent: 'Online ödeme',
+  Poll: 'Anket',
   RecurringTask: 'Tekrarlayan görev',
   ReminderSettings: 'Hatırlatma ayarı',
   Shift: 'Vardiya',
@@ -116,6 +117,7 @@ export const auditActionLabels: Record<string, string> = {
   ATTENDANCE: 'Hazirun',
   DECISION: 'Karar',
   COMPLETE: 'Toplantı tamamlandı',
+  FINISH: 'Bitirildi',
 };
 
 export const auditLabel = (labels: Record<string, string>, key: string) => labels[key] ?? key;
