@@ -52,6 +52,8 @@ export class DashboardService {
       locked,
       debts,
       announcements,
+      newRequestCount,
+      dueTaskCount,
     ] = await Promise.all([
       this.tenant.db.unit.count({ where: { archivedAt: null } }),
       this.tenant.db.charge.findMany({
@@ -98,6 +100,10 @@ export class DashboardService {
         orderBy: [{ pinned: 'desc' }, { publishedAt: 'desc' }],
         take: 3,
       }),
+      this.tenant.db.serviceRequest.count({ where: { status: 'NEW' } }),
+      this.tenant.db.task.count({
+        where: { status: { in: ['TODO', 'IN_PROGRESS'] }, dueDate: { lte: dateOnly(today) } },
+      }),
     ]);
     const stats = await announcementStats(this.tenant, announcements);
 
@@ -115,8 +121,8 @@ export class DashboardService {
           remainingKurus: state.remainingKurus,
         };
       })
-      .filter((c) => c.remainingKurus > 0)
-      .slice(0, 8);
+      .filter((c) => c.remainingKurus > 0);
+    const dueTodayCount = upcomingCharges.filter((c) => c.dueDate === today).length;
 
     return {
       period,
@@ -134,7 +140,7 @@ export class DashboardService {
         (p) => months.get(p) ?? { period: p, incomeKurus: 0, expenseKurus: 0 },
       ),
       recentTransactions: recent.map((t) => toTransactionDto(t, locked)),
-      upcomingCharges,
+      upcomingCharges: upcomingCharges.slice(0, 8),
       topDebtors: debts
         .filter((d) => d.overdueKurus > 0)
         .sort((a, b) => b.overdueKurus - a.overdueKurus)
@@ -146,6 +152,7 @@ export class DashboardService {
         readCount: stats.get(a.id)?.readCount ?? 0,
         audienceCount: stats.get(a.id)?.audienceCount ?? 0,
       })),
+      todo: { newRequestCount, dueTaskCount, dueTodayCount },
     };
   }
 }

@@ -13,6 +13,12 @@ export interface UpcomingChargeDto {
   remainingKurus: Kurus;
 }
 
+export interface DashboardTodoDto {
+  newRequestCount: number;
+  dueTaskCount: number;
+  dueTodayCount: number;
+}
+
 export interface DashboardDto {
   period: string;
   unitCount: number;
@@ -28,4 +34,5 @@ export interface DashboardDto {
   upcomingCharges: UpcomingChargeDto[];
   topDebtors: DebtReportRowDto[];
   announcements: DashboardAnnouncementDto[];
+  todo: DashboardTodoDto;
 }

@@ -8,6 +8,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppearanceMenu } from '@/components/appearance-menu';
+import { QuickSearch } from '@/components/quick-search';
 import { MobileTabBar } from '@/components/mobile-tab-bar';
 import { NotificationBell } from '@/components/notification-bell';
 import { Separator } from '@/components/ui/separator';
@@ -73,6 +74,7 @@ function AppLayout() {
           <span className="min-w-0 flex-1 truncate font-heading text-base font-semibold">
             {siteName ?? appName}
           </span>
+          <QuickSearch />
           <AppearanceMenu />
           <NotificationBell />
         </header>

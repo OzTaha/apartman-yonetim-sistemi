@@ -15,6 +15,12 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 Her kullanıcı yazı boyutunu (Normal, Büyük, Çok büyük) ve açık/koyu görünümü üst çubukta bildirim zilinin yanındaki
 güneş/ay düğmesinden kendi cihazı için seçebilir. Telefonda menüye alttaki çubuktan ulaşılır.
 
+Her rol (sistem yöneticisi, site yöneticisi, blok yöneticisi, denetçi) ilk girişte kendi açılış sayfasında kısa bir
+tanıtım turu görür. Tüm sayfaların başlığındaki "i" düğmesi o sayfanın ne işe yaradığını örnekle anlatır. Yöneticinin
+panelindeki "Bugün yapılacaklar" kartı bekleyen işleri (geciken borçlar, yeni talepler, günü gelen görevler, bugün
+vadesi dolan borçlar) sıralar. Üst çubuktaki büyüteç (bilgisayarda Ctrl+K) ile sayfa adı, daire numarası veya sakin
+adı yazılarak hızlıca aranır.
+
 Sakinler ilk girişte Dairem sayfasında kısa bir tanıtım turu görür (borç kartı, sık yapılan işler, yönetim iletişimi,
 yazı boyutu, menü). Tur bir kez çıkar; kullanıcı menüsündeki "Tanıtım turunu göster" ile tekrar açılır. Sayfa
 başlıklarının yanındaki "i" düğmesi o bölümün kısa açıklamasını gösterir. Dairem sayfasındaki "Yönetim" kartında site

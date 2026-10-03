@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
+import { Tour } from '@/components/tour';
+import { adminTour } from '@/features/dashboard/tours';
 import { PasswordResetDialog } from '@/components/password-reset-dialog';
 import {
   AlertDialog,
@@ -198,12 +200,13 @@ function SitesPage() {
         title="Apartman ve siteler"
         description="Bu kurulumdaki tüm apartman, site ve yöneticileri"
         actions={
-          <Button onClick={() => setCreating(true)}>
+          <Button onClick={() => setCreating(true)} data-tour="new-site">
             <Plus />
             Ekle
           </Button>
         }
       />
+      <Tour id="admin-home" steps={adminTour} ready={sites.isSuccess} />
       {sites.isPending ? (
         <LoadingRows rows={3} />
       ) : sites.isError ? (

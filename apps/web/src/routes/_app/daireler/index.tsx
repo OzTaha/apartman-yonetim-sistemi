@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { ManagerOnly } from '@/components/manager-only';
 import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/page';
+import { Tour } from '@/components/tour';
+import { blockManagerTour } from '@/features/dashboard/tours';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,7 +115,8 @@ function UnitCard({ unit, showArea }: { unit: UnitDto; showArea: boolean }) {
 }
 
 function UnitsPage() {
-  const full = canManage(useRole());
+  const role = useRole();
+  const full = canManage(role);
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const isApartment = useIsApartment();
@@ -166,6 +169,9 @@ function UnitsPage() {
         }
       />
 
+      {role === 'BLOCK_MANAGER' && (
+        <Tour id="block-manager-home" steps={blockManagerTour} ready={units.isSuccess} />
+      )}
       {blocks.isSuccess && !hasBlocks && !isApartment ? (
         <EmptyState
           title="Henüz blok yok"

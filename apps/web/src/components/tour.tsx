@@ -94,12 +94,18 @@ export function Tour({ id, steps, ready }: { id: string; steps: TourStep[]; read
   if (!active || !step) return null;
   const last = index === active.length - 1;
   const viewportH = window.innerHeight;
+  const viewportW = window.innerWidth;
+  const tall = rect !== null && rect.height > viewportH * 0.6;
   const below = !rect || rect.top + rect.height / 2 < viewportH / 2;
-  const tipStyle: React.CSSProperties = rect
-    ? below
-      ? { top: Math.min(rect.top + rect.height + PAD + 12, viewportH - 24) }
-      : { bottom: Math.max(viewportH - rect.top + PAD + 12, 24) }
-    : { top: '30%' };
+  const tipStyle: React.CSSProperties = !rect
+    ? { top: '30%' }
+    : tall && rect.left + rect.width + 400 < viewportW
+      ? { top: '30%', left: rect.left + rect.width + PAD + 16, right: 'auto', width: '24rem' }
+      : tall
+        ? { top: '30%' }
+        : below
+          ? { top: Math.min(rect.top + rect.height + PAD + 12, viewportH - 24) }
+          : { bottom: Math.max(viewportH - rect.top + PAD + 12, 24) };
 
   return createPortal(
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label={step.title}>

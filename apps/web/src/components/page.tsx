@@ -1,4 +1,7 @@
+import { useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
+import { InfoTip } from '@/components/info-tip';
+import { pageHelp } from '@/lib/page-help';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { errorMessage } from '@/lib/api';
@@ -15,12 +18,27 @@ export function PageHeader({
   actions?: ReactNode;
   info?: ReactNode;
 }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const help = info === undefined ? pageHelp(pathname) : undefined;
+  const tip =
+    info ??
+    (help && (
+      <InfoTip title={help.title}>
+        {help.body.map((p) => (
+          <p key={p}>{p}</p>
+        ))}
+      </InfoTip>
+    ));
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {info && <span className="text-primary">{info}</span>}
+          {tip && (
+            <span className="text-primary" data-tour="help">
+              {tip}
+            </span>
+          )}
         </div>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>

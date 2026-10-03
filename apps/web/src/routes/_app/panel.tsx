@@ -4,6 +4,9 @@ import { ArrowRight, HandCoins, Minus } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ManagerOnly } from '@/components/manager-only';
 import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
+import { Tour } from '@/components/tour';
+import { TodayCard } from '@/features/dashboard/today-card';
+import { auditorTour, managerTour } from '@/features/dashboard/tours';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PaymentDialog } from '@/features/dues/payment-dialog';
@@ -12,7 +15,7 @@ import { MonthChart } from '@/features/finance/month-chart';
 import { TransactionDialog } from '@/features/finance/transaction-dialog';
 import { formatDate } from '@/lib/format';
 import { useDashboard } from '@/lib/queries';
-import { canManage, useRole } from '@/lib/session';
+import { canManage, useRole, useSession } from '@/lib/session';
 import { labelUnit } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
@@ -117,7 +120,9 @@ function TransactionLine({ t }: { t: TransactionDto }) {
 }
 
 function DashboardPage() {
-  const full = canManage(useRole());
+  const role = useRole();
+  const full = canManage(role);
+  const admin = Boolean(useSession().user?.isPlatformAdmin);
   const dashboard = useDashboard();
   const [dialog, setDialog] = useState<'pay' | 'expense' | null>(null);
   const d = dashboard.data;
@@ -130,7 +135,7 @@ function DashboardPage() {
         actions={
           full && (
             <>
-              <Button onClick={() => setDialog('pay')}>
+              <Button onClick={() => setDialog('pay')} data-tour="pay">
                 <HandCoins />
                 Ödeme al
               </Button>
@@ -149,7 +154,8 @@ function DashboardPage() {
         <ErrorState error={dashboard.error} />
       ) : d ? (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          {full && <TodayCard dashboard={d} canSeeStaff={full} />}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3" data-tour="stats">
             <Stat label="Toplam daire" value={String(d.unitCount)} to="/daireler" />
             <Stat
               label="Bu ay aidatını ödeyen"
@@ -292,6 +298,11 @@ function DashboardPage() {
         </>
       ) : null}
 
+      <Tour
+        id={full ? (admin ? 'admin-panel' : 'manager-home') : 'auditor-home'}
+        steps={full ? managerTour : auditorTour}
+        ready={Boolean(d)}
+      />
       <PaymentDialog open={dialog === 'pay'} onOpenChange={(o) => setDialog(o ? 'pay' : null)} />
       <TransactionDialog
         type="EXPENSE"

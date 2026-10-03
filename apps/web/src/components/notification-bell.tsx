@@ -41,6 +41,7 @@ export function NotificationBell() {
           variant="ghost"
           size="icon"
           className="relative"
+          data-tour="bell"
           aria-label={total > 0 ? `Bildirimler, ${total} okunmamış` : 'Bildirimler'}
         >
           <Bell />

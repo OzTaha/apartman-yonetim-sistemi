@@ -675,6 +675,19 @@ describe('Yönetim paneli', () => {
     expect(res.body.months).toHaveLength(6);
     expect(res.body.months.at(-1).period).toBe(current);
     expect(res.body.recentTransactions.length).toBeGreaterThan(0);
+    expect(res.body.todo).toEqual({
+      newRequestCount: await prisma.serviceRequest.count({
+        where: { siteId: ids.siteA, status: 'NEW' },
+      }),
+      dueTaskCount: await prisma.task.count({
+        where: {
+          siteId: ids.siteA,
+          status: { in: ['TODO', 'IN_PROGRESS'] },
+          dueDate: { lte: new Date(`${todayInIstanbul()}T00:00:00Z`) },
+        },
+      }),
+      dueTodayCount: expect.any(Number),
+    });
     await http().get('/api/dashboard').set(R()).expect(403);
     await http().get('/api/dashboard').set(B()).expect(200);
   });
