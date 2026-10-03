@@ -6,6 +6,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 export const ACCESS_TOKEN_TTL = '15m';
 export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const REUSE_GRACE_MS = 30_000;
+export const MANAGER_IDLE_LIMIT_MS = 3 * 60 * 60 * 1000;
+const PRIVILEGED_ROLES = ['SITE_MANAGER', 'BLOCK_MANAGER', 'AUDITOR'] as const;
 
 export interface AccessTokenPayload {
   sub: string;
@@ -49,6 +51,17 @@ export class TokenService {
     return token;
   }
 
+  async isPrivileged(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        isPlatformAdmin: true,
+        memberships: { where: { role: { in: [...PRIVILEGED_ROLES] } }, select: { id: true } },
+      },
+    });
+    return Boolean(user && (user.isPlatformAdmin || user.memberships.length > 0));
+  }
+
   async rotateRefreshToken(
     token: string,
     meta: ClientMeta,
@@ -80,6 +93,18 @@ export class TokenService {
     }
     if (existing.expiresAt.getTime() <= Date.now()) {
       throw new UnauthorizedException('Oturum süresi doldu');
+    }
+    if (
+      Date.now() - existing.createdAt.getTime() > MANAGER_IDLE_LIMIT_MS &&
+      (await this.isPrivileged(existing.userId))
+    ) {
+      await this.prisma.refreshToken.updateMany({
+        where: { id: existing.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw new UnauthorizedException(
+        'Uzun süre işlem yapılmadığı için güvenliğiniz için oturumunuz kapatıldı. Lütfen yeniden giriş yapın.',
+      );
     }
 
     const newToken = generateOpaqueToken();

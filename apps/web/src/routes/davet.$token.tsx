@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PasswordInput } from '@/components/password-input';
 import { apiFetch, errorMessage } from '@/lib/api';
+import { markActive } from '@/lib/idle';
 import { session } from '@/lib/session';
 
 export const Route = createFileRoute('/davet/$token')({
@@ -59,6 +60,7 @@ function InvitationPage() {
         { method: 'POST', body: password ? { password } : {}, noRetry: true, siteId: null },
       );
       if (result.status === 'ACTIVATED') {
+        markActive();
         session.setAuth(result);
         await navigate({ to: '/' });
       } else {

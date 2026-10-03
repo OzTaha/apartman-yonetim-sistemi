@@ -15,6 +15,10 @@ sunucuda ve sizin belirlediğiniz yedek deposunda tutulur.
 Her kullanıcı yazı boyutunu (Normal, Büyük, Çok büyük) ve açık/koyu görünümü üst çubukta bildirim zilinin yanındaki
 güneş/ay düğmesinden kendi cihazı için seçebilir. Telefonda menüye alttaki çubuktan ulaşılır.
 
+**Otomatik çıkış:** Güvenlik için sistem yöneticisi, site yöneticisi, blok yöneticisi ve denetçi 3 saat hiçbir işlem
+yapmazsa oturumları kendiliğinden kapanır; kapanmadan 5 dakika önce "Hâlâ burada mısınız?" uyarısı çıkar. Yalnızca
+sakin olanlar ve görevliler 30 gün boyunca hiç girmezlerse yeniden giriş yapmaları istenir.
+
 **Telefon bildirimleri:** Kullanıcılar Dairem veya Panel sayfasındaki "Bildirimleri aç" kartıyla ya da kullanıcı
 menüsü > "Telefon bildirimleri" bölümünden telefonlarına ücretsiz bildirim alabilir. Sakinlere yeni duyuru, alınan
 ödeme ve talep yanıtları; yöneticilere yeni arıza talepleri ve şifre talepleri bildirilir. iPhone'da bildirim için

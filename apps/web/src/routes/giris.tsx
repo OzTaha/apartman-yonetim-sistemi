@@ -18,8 +18,9 @@ import { ensureSession, login } from '@/lib/auth';
 import { safeRedirect } from '@/lib/format';
 
 export const Route = createFileRoute('/giris')({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string; neden?: string } => ({
     redirect: typeof search['redirect'] === 'string' ? search['redirect'] : undefined,
+    neden: typeof search['neden'] === 'string' ? search['neden'] : undefined,
   }),
   beforeLoad: async ({ search }) => {
     if (await ensureSession()) throw redirect({ href: safeRedirect(search.redirect) });
@@ -78,6 +79,15 @@ function LoginPage() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-4" onSubmit={onSubmit} noValidate>
+            {search.neden === 'hareketsizlik' && !error && (
+              <Alert>
+                <CircleAlert />
+                <AlertDescription>
+                  Uzun süre işlem yapılmadığı için güvenliğiniz için oturumunuz kapatıldı. Lütfen
+                  yeniden giriş yapın.
+                </AlertDescription>
+              </Alert>
+            )}
             {error && (
               <Alert variant="destructive">
                 <CircleAlert />

@@ -221,6 +221,17 @@ describe('Refresh token', () => {
     await http().post('/api/auth/refresh').set('Cookie', first).expect(401);
   });
 
+  it('yönetici 3 saat işlem yapmazsa oturum kapanır', async () => {
+    const { cookie } = await login('yonetici-a@test.com');
+    await prisma.refreshToken.update({
+      where: { tokenHash: sha256(cookie.slice(3)) },
+      data: { createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000 - 60_000) },
+    });
+    const res = await http().post('/api/auth/refresh').set('Cookie', cookie).expect(401);
+    expect(res.body.message).toContain('Uzun süre işlem yapılmadığı');
+    await http().post('/api/auth/refresh').set('Cookie', cookie).expect(401);
+  });
+
   it('çıkış yapınca refresh token geçersiz olur', async () => {
     const { cookie } = await login('yonetici-b@test.com');
     await http().post('/api/auth/logout').set('Cookie', cookie).expect(204);
@@ -494,7 +505,12 @@ describe('Davet akışı', () => {
       .expect(200);
     expect(accepted.body).toEqual({ status: 'LINKED_EXISTING' });
 
-    const { token: residentToken } = await login('+905551112233', PASSWORD);
+    const { token: residentToken, cookie: residentCookie } = await login('+905551112233', PASSWORD);
+    await prisma.refreshToken.update({
+      where: { tokenHash: sha256(residentCookie.slice(3)) },
+      data: { createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
+    });
+    await http().post('/api/auth/refresh').set('Cookie', residentCookie).expect(200);
     const me = await http().get('/api/auth/me').set(auth(residentToken)).expect(200);
     expect(me.body.memberships.map((m: { siteId: string }) => m.siteId).sort()).toEqual(
       [ids.siteA, ids.siteB].sort(),

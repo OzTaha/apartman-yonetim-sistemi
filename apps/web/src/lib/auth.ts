@@ -1,5 +1,6 @@
 import type { AuthResponse, LoginInput } from '@apartman/shared';
 import { apiFetch, refreshSession } from './api';
+import { markActive } from './idle';
 import { queryClient } from './query-client';
 import { session } from './session';
 
@@ -9,6 +10,7 @@ export async function login(input: LoginInput): Promise<void> {
     body: input,
     noRetry: true,
   });
+  markActive();
   session.setAuth(auth);
 }
 

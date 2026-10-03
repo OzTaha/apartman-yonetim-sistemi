@@ -8,6 +8,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppearanceMenu } from '@/components/appearance-menu';
+import { IdleWarning } from '@/components/idle-warning';
 import { QuickSearch } from '@/components/quick-search';
 import { MobileTabBar } from '@/components/mobile-tab-bar';
 import { NotificationBell } from '@/components/notification-bell';
@@ -82,6 +83,7 @@ function AppLayout() {
           <Outlet />
         </div>
         <MobileTabBar />
+        <IdleWarning />
       </SidebarInset>
     </SidebarProvider>
   );
