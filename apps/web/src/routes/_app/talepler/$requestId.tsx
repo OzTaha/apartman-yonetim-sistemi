@@ -12,12 +12,16 @@ import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CommentForm, RequestStatusDialog, RequestTaskDialog } from '@/features/requests/dialogs';
-import { formatDateTime, requestSubtitle } from '@/features/requests/format';
-import { PhotoGallery, RequestStatusBadge, RequestTimeline } from '@/features/requests/parts';
+import { formatDateTime, requestPlace, requestSubtitle } from '@/features/requests/format';
+import {
+  PhotoGallery,
+  RequestSourceBadges,
+  RequestStatusBadge,
+  RequestTimeline,
+} from '@/features/requests/parts';
 import { formatPhone } from '@/lib/format';
 import { useServiceRequest } from '@/lib/queries';
 import { canManage, useRole } from '@/lib/session';
-import { labelUnit } from '@/lib/unit-label';
 
 export const Route = createFileRoute('/_app/talepler/$requestId')({
   component: () => (
@@ -56,9 +60,9 @@ function RequestDetailPage() {
   const open = OPEN_REQUEST_STATUSES.includes(r.status);
   const canCreateTask = manager && open && (!r.task || r.task.status === 'CANCELLED');
   const info: [string, string | null][] = [
-    ['Daire', labelUnit(r.blockName, r.unitNumber)],
-    ['Yer', requestLocationLabels[r.location]],
-    ['Sakin', r.requesterName],
+    ['Daire', r.fromStaff ? null : requestPlace(r)],
+    ['Yer', r.fromStaff ? null : requestLocationLabels[r.location]],
+    [r.fromStaff ? 'Görevli' : 'Sakin', r.requesterName],
     ['Telefon', r.requesterPhone ? formatPhone(r.requesterPhone) : null],
     ['Açılış', formatDateTime(r.createdAt)],
     ['Çözülme', r.resolvedAt ? formatDateTime(r.resolvedAt) : null],
@@ -72,6 +76,7 @@ function RequestDetailPage() {
         description={
           <span className="inline-flex flex-wrap items-center gap-2">
             <RequestStatusBadge status={r.status} />
+            <RequestSourceBadges r={r} />
             {requestSubtitle(r)}
           </span>
         }

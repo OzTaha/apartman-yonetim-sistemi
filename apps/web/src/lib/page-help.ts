@@ -69,7 +69,7 @@ const help: Record<string, PageHelp> = {
   '/talepler': {
     title: 'Arıza ve talepler nedir?',
     body: [
-      'Sakinlerin telefondan bildirdiği arızalar, şikâyetler ve öneriler burada toplanır.',
+      'Sakinlerin telefondan bildirdiği arızalar, şikâyetler ve öneriler burada toplanır. Görevlilerin "Yöneticiye yaz" ile gönderdiği mesajlar da "Görevliden" etiketiyle burada görünür.',
       'Bir talebi açıp sakine yanıt yazabilirsiniz. Durumunu "İşleme al", "Çözüldü" veya "Reddet" ile değiştirdiğinizde sakin bunu kendi ekranında görür.',
       'İşi bir çalışana vermek isterseniz "Görev oluştur"a basın; görev bitince talep de kendiliğinden çözülür.',
     ],
@@ -306,6 +306,7 @@ const help: Record<string, PageHelp> = {
     body: [
       'Yöneticinin size verdiği işler ve çalışma saatleriniz bu sayfadadır.',
       'Bir işe başladığınızda "Başladım", bitirdiğinizde "Bitirdim" düğmesine basın. Yönetici işin bittiğini hemen görür.',
+      'Şüpheli birini gördüğünüzde ya da bir şey bozulduğunda "Yöneticiye yaz" düğmesine basın. Örneğin: "Otoparkta tanımadığım biri arabalara bakıyor." Hemen bakılması gerekiyorsa "Acil" işaretleyin. Yöneticinin yanıtını aynı yerde görürsünüz.',
     ],
   },
   '/kapi': {

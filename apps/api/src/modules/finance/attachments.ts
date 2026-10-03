@@ -152,6 +152,9 @@ export class AttachmentsService {
     ) {
       throw new NotFoundException('Dosya bulunamadı');
     }
+    if (this.tenant.role === 'STAFF' && attachment.request?.createdById !== this.tenant.userId) {
+      throw new NotFoundException('Dosya bulunamadı');
+    }
     if (this.tenant.isResident && !(await this.residentCanSee(attachment))) {
       throw new NotFoundException('Dosya bulunamadı');
     }
@@ -231,7 +234,7 @@ export class AttachmentsService {
         where: { id: a.requestId },
         select: { unit: { select: { blockId: true } } },
       });
-      return inScope(r?.unit.blockId);
+      return inScope(r?.unit?.blockId);
     }
     return false;
   }
@@ -299,7 +302,7 @@ export class AttachmentsController {
     return this.attachments.upload(query, file);
   }
 
-  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'RESIDENT')
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'RESIDENT', 'STAFF')
   @Get(':id')
   async download(
     @Param('id', ParseUUIDPipe) id: string,

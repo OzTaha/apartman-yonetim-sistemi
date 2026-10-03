@@ -226,6 +226,70 @@ describe('Görevli hesabı', () => {
     await http().get('/api/door').set(R()).expect(403);
   });
 
+  it('görevli yöneticiye mesaj yazar, yönetici yanıtlar ve görevli yanıtı görür', async () => {
+    await http()
+      .post('/api/requests/mine/staff-message')
+      .set(R())
+      .field('category', 'SECURITY')
+      .field('description', 'Sakin bu yolu kullanamaz')
+      .expect(403);
+    await http()
+      .post('/api/requests/mine/staff-message')
+      .set(S())
+      .field('category', 'COMPLAINT')
+      .field('description', 'Geçersiz konu')
+      .expect(400);
+    const sent = await http()
+      .post('/api/requests/mine/staff-message')
+      .set(S())
+      .field('category', 'SECURITY')
+      .field('description', 'Otoparkta tanımadığım biri arabalara bakıyor')
+      .field('urgent', 'true')
+      .expect(201);
+    expect(sent.body).toMatchObject({
+      fromStaff: true,
+      urgent: true,
+      unitId: null,
+      category: 'SECURITY',
+      status: 'NEW',
+      title: 'Otoparkta tanımadığım biri arabalara bakıyor',
+    });
+    const id = sent.body.id as string;
+
+    const notes = await http().get('/api/notifications').set(M()).expect(200);
+    expect(notes.body.map((n: { title: string }) => n.title)).toContain(
+      'ACİL: Görevliden mesaj (şüpheli durum)',
+    );
+    const list = await http().get('/api/requests').set(M()).expect(200);
+    expect(list.body.find((r: { id: string }) => r.id === id)).toMatchObject({
+      fromStaff: true,
+      blockName: null,
+      requesterName: 'Görevli doorman',
+    });
+    await http().get('/api/requests/mine').set(R()).expect(200).expect((res) => {
+      expect(res.body.some((r: { id: string }) => r.id === id)).toBe(false);
+    });
+
+    await http()
+      .post(`/api/requests/${id}/comments`)
+      .set(M())
+      .send({ note: 'Güvenliği arıyorum, takipte kal.' })
+      .expect(200);
+    await http()
+      .post(`/api/requests/${id}/status`)
+      .set(M())
+      .send({ status: 'RESOLVED' })
+      .expect(200);
+    const mine = await http().get('/api/requests/mine').set(S()).expect(200);
+    expect(mine.body).toHaveLength(1);
+    expect(mine.body[0]).toMatchObject({ id, unseen: true, status: 'RESOLVED' });
+    const detail = await http().get(`/api/requests/mine/${id}`).set(S()).expect(200);
+    expect(detail.body.events.map((e: { note: string | null }) => e.note)).toContain(
+      'Güvenliği arıyorum, takipte kal.',
+    );
+    await http().post('/api/requests/mine').set(S()).send({}).expect(403);
+  });
+
   it('yönetici hesabı kapatınca görevli giremez', async () => {
     const res = await http()
       .delete(`/api/employees/${employees.doorman}/account`)

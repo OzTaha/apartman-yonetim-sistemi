@@ -99,15 +99,15 @@ export function useNavigation() {
   const notifications = useCanReceiveNotifications();
   const hasSite = Boolean(s.siteId);
   const hasUnit = useHasUnitInSite();
-  const unseen = (useMyRequests(hasUnit).data ?? []).filter((r) => r.unseen).length;
+  const staff = role === 'STAFF' && hasSite;
+  const unseen = (useMyRequests(hasUnit || staff).data ?? []).filter((r) => r.unseen).length;
   const badges: Partial<Record<NavItem['to'], number>> = {
     '/bildirimler': unread,
-    '/taleplerim': unseen,
+    [staff ? '/islerim' : '/taleplerim']: unseen,
   };
   const manager = canManage(role) && hasSite;
   const blockManager = role === 'BLOCK_MANAGER' && hasSite;
   const auditor = role === 'AUDITOR' && hasSite;
-  const staff = role === 'STAFF' && hasSite;
   const staffMe = useStaffMe(staff);
   const items: NavItem[] = [];
   if (staff) {
@@ -133,7 +133,7 @@ export function useNavigation() {
   if ((s.user?.occupancies.length ?? 0) > 0)
     items.push({ to: '/dairem', label: 'Dairem', icon: Home });
   if (hasUnit) items.push({ to: '/taleplerim', label: 'Taleplerim', icon: MessageSquareWarning });
-  if (hasSite && role !== 'RESIDENT') {
+  if (hasSite && role !== 'RESIDENT' && !staff) {
     items.push({ to: '/genel-kurul', label: 'Genel kurul', icon: Gavel });
   }
   if ((role === 'RESIDENT' || auditor) && hasSite) {

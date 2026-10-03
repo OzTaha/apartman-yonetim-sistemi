@@ -24,7 +24,7 @@ import {
   useNotifications,
 } from '@/lib/notifications';
 import { session } from '@/lib/session';
-import { labelUnit } from '@/lib/unit-label';
+import { requestPlace } from '@/features/requests/format';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/bildirimler')({
@@ -96,7 +96,7 @@ function RequestNotificationCard({
           {[
             time.format(new Date(n.createdAt)),
             n.siteName,
-            `#${n.data.number} · ${labelUnit(n.data.blockName, n.data.unitNumber, 'short')}`,
+            `#${n.data.number} · ${requestPlace(n.data, 'short')}`,
           ]
             .filter(Boolean)
             .join(' · ')}

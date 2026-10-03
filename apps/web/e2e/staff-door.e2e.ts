@@ -61,5 +61,25 @@ test('yönetici görevliye hesap açar; görevli kargo kaydeder ve teslim eder',
   await row.first().getByRole('button', { name: 'Teslim et' }).click();
   await staff.getByRole('dialog').getByRole('button', { name: 'Teslim edildi' }).click();
   await expect(staff.getByText('Teslim edildi', { exact: true }).first()).toBeVisible();
+
+  await staff.goto('/islerim');
+  await expect(staff.getByRole('link', { name: 'Genel kurul' })).toHaveCount(0);
+  const note = `Otoparkta tanımadığım biri ${suffix}`;
+  await staff.getByRole('button', { name: 'Yöneticiye yaz' }).click();
+  const msg = staff.getByRole('dialog');
+  await msg.getByRole('radio', { name: /Şüpheli durum/ }).click();
+  await msg.getByLabel('Ne oldu?').fill(note);
+  await msg.getByLabel('Acil').click();
+  await msg.getByRole('button', { name: 'Gönder' }).click();
+  await expect(staff.getByText('Mesajınız yöneticiye iletildi')).toBeVisible();
+  await expect(staff.getByRole('list', { name: 'Gönderdiğim mesajlar' })).toContainText(note);
+
+  await page.goto('/talepler');
+  const item = page.getByText(note).locator('visible=true').first();
+  await expect(item).toBeVisible();
+  await item.click();
+  await expect(page.getByRole('heading', { name: note })).toBeVisible();
+  await expect(page.getByText('Görevliden', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Acil', { exact: true }).first()).toBeVisible();
   await staffContext.close();
 });

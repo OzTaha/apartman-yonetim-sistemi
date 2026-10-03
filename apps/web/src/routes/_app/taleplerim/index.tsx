@@ -7,11 +7,10 @@ import { EmptyState, ErrorState, LoadingRows, PageHeader } from '@/components/pa
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { NewRequestDialog } from '@/features/requests/dialogs';
-import { formatDateTime, requestSubtitle } from '@/features/requests/format';
+import { formatDateTime, requestPlace, requestSubtitle } from '@/features/requests/format';
 import { RequestStatusBadge } from '@/features/requests/parts';
 import { useMyRequests } from '@/lib/queries';
 import { useHasUnitInSite } from '@/lib/session';
-import { labelUnit } from '@/lib/unit-label';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_app/taleplerim/')({
@@ -40,7 +39,7 @@ function RequestCard({ r }: { r: MyRequestDto }) {
             <RequestStatusBadge status={r.status} />
           </div>
           <span className="text-xs text-muted-foreground">
-            {[requestSubtitle(r), labelUnit(r.blockName, r.unitNumber, 'short')].join(' · ')}
+            {[requestSubtitle(r), requestPlace(r, 'short')].join(' · ')}
           </span>
           <span className="text-xs text-muted-foreground">
             {formatDateTime(r.createdAt)}

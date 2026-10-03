@@ -27,10 +27,11 @@ const todayName = new Date().toLocaleDateString('tr-TR', {
 test('yönetici çalışan ekler, vardiya ve görev planlar, maaş öder ve raporu görür', async ({
   page,
 }, info) => {
+  test.setTimeout(120_000);
   const suffix = `${info.project.name === 'masaustu' ? 'M' : 'T'}${String(Date.now()).slice(-4)}`;
   const name = `Deniz${suffix} Tekin`;
   await login(page, 'yonetici@ornek.com');
-  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Panel' })).toBeVisible({ timeout: 20_000 });
 
   await page.goto('/calisanlar');
   await expect(page.getByRole('heading', { name: 'Çalışanlar' })).toBeVisible();

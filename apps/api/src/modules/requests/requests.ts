@@ -30,6 +30,9 @@ import {
   requestStatusChangeSchema,
   requestStatusLabels,
   requestTaskSchema,
+  staffMessageCategoryLabels,
+  staffMessageSchema,
+  staffMessageTitle,
   unitLabel,
   type MyRequestDetailDto,
   type MyRequestDto,
@@ -64,6 +67,7 @@ class RequestCommentDto extends createZodDto(requestCommentSchema) {}
 class RequestStatusChangeDto extends createZodDto(requestStatusChangeSchema) {}
 class RequestTaskDto extends createZodDto(requestTaskSchema) {}
 class RequestListQueryDto extends createZodDto(requestListQuerySchema) {}
+class StaffMessageDto extends createZodDto(staffMessageSchema) {}
 
 type Tx = Pick<TenantClient, 'serviceRequest' | 'serviceRequestEvent'>;
 
@@ -96,8 +100,10 @@ function toDto(r: ListRow): ServiceRequestDto {
     id: r.id,
     number: r.number,
     unitId: r.unitId,
-    blockName: r.unit.block.name,
-    unitNumber: r.unit.number,
+    blockName: r.unit?.block.name ?? null,
+    unitNumber: r.unit?.number ?? null,
+    fromStaff: r.fromStaff,
+    urgent: r.urgent,
     location: r.location,
     category: r.category,
     title: r.title,
@@ -114,8 +120,10 @@ function toMyDto(r: ListRow): MyRequestDto {
     id: r.id,
     number: r.number,
     unitId: r.unitId,
-    blockName: r.unit.block.name,
-    unitNumber: r.unit.number,
+    blockName: r.unit?.block.name ?? null,
+    unitNumber: r.unit?.number ?? null,
+    fromStaff: r.fromStaff,
+    urgent: r.urgent,
     location: r.location,
     category: r.category,
     title: r.title,
@@ -206,6 +214,99 @@ export class RequestsService {
     if (!occupancy || !userId) {
       throw new NotFoundException('Yalnızca oturduğunuz daire için talep açabilirsiniz');
     }
+    const created = await this.store(
+      {
+        unitId: input.unitId,
+        location: input.location,
+        category: input.category,
+        title: input.title,
+        description: input.description,
+      },
+      files,
+    );
+    await this.audit.record({
+      action: 'CREATE',
+      entityType: 'ServiceRequest',
+      entityId: created.id,
+      after: { ...input, number: created.number, photos: files.length },
+    });
+    const kind = await this.tenant.siteKind();
+    const unit = unitLabel(kind, occupancy.unit.block.name, occupancy.unit.number);
+    await this.notifications.notifySiteStaff({
+      siteId: this.tenant.siteId,
+      blockId: occupancy.unit.blockId,
+      subjectKey: requestSubject(created.id),
+      title: `Yeni ${requestCategoryLabels[input.category].toLocaleLowerCase('tr')} talebi`,
+      body: `${unit}: ${input.title}`,
+      data: {
+        requestId: created.id,
+        number: created.number,
+        blockName: occupancy.unit.block.name,
+        unitNumber: occupancy.unit.number,
+      },
+      exclude: userId,
+    });
+    return this.myRow(created.id);
+  }
+
+  async createStaffMessage(
+    input: StaffMessageDto,
+    files: UploadedFileData[] = [],
+  ): Promise<MyRequestDto> {
+    const userId = this.tenant.userId!;
+    const employee = await this.tenant.db.employee.findFirst({
+      where: { userId, isActive: true },
+      select: { firstName: true, lastName: true },
+    });
+    if (!employee) throw new NotFoundException('Görevli kaydınız bulunamadı');
+    const title = staffMessageTitle(input.description);
+    const created = await this.store(
+      {
+        unitId: null,
+        fromStaff: true,
+        urgent: input.urgent,
+        location: 'COMMON',
+        category: input.category,
+        title,
+        description: input.description,
+      },
+      files,
+    );
+    await this.audit.record({
+      action: 'CREATE',
+      entityType: 'ServiceRequest',
+      entityId: created.id,
+      after: { ...input, fromStaff: true, number: created.number, photos: files.length },
+    });
+    const topic = staffMessageCategoryLabels[input.category];
+    await this.notifications.notifySiteStaff({
+      siteId: this.tenant.siteId,
+      blockId: null,
+      subjectKey: requestSubject(created.id),
+      title: `${input.urgent ? 'ACİL: ' : ''}Görevliden mesaj (${topic.toLocaleLowerCase('tr')})`,
+      body: `${fullName(employee)}: ${title}`,
+      data: { requestId: created.id, number: created.number, blockName: null, unitNumber: null },
+      exclude: userId,
+    });
+    return this.myRow(created.id);
+  }
+
+  private async myRow(id: string): Promise<MyRequestDto> {
+    const row = await this.tenant.db.serviceRequest.findUniqueOrThrow({
+      where: { id },
+      include: listInclude,
+    });
+    return toMyDto(row);
+  }
+
+  private async store(
+    data: Pick<
+      Prisma.ServiceRequestUncheckedCreateInput,
+      'unitId' | 'fromStaff' | 'urgent' | 'location' | 'category' | 'title' | 'description'
+    >,
+    files: UploadedFileData[],
+  ): Promise<{ id: string; number: number }> {
+    const userId = this.tenant.userId!;
     if (files.length > REQUEST_PHOTO_MAX) {
       throw new BadRequestException(`En fazla ${REQUEST_PHOTO_MAX} fotoğraf eklenebilir`);
     }
@@ -219,21 +320,11 @@ export class RequestsService {
 
     const siteId = this.tenant.siteId;
     for (const p of photos) await this.storage.save(p.key, p.file.buffer);
-    let created;
     try {
-      created = await this.tenant.db.$transaction(async (tx) => {
+      return await this.tenant.db.$transaction(async (tx) => {
         const number = await nextCounter(tx, siteId, 'service-request');
         const request = await tx.serviceRequest.create({
-          data: {
-            siteId,
-            number,
-            unitId: input.unitId,
-            location: input.location,
-            category: input.category,
-            title: input.title,
-            description: input.description,
-            createdById: userId,
-          },
+          data: { ...data, siteId, number, createdById: userId },
         });
         await tx.serviceRequestEvent.create({
           data: { siteId, requestId: request.id, kind: 'CREATED', userId, byResident: true },
@@ -252,40 +343,12 @@ export class RequestsService {
             },
           });
         }
-        return request;
+        return { id: request.id, number: request.number };
       });
     } catch (error) {
       for (const p of photos) await this.storage.remove(p.key);
       throw error;
     }
-
-    await this.audit.record({
-      action: 'CREATE',
-      entityType: 'ServiceRequest',
-      entityId: created.id,
-      after: { ...input, number: created.number, photos: photos.length },
-    });
-    const kind = await this.tenant.siteKind();
-    const unit = unitLabel(kind, occupancy.unit.block.name, occupancy.unit.number);
-    await this.notifications.notifySiteStaff({
-      siteId,
-      blockId: occupancy.unit.blockId,
-      subjectKey: requestSubject(created.id),
-      title: `Yeni ${requestCategoryLabels[input.category].toLocaleLowerCase('tr')} talebi`,
-      body: `${unit}: ${input.title}`,
-      data: {
-        requestId: created.id,
-        number: created.number,
-        blockName: occupancy.unit.block.name,
-        unitNumber: occupancy.unit.number,
-      },
-      exclude: userId,
-    });
-    const row = await this.tenant.db.serviceRequest.findUniqueOrThrow({
-      where: { id: created.id },
-      include: listInclude,
-    });
-    return toMyDto(row);
   }
 
   async residentComment(id: string, input: RequestCommentDto): Promise<MyRequestDetailDto> {
@@ -308,15 +371,15 @@ export class RequestsService {
     });
     await this.notifications.notifySiteStaff({
       siteId: this.tenant.siteId,
-      blockId: row.unit.blockId,
+      blockId: row.unit?.blockId ?? null,
       subjectKey: requestSubject(id),
       title: `Talep #${row.number} için yeni mesaj`,
       body: input.note.length > 140 ? `${input.note.slice(0, 137)}...` : input.note,
       data: {
         requestId: id,
         number: row.number,
-        blockName: row.unit.block.name,
-        unitNumber: row.unit.number,
+        blockName: row.unit?.block.name ?? null,
+        unitNumber: row.unit?.number ?? null,
       },
       exclude: this.tenant.userId!,
     });
@@ -361,10 +424,7 @@ export class RequestsService {
       where: {
         ...status,
         ...(query.category ? { category: query.category } : {}),
-        unit: {
-          ...this.tenant.unitScope(),
-          ...(query.blockId ? { blockId: query.blockId } : {}),
-        },
+        ...this.scopeWhere(query.blockId),
       },
       include: listInclude,
       orderBy: [{ createdAt: 'desc' }],
@@ -421,8 +481,8 @@ export class RequestsService {
       after: input,
     });
     this.push.send([row.createdById], {
-      title: 'Talebiniz güncellendi',
-      body: `"${row.title}" talebinizin durumu: ${requestStatusLabels[input.status]}`,
+      title: row.fromStaff ? 'Mesajınız güncellendi' : 'Talebiniz güncellendi',
+      body: `"${row.title}" ${row.fromStaff ? 'mesajınızın' : 'talebinizin'} durumu: ${requestStatusLabels[input.status]}`,
       url: `/taleplerim/${id}`,
       tag: `request-${id}`,
     });
@@ -445,7 +505,7 @@ export class RequestsService {
       after: input,
     });
     this.push.send([row.createdById], {
-      title: 'Yönetim talebinize yanıt yazdı',
+      title: row.fromStaff ? 'Yönetim mesajınıza yanıt yazdı' : 'Yönetim talebinize yanıt yazdı',
       body: input.note.length > 140 ? `${input.note.slice(0, 137)}…` : input.note,
       url: `/taleplerim/${id}`,
       tag: `request-${id}`,
@@ -465,7 +525,9 @@ export class RequestsService {
     }
     const employee = input.employeeId ? await activeEmployee(this.tenant, input.employeeId) : null;
     const kind = await this.tenant.siteKind();
-    const unit = unitLabel(kind, row.unit.block.name, row.unit.number);
+    const unit = row.unit
+      ? unitLabel(kind, row.unit.block.name, row.unit.number)
+      : 'Görevli mesajı';
     const where = row.location === 'COMMON' ? 'Ortak alan' : 'Daire içi';
     const siteId = this.tenant.siteId;
     const userId = this.tenant.userId ?? null;
@@ -543,9 +605,17 @@ export class RequestsService {
     return row;
   }
 
+  private scopeWhere(blockId?: string): Prisma.ServiceRequestWhereInput {
+    const unit: Prisma.UnitWhereInput = {
+      ...this.tenant.unitScope(),
+      ...(blockId ? { blockId } : {}),
+    };
+    return Object.keys(unit).length > 0 ? { unit } : {};
+  }
+
   private async findScoped(id: string): Promise<DetailRow> {
     const row = await this.tenant.db.serviceRequest.findFirst({
-      where: { id, unit: this.tenant.unitScope() },
+      where: { id, ...this.scopeWhere() },
       include: detailInclude,
     });
     if (!row) throw new NotFoundException('Talep bulunamadı');
@@ -576,7 +646,7 @@ export class RequestsService {
 
 @ApiTags('Arıza ve talepler')
 @ApiBearerAuth()
-@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER', 'AUDITOR', 'RESIDENT')
+@SiteScoped('SITE_MANAGER', 'BLOCK_MANAGER', 'AUDITOR', 'RESIDENT', 'STAFF')
 @Controller('requests/mine')
 export class MyRequestsController {
   constructor(private readonly requests: RequestsService) {}
@@ -594,11 +664,28 @@ export class MyRequestsController {
       limits: { fileSize: REQUEST_PHOTO_MAX_BYTES, files: REQUEST_PHOTO_MAX },
     }),
   )
+  @SiteRoles('SITE_MANAGER', 'BLOCK_MANAGER', 'AUDITOR', 'RESIDENT')
   create(
     @Body() body: RequestCreateDto,
     @UploadedFiles() files: UploadedFileData[] | undefined,
   ): Promise<MyRequestDto> {
     return this.requests.create(body, files ?? []);
+  }
+
+  @Post('staff-message')
+  @SiteRoles('STAFF')
+  @ApiConsumes('multipart/form-data')
+  @UseFilters(FileTooLargeFilter)
+  @UseInterceptors(
+    FilesInterceptor('photos', REQUEST_PHOTO_MAX, {
+      limits: { fileSize: REQUEST_PHOTO_MAX_BYTES, files: REQUEST_PHOTO_MAX },
+    }),
+  )
+  createStaffMessage(
+    @Body() body: StaffMessageDto,
+    @UploadedFiles() files: UploadedFileData[] | undefined,
+  ): Promise<MyRequestDto> {
+    return this.requests.createStaffMessage(body, files ?? []);
   }
 
   @Get(':id')

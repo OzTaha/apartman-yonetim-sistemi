@@ -6,6 +6,9 @@ import {
   requestCategoryLabels,
   requestCreateSchema,
   requestStatusLabels,
+  STAFF_MESSAGE_CATEGORIES,
+  staffMessageCategoryLabels,
+  staffMessageSchema,
   unitLabel,
   type MyRequestDto,
   type RequestCategory,
@@ -20,6 +23,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Field } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +45,7 @@ import { EmployeeSelect, PrioritySelect } from '@/features/staff/task-dialogs';
 import { apiFetch, postForm } from '@/lib/api';
 import { useApiMutation } from '@/lib/queries';
 import { useSession } from '@/lib/session';
+import { cn } from '@/lib/utils';
 
 const ACCEPTED = new Set(REQUEST_PHOTO_ACCEPT.split(','));
 
@@ -495,6 +500,155 @@ export function RequestTaskDialog({
           </Button>
           <Button type="submit" form="request-task-form" disabled={mutation.isPending}>
             Görev oluştur
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type StaffTopic = (typeof STAFF_MESSAGE_CATEGORIES)[number];
+
+const staffTopicHints: Record<StaffTopic, string> = {
+  SECURITY: 'Tanımadığınız, siteye girmeye çalışan biri gibi',
+  FAULT: 'Bozulan, akan, yanmayan bir şey',
+  OTHER: 'Yöneticiye iletmek istediğiniz başka bir konu',
+};
+
+export function StaffMessageDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [topic, setTopic] = useState<StaffTopic | null>(null);
+  const [text, setText] = useState('');
+  const [urgent, setUrgent] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const reset = () => {
+    setTopic(null);
+    setText('');
+    setUrgent(false);
+    setPhotos([]);
+    setError(null);
+  };
+
+  const mutation = useApiMutation(
+    () => {
+      const body = new FormData();
+      body.append('category', topic ?? '');
+      body.append('description', text);
+      body.append('urgent', String(urgent));
+      for (const photo of photos) body.append('photos', photo);
+      return postForm<MyRequestDto>('/requests/mine/staff-message', body);
+    },
+    {
+      success: 'Mesajınız yöneticiye iletildi',
+      onSuccess: () => {
+        reset();
+        onOpenChange(false);
+      },
+    },
+  );
+
+  const submit = () => {
+    const parsed = staffMessageSchema.safeParse({
+      category: topic ?? undefined,
+      description: text,
+    });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Bilgileri kontrol edin');
+      return;
+    }
+    setError(null);
+    mutation.mutate(undefined);
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) reset();
+        onOpenChange(v);
+      }}
+    >
+      <DialogContent className="max-h-[90svh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Yöneticiye yaz</DialogTitle>
+          <DialogDescription>
+            Gördüğünüz bir durumu yöneticiye bildirin. Yönetici yanıt yazınca telefonunuza bildirim
+            gelir.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div className="grid gap-2" role="radiogroup" aria-label="Konu">
+            <span className="text-sm font-medium">Konu</span>
+            {STAFF_MESSAGE_CATEGORIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                role="radio"
+                aria-checked={topic === c}
+                onClick={() => setTopic(c)}
+                className={cn(
+                  'grid gap-0.5 rounded-lg border p-3 text-left transition-colors',
+                  topic === c
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : 'hover:bg-muted',
+                )}
+              >
+                <span className="font-semibold">{staffMessageCategoryLabels[c]}</span>
+                <span className="text-sm text-muted-foreground">{staffTopicHints[c]}</span>
+              </button>
+            ))}
+          </div>
+          <Field label="Ne oldu?" htmlFor="staff-message-text" required>
+            <Textarea
+              id="staff-message-text"
+              rows={4}
+              maxLength={2000}
+              placeholder="Örn. B Blok otoparkında 20 dakikadır bekleyen tanımadığım biri var."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+          </Field>
+          <label
+            htmlFor="staff-message-urgent"
+            className="flex items-start gap-3 rounded-lg border p-3"
+          >
+            <Checkbox
+              id="staff-message-urgent"
+              checked={urgent}
+              onCheckedChange={(v) => setUrgent(v === true)}
+              className="mt-0.5"
+            />
+            <span className="grid gap-0.5">
+              <span className="font-medium">Acil</span>
+              <span className="text-sm text-muted-foreground">
+                Hemen bakılması gerekiyorsa işaretleyin. Can güvenliği varsa önce 112&apos;yi
+                arayın.
+              </span>
+            </span>
+          </label>
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">Fotoğraflar</span>
+            <PhotoPicker files={photos} onChange={setPhotos} />
+          </div>
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Vazgeç
+          </Button>
+          <Button onClick={submit} disabled={mutation.isPending}>
+            Gönder
           </Button>
         </DialogFooter>
       </DialogContent>

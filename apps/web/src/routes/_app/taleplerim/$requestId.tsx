@@ -7,12 +7,16 @@ import { ErrorState, LoadingRows, PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CommentForm } from '@/features/requests/dialogs';
-import { formatDateTime, requestSubtitle } from '@/features/requests/format';
-import { PhotoGallery, RequestStatusBadge, RequestTimeline } from '@/features/requests/parts';
+import { formatDateTime, requestPlace, requestSubtitle } from '@/features/requests/format';
+import {
+  PhotoGallery,
+  RequestSourceBadges,
+  RequestStatusBadge,
+  RequestTimeline,
+} from '@/features/requests/parts';
 import { apiFetch } from '@/lib/api';
 import { useApiMutation, useMyRequest } from '@/lib/queries';
-import { useHasUnitInSite } from '@/lib/session';
-import { labelUnit } from '@/lib/unit-label';
+import { useHasUnitInSite, useRole } from '@/lib/session';
 import { withUndo } from '@/lib/undo';
 
 export const Route = createFileRoute('/_app/taleplerim/$requestId')({
@@ -20,7 +24,9 @@ export const Route = createFileRoute('/_app/taleplerim/$requestId')({
 });
 
 function MyRequestGuard() {
-  if (!useHasUnitInSite()) return <Navigate to="/" replace />;
+  const hasUnit = useHasUnitInSite();
+  const staff = useRole() === 'STAFF';
+  if (!hasUnit && !staff) return <Navigate to="/" replace />;
   return <MyRequestPage />;
 }
 
@@ -32,18 +38,22 @@ function MyRequestPage() {
   useEffect(() => {
     if (request.dataUpdatedAt) void queryClient.invalidateQueries({ queryKey: ['my-requests'] });
   }, [request.dataUpdatedAt, queryClient]);
+  const staff = useRole() === 'STAFF';
   const withdraw = useApiMutation(
     () => apiFetch<void>(`/requests/mine/${requestId}`, { method: 'DELETE' }),
-    { success: 'Talep geri çekildi', onSuccess: () => void navigate({ to: '/taleplerim' }) },
+    {
+      success: staff ? 'Mesaj geri çekildi' : 'Talep geri çekildi',
+      onSuccess: () => void navigate({ to: staff ? '/islerim' : '/taleplerim' }),
+    },
   );
 
   const [withdrawing, setWithdrawing] = useState(false);
 
   const back = (
     <Button variant="ghost" size="sm" asChild className="-ml-2 w-fit">
-      <Link to="/taleplerim">
+      <Link to={staff ? '/islerim' : '/taleplerim'}>
         <ArrowLeft />
-        Taleplerim
+        {staff ? 'İşlerim' : 'Taleplerim'}
       </Link>
     </Button>
   );
@@ -69,6 +79,7 @@ function MyRequestPage() {
         description={
           <span className="inline-flex flex-wrap items-center gap-2">
             <RequestStatusBadge status={r.status} />
+            {r.urgent && <RequestSourceBadges r={{ fromStaff: false, urgent: true }} />}
             {requestSubtitle(r)}
           </span>
         }
@@ -81,14 +92,14 @@ function MyRequestPage() {
               onClick={() => {
                 setWithdrawing(true);
                 withUndo({
-                  message: 'Talep geri çekiliyor',
+                  message: r.fromStaff ? 'Mesaj geri çekiliyor' : 'Talep geri çekiliyor',
                   run: () => withdraw.mutate(undefined),
                   onUndo: () => setWithdrawing(false),
                 });
               }}
             >
               <Trash2 />
-              Talebi geri çek
+              {r.fromStaff ? 'Mesajı geri çek' : 'Talebi geri çek'}
             </Button>
           )
         }
@@ -97,8 +108,12 @@ function MyRequestPage() {
         <Card className="min-w-0 py-4">
           <CardContent className="grid gap-4">
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-              <dt className="text-muted-foreground">Daire</dt>
-              <dd className="font-medium">{labelUnit(r.blockName, r.unitNumber)}</dd>
+              {!r.fromStaff && (
+                <>
+                  <dt className="text-muted-foreground">Daire</dt>
+                  <dd className="font-medium">{requestPlace(r)}</dd>
+                </>
+              )}
               <dt className="text-muted-foreground">Açılış</dt>
               <dd className="font-medium">{formatDateTime(r.createdAt)}</dd>
               {r.resolvedAt && (
@@ -114,7 +129,7 @@ function MyRequestPage() {
         </Card>
         <Card className="min-w-0">
           <CardHeader>
-            <CardTitle>Talep geçmişi</CardTitle>
+            <CardTitle>{r.fromStaff ? 'Mesaj geçmişi' : 'Talep geçmişi'}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             <RequestTimeline events={r.events} />
@@ -127,7 +142,9 @@ function MyRequestPage() {
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                Talep kapandı. Sorun devam ediyorsa yeni talep açabilirsiniz.
+                {r.fromStaff
+                  ? 'Bu konu kapandı. Yeni bir durum olursa İşlerim sayfasından yeniden yazabilirsiniz.'
+                  : 'Talep kapandı. Sorun devam ediyorsa yeni talep açabilirsiniz.'}
               </p>
             )}
           </CardContent>

@@ -1067,7 +1067,9 @@ model ServiceRequest {
   id                String          @id @default(uuid(7)) @db.Uuid
   siteId            String          @db.Uuid
   number            Int
-  unitId            String          @db.Uuid
+  unitId            String?         @db.Uuid
+  fromStaff         Boolean         @default(false)
+  urgent            Boolean         @default(false)
   location          RequestLocation
   category          RequestCategory
   title             String
@@ -1082,8 +1084,8 @@ model ServiceRequest {
   updatedAt         DateTime        @updatedAt
 
   site        Site                  @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  unit        Unit                  @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
-  task        Task?                 @relation(fields: [taskId, siteId], references: [id, siteId], onDelete: Restrict)
+  unit        Unit?                 @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
+  task        Task?              @relation(fields: [taskId, siteId], references: [id, siteId], onDelete: Restrict)
   createdBy   User                  @relation(fields: [createdById], references: [id], onDelete: Restrict)
   events      ServiceRequestEvent[]
   attachments Attachment[]

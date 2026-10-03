@@ -27,6 +27,20 @@ export function RequestStatusBadge({ status }: { status: RequestStatus }) {
   );
 }
 
+export function RequestSourceBadges({ r }: { r: { fromStaff: boolean; urgent: boolean } }) {
+  if (!r.fromStaff && !r.urgent) return null;
+  return (
+    <>
+      {r.urgent && (
+        <Badge variant="secondary" className="bg-destructive/10 text-destructive">
+          Acil
+        </Badge>
+      )}
+      {r.fromStaff && <Badge variant="outline">Görevliden</Badge>}
+    </>
+  );
+}
+
 function Thumbnail({ photo }: { photo: AttachmentDto }) {
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);

@@ -386,7 +386,7 @@ export class SiteDeletionService {
         rows: requests,
         columns: [
           { header: 'No', value: (r) => r.number },
-          { header: 'Daire', value: (r) => label(r.unit) },
+          { header: 'Daire', value: (r) => (r.unit ? label(r.unit) : 'Görevli mesajı') },
           { header: 'Kategori', value: (r) => requestCategoryLabels[r.category] },
           { header: 'Başlık', value: (r) => r.title },
           { header: 'Açıklama', value: (r) => r.description },

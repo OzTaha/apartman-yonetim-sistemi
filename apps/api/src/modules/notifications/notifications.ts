@@ -178,7 +178,7 @@ export class NotificationsService {
 
   async notifySiteStaff(input: {
     siteId: string;
-    blockId: string;
+    blockId: string | null;
     subjectKey: string;
     title: string;
     body: string;
@@ -190,16 +190,18 @@ export class NotificationsService {
         where: { siteId: input.siteId, role: 'SITE_MANAGER', user: { isActive: true } },
         select: { userId: true },
       }),
-      this.prisma.blockManager.findMany({
-        where: {
-          blockId: input.blockId,
-          user: {
-            isActive: true,
-            memberships: { some: { siteId: input.siteId, role: 'BLOCK_MANAGER' } },
-          },
-        },
-        select: { userId: true },
-      }),
+      input.blockId
+        ? this.prisma.blockManager.findMany({
+            where: {
+              blockId: input.blockId,
+              user: {
+                isActive: true,
+                memberships: { some: { siteId: input.siteId, role: 'BLOCK_MANAGER' } },
+              },
+            },
+            select: { userId: true },
+          })
+        : Promise.resolve([]),
     ]);
     let recipients = [...managers, ...blockManagers].map((m) => m.userId);
     if (managers.length === 0) {

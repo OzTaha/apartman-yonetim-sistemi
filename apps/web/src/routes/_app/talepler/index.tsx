@@ -19,10 +19,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatDateTime, requestSubtitle } from '@/features/requests/format';
-import { RequestStatusBadge } from '@/features/requests/parts';
+import {
+  formatDateTime,
+  requestCategoryText,
+  requestPlace,
+  requestSubtitle,
+} from '@/features/requests/format';
+import { RequestSourceBadges, RequestStatusBadge } from '@/features/requests/parts';
 import { useScopeBlocks, useServiceRequests } from '@/lib/queries';
-import { labelUnit } from '@/lib/unit-label';
 
 const viewLabels: Record<RequestView, string> = {
   open: 'Açık talepler',
@@ -56,6 +60,7 @@ function Title({ r }: { r: ServiceRequestDto }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5 font-medium">
       <span className="truncate">{r.title}</span>
+      <RequestSourceBadges r={r} />
       {r.photoCount > 0 && (
         <Camera
           className="size-3.5 shrink-0 text-muted-foreground"
@@ -84,14 +89,14 @@ function RequestsPage() {
     {
       id: 'unit',
       header: 'Daire',
-      accessorFn: (r) => labelUnit(r.blockName, r.unitNumber, 'short'),
+      accessorFn: (r) => requestPlace(r, 'short'),
     },
     {
       accessorKey: 'category',
       header: 'Kategori',
-      cell: ({ row }) => requestCategoryLabels[row.original.category],
+      cell: ({ row }) => requestCategoryText(row.original),
     },
-    { accessorKey: 'requesterName', header: 'Sakin' },
+    { accessorKey: 'requesterName', header: 'Bildiren' },
     {
       accessorKey: 'createdAt',
       header: 'Tarih',
@@ -112,7 +117,7 @@ function RequestsPage() {
         description={
           requests.data
             ? `${requests.data.length} talep`
-            : 'Sakinlerin bildirdiği arıza ve talepler'
+            : 'Sakinlerin ve görevlilerin bildirdiği arıza ve talepler'
         }
       />
       <div className="grid gap-2 sm:grid-cols-3">
@@ -183,11 +188,7 @@ function RequestsPage() {
                 <RequestStatusBadge status={r.status} />
               </div>
               <span className="text-xs text-muted-foreground">
-                {[
-                  requestSubtitle(r),
-                  labelUnit(r.blockName, r.unitNumber, 'short'),
-                  r.requesterName,
-                ].join(' · ')}
+                {[requestSubtitle(r), requestPlace(r, 'short'), r.requesterName].join(' · ')}
               </span>
               <span className="text-xs text-muted-foreground">{formatDateTime(r.createdAt)}</span>
             </div>

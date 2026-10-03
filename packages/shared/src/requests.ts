@@ -69,6 +69,37 @@ export const requestCreateSchema = z.object({
 });
 export type RequestCreateInput = z.input<typeof requestCreateSchema>;
 
+export const STAFF_MESSAGE_CATEGORIES = [
+  'SECURITY',
+  'FAULT',
+  'OTHER',
+] as const satisfies readonly RequestCategory[];
+export const staffMessageCategoryLabels: Record<(typeof STAFF_MESSAGE_CATEGORIES)[number], string> =
+  {
+    SECURITY: 'Şüpheli durum',
+    FAULT: 'Arıza',
+    OTHER: 'Diğer',
+  };
+
+export const staffMessageSchema = z.object({
+  category: z.enum(STAFF_MESSAGE_CATEGORIES, 'Konu seçin'),
+  description: z
+    .string()
+    .trim()
+    .min(5, 'Ne olduğunu kısaca yazın')
+    .max(2000, 'En fazla 2000 karakter olabilir'),
+  urgent: z
+    .union([z.boolean(), z.enum(['true', 'false'])])
+    .optional()
+    .transform((v) => v === true || v === 'true'),
+});
+export type StaffMessageInput = z.input<typeof staffMessageSchema>;
+
+export function staffMessageTitle(description: string): string {
+  const text = description.trim().replace(/\s+/g, ' ');
+  return text.length > 60 ? `${text.slice(0, 57)}...` : text;
+}
+
 export const requestCommentSchema = z.object({
   note: z.string().trim().min(1, 'Mesaj yazın').max(1000, 'En fazla 1000 karakter olabilir'),
 });
@@ -110,9 +141,11 @@ export interface RequestEventDto {
 export interface ServiceRequestDto {
   id: string;
   number: number;
-  unitId: string;
-  blockName: string;
-  unitNumber: string;
+  unitId: string | null;
+  blockName: string | null;
+  unitNumber: string | null;
+  fromStaff: boolean;
+  urgent: boolean;
   location: RequestLocation;
   category: RequestCategory;
   title: string;
@@ -135,9 +168,11 @@ export interface ServiceRequestDetailDto extends ServiceRequestDto {
 export interface MyRequestDto {
   id: string;
   number: number;
-  unitId: string;
-  blockName: string;
-  unitNumber: string;
+  unitId: string | null;
+  blockName: string | null;
+  unitNumber: string | null;
+  fromStaff: boolean;
+  urgent: boolean;
   location: RequestLocation;
   category: RequestCategory;
   title: string;
@@ -157,6 +192,6 @@ export interface MyRequestDetailDto extends MyRequestDto {
 export interface ServiceRequestNotificationData {
   requestId: string;
   number: number;
-  blockName: string;
-  unitNumber: string;
+  blockName: string | null;
+  unitNumber: string | null;
 }

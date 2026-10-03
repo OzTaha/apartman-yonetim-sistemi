@@ -106,6 +106,10 @@ adı gösterilir.
   saatlerini görür, işi bitirince "Bitirdim" der. "Kapı sayfasını kullanabilir" işaretliyse gelen kargoları ve
   misafirleri kaydeder; sakinlere telefon bildirimi gider. Sakinler Dairem sayfasından bekledikleri misafiri bildirir.
   Kapı kayıtları kişisel veri olduğu için 6 ay sonra kendiliğinden silinir. "Hesabı kapat" ile erişim kaldırılır.
+  Görevli şüpheli birini gördüğünde ya da bir arıza fark ettiğinde İşlerim sayfasındaki "Yöneticiye yaz" düğmesiyle
+  mesaj gönderir (konu, kısa açıklama, isteğe bağlı fotoğraf ve "Acil" işareti). Mesaj site yöneticisinin ziline ve
+  telefonuna düşer, "Arıza ve talepler" sayfasında "Görevliden" etiketiyle görünür. Yanıt yazıp durumunu
+  güncelleyebilirsiniz; görevliye bildirim gider.
 - **Çalışanlar:** Vardiya planı, görevler ve tekrarlayan görevler "Çalışan ve görev" menüsündedir.
 - **İşletme projesi:** Yıllık bütçeyi "İşletme projesi" sayfasında hazırlayın: önümüzdeki 12 ayın tahmini giderlerini
   kalem kalem girin, sistem daire başına düşen aylık avans aidatı hesaplar. PDF'i genel kurula sunun; kabul edilince
