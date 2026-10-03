@@ -31,6 +31,7 @@ import {
   Users,
   Wrench,
   Calculator,
+  FileSpreadsheet,
   Gavel,
   MessageSquareWarning,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ export interface NavItem {
     | '/panel'
     | '/daireler'
     | '/sakinler'
+    | '/excel-aktarma'
     | '/dairem'
     | '/siteler'
     | '/aidat'
@@ -105,7 +107,10 @@ export function useNavigation() {
     items.push({ to: '/daireler', label: 'Daireler', icon: DoorOpen });
     items.push({ to: '/sakinler', label: 'Sakinler', icon: Users });
   }
-  if (manager) items.push({ to: '/yetkililer', label: 'Yetkililer', icon: ShieldCheck });
+  if (manager) {
+    items.push({ to: '/yetkililer', label: 'Yetkililer', icon: ShieldCheck });
+    items.push({ to: '/excel-aktarma', label: "Excel'den aktar", icon: FileSpreadsheet });
+  }
   if (s.user?.isPlatformAdmin && hasSite) {
     items.push({ to: '/islem-gecmisi', label: 'İşlem geçmişi', icon: History });
   }

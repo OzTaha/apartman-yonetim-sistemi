@@ -13,6 +13,7 @@ import { AuditModule } from './modules/audit/audit.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { CommunicationModule } from './modules/communication/communication.module';
 import { BankImportModule } from './modules/finance/bank-import';
+import { DataImportModule } from './modules/imports/data-import';
 import { BlocksModule } from './modules/blocks/blocks';
 import { BrandingModule } from './modules/branding/branding';
 import { DuesModule } from './modules/dues/dues.module';
@@ -59,6 +60,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     DuesModule,
     FinanceModule,
     BankImportModule,
+    DataImportModule,
     StaffModule,
     CommunicationModule,
     OnlinePaymentsModule,

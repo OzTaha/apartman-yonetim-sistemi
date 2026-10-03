@@ -36,6 +36,14 @@ const help: Record<string, PageHelp> = {
       'Bir sakin taşındığında silmek yerine "Taşındı" olarak işaretleyin; geçmiş kayıtları kaybolmaz.',
     ],
   },
+  '/excel-aktarma': {
+    title: "Excel'den aktar nedir?",
+    body: [
+      'Daireleri, sakinleri ve eski yönetimden kalan borçları tek tek yazmak yerine bir Excel dosyasıyla hepsini birden eklersiniz.',
+      'Önce şablonu indirin. Şablonun ilk sayfasında hangi sütuna ne yazılacağı anlatılır. Doldurup kaydettikten sonra buraya yükleyin.',
+      'Sistem önce bir önizleme gösterir: kaç daire, kaç sakin, kaç borç ekleneceğini ve varsa hangi satırda sorun olduğunu söyler. Siz "Aktar"a basmadan hiçbir şey kaydedilmez. Sistemde zaten olan daire ve sakinler atlanır.',
+    ],
+  },
   '/yetkililer': {
     title: 'Yetkililer nedir?',
     body: [

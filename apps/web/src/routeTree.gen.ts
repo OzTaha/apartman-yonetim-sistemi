@@ -19,6 +19,7 @@ import { Route as AppBildirimlerRouteImport } from './routes/_app/bildirimler'
 import { Route as AppBorclarRouteImport } from './routes/_app/borclar'
 import { Route as AppCalisanRaporuRouteImport } from './routes/_app/calisan-raporu'
 import { Route as AppDairemRouteImport } from './routes/_app/dairem'
+import { Route as AppExcelAktarmaRouteImport } from './routes/_app/excel-aktarma'
 import { Route as AppFirmalarRouteImport } from './routes/_app/firmalar'
 import { Route as AppGelirGiderRouteImport } from './routes/_app/gelir-gider'
 import { Route as AppGiderlerRouteImport } from './routes/_app/giderler'
@@ -108,6 +109,11 @@ const AppCalisanRaporuRoute = AppCalisanRaporuRouteImport.update({
 const AppDairemRoute = AppDairemRouteImport.update({
   id: '/dairem',
   path: '/dairem',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExcelAktarmaRoute = AppExcelAktarmaRouteImport.update({
+  id: '/excel-aktarma',
+  path: '/excel-aktarma',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFirmalarRoute = AppFirmalarRouteImport.update({
@@ -327,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/borclar': typeof AppBorclarRoute
   '/calisan-raporu': typeof AppCalisanRaporuRoute
   '/dairem': typeof AppDairemRoute
+  '/excel-aktarma': typeof AppExcelAktarmaRoute
   '/firmalar': typeof AppFirmalarRoute
   '/gelir-gider': typeof AppGelirGiderRoute
   '/giderler': typeof AppGiderlerRoute
@@ -378,6 +385,7 @@ export interface FileRoutesByTo {
   '/borclar': typeof AppBorclarRoute
   '/calisan-raporu': typeof AppCalisanRaporuRoute
   '/dairem': typeof AppDairemRoute
+  '/excel-aktarma': typeof AppExcelAktarmaRoute
   '/firmalar': typeof AppFirmalarRoute
   '/gelir-gider': typeof AppGelirGiderRoute
   '/giderler': typeof AppGiderlerRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/_app/borclar': typeof AppBorclarRoute
   '/_app/calisan-raporu': typeof AppCalisanRaporuRoute
   '/_app/dairem': typeof AppDairemRoute
+  '/_app/excel-aktarma': typeof AppExcelAktarmaRoute
   '/_app/firmalar': typeof AppFirmalarRoute
   '/_app/gelir-gider': typeof AppGelirGiderRoute
   '/_app/giderler': typeof AppGiderlerRoute
@@ -487,6 +496,7 @@ export interface FileRouteTypes {
     | '/borclar'
     | '/calisan-raporu'
     | '/dairem'
+    | '/excel-aktarma'
     | '/firmalar'
     | '/gelir-gider'
     | '/giderler'
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/borclar'
     | '/calisan-raporu'
     | '/dairem'
+    | '/excel-aktarma'
     | '/firmalar'
     | '/gelir-gider'
     | '/giderler'
@@ -591,6 +602,7 @@ export interface FileRouteTypes {
     | '/_app/borclar'
     | '/_app/calisan-raporu'
     | '/_app/dairem'
+    | '/_app/excel-aktarma'
     | '/_app/firmalar'
     | '/_app/gelir-gider'
     | '/_app/giderler'
@@ -712,6 +724,13 @@ declare module '@tanstack/react-router' {
       path: '/dairem'
       fullPath: '/dairem'
       preLoaderRoute: typeof AppDairemRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/excel-aktarma': {
+      id: '/_app/excel-aktarma'
+      path: '/excel-aktarma'
+      fullPath: '/excel-aktarma'
+      preLoaderRoute: typeof AppExcelAktarmaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/firmalar': {
@@ -1012,6 +1031,7 @@ interface AppRouteChildren {
   AppBorclarRoute: typeof AppBorclarRoute
   AppCalisanRaporuRoute: typeof AppCalisanRaporuRoute
   AppDairemRoute: typeof AppDairemRoute
+  AppExcelAktarmaRoute: typeof AppExcelAktarmaRoute
   AppFirmalarRoute: typeof AppFirmalarRoute
   AppGelirGiderRoute: typeof AppGelirGiderRoute
   AppGiderlerRoute: typeof AppGiderlerRoute
@@ -1062,6 +1082,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBorclarRoute: AppBorclarRoute,
   AppCalisanRaporuRoute: AppCalisanRaporuRoute,
   AppDairemRoute: AppDairemRoute,
+  AppExcelAktarmaRoute: AppExcelAktarmaRoute,
   AppFirmalarRoute: AppFirmalarRoute,
   AppGelirGiderRoute: AppGelirGiderRoute,
   AppGiderlerRoute: AppGiderlerRoute,

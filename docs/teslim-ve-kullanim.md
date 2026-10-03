@@ -39,6 +39,10 @@ adı gösterilir.
 
 ## İlk adımlar
 
+0. **Excel ile hızlı başlangıç (isteğe bağlı):** Menüdeki "Excel'den aktar" sayfasından şablonu indirin; daireleri,
+   sakinleri ve önceki yönetimden kalan borçları doldurup yükleyin. Önizlemede hatalı satırlar gösterilir; "Aktar"a
+   basmadan hiçbir şey kaydedilmez. Sistemde zaten olan daire ve sakinler atlanır. Bu yolu kullanırsanız 1–2. adımlar
+   gerekmez.
 1. **Daireler:** Daireler sayfasından "Toplu ekle" ile daireleri oluşturun (sitelerde önce bloklar eklenir).
 2. **Sakinler:** Her dairenin sayfasından malik veya kiracıyı ekleyin. Telefon ve iletişim onayı SMS için gereklidir.
    Ev sahibi (malik) eklerken tapudaki arsa payını da girin (örneğin 24/480 ise 24); genel kurulda toplantı yeter
