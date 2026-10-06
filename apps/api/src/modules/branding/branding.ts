@@ -29,6 +29,7 @@ import {
   DEFAULT_APP_NAME,
   DEFAULT_THEME_COLOR,
   themeColorHex,
+  loginNoticeSchema,
   themeColorSchema,
   LOGO_MAX_BYTES,
   LOGO_MAX_SIZE,
@@ -50,6 +51,7 @@ import { FileStorage } from '../finance/storage';
 
 class BrandingBody extends createZodDto(brandingSchema) {}
 class ThemeColorBody extends createZodDto(themeColorSchema) {}
+class LoginNoticeBody extends createZodDto(loginNoticeSchema) {}
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -83,6 +85,7 @@ export class BrandingService {
       appName: row?.appName ?? DEFAULT_APP_NAME,
       logoUrl: row?.logoKey ? `/api/branding/logo?v=${row.updatedAt.getTime()}` : null,
       themeColor: row?.themeColor ?? DEFAULT_THEME_COLOR,
+      loginNotice: row?.loginNotice ?? false,
     };
   }
 
@@ -117,6 +120,24 @@ export class BrandingService {
       entityId: '1',
       siteId: null,
       before: { themeColor: before.themeColor },
+      after: input,
+    });
+    return this.get();
+  }
+
+  async setLoginNotice(input: LoginNoticeBody): Promise<BrandingDto> {
+    const before = await this.get();
+    await this.prisma.branding.upsert({
+      where: { id: 1 },
+      create: { id: 1, appName: DEFAULT_APP_NAME, loginNotice: input.loginNotice },
+      update: { loginNotice: input.loginNotice },
+    });
+    await this.audit.record({
+      action: 'UPDATE',
+      entityType: 'Branding',
+      entityId: '1',
+      siteId: null,
+      before: { loginNotice: before.loginNotice },
       after: input,
     });
     return this.get();
@@ -237,6 +258,13 @@ export class BrandingController {
   @Put('theme')
   setThemeColor(@Body() body: ThemeColorBody): Promise<BrandingDto> {
     return this.branding.setThemeColor(body);
+  }
+
+  @ApiBearerAuth()
+  @PlatformAdminOnly()
+  @Put('login-notice')
+  setLoginNotice(@Body() body: LoginNoticeBody): Promise<BrandingDto> {
+    return this.branding.setLoginNotice(body);
   }
 
   @ApiBearerAuth()

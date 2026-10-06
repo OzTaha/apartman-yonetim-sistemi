@@ -30,8 +30,14 @@ export const themeColorHex: Record<ThemeColor, string> = {
 export const themeColorSchema = z.object({ themeColor: z.enum(themeColors) });
 export type ThemeColorInput = z.input<typeof themeColorSchema>;
 
+export const LOGIN_NOTICE_TEXT =
+  'Bu site tanıtım amaçlıdır. Buradaki kişi, daire ve tutarlar gerçek değildir.';
+export const loginNoticeSchema = z.object({ loginNotice: z.boolean() });
+export type LoginNoticeInput = z.input<typeof loginNoticeSchema>;
+
 export interface BrandingDto {
   appName: string;
   logoUrl: string | null;
   themeColor: ThemeColor;
+  loginNotice: boolean;
 }

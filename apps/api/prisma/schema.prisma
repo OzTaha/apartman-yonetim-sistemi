@@ -959,11 +959,12 @@ enum ThemeColor {
 }
 
 model Branding {
-  id         Int        @id @default(1)
-  appName    String
-  logoKey    String?
-  themeColor ThemeColor @default(BLUE)
-  updatedAt  DateTime   @updatedAt
+  id          Int        @id @default(1)
+  appName     String
+  logoKey     String?
+  themeColor  ThemeColor @default(BLUE)
+  loginNotice Boolean    @default(false)
+  updatedAt   DateTime   @updatedAt
 
   @@map("branding")
 }
@@ -1085,7 +1086,7 @@ model ServiceRequest {
 
   site        Site                  @relation(fields: [siteId], references: [id], onDelete: Cascade)
   unit        Unit?                 @relation(fields: [unitId, siteId], references: [id, siteId], onDelete: Restrict)
-  task        Task?              @relation(fields: [taskId, siteId], references: [id, siteId], onDelete: Restrict)
+  task        Task?                 @relation(fields: [taskId, siteId], references: [id, siteId], onDelete: Restrict)
   createdBy   User                  @relation(fields: [createdById], references: [id], onDelete: Restrict)
   events      ServiceRequestEvent[]
   attachments Attachment[]

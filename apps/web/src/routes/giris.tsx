@@ -1,7 +1,7 @@
-import { loginSchema, removeSpaces, type LoginInput } from '@apartman/shared';
+import { LOGIN_NOTICE_TEXT, loginSchema, removeSpaces, type LoginInput } from '@apartman/shared';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { CircleAlert, CircleCheck, LogIn } from 'lucide-react';
+import { CircleAlert, CircleCheck, Info, LogIn } from 'lucide-react';
 import { type ChangeEvent, type FormEvent, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AuthShell } from '@/components/brand';
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiFetch, errorMessage } from '@/lib/api';
 import { ensureSession, login } from '@/lib/auth';
+import { useBranding } from '@/lib/branding';
 import { safeRedirect } from '@/lib/format';
 
 export const Route = createFileRoute('/giris')({
@@ -54,6 +55,7 @@ function LoginPage() {
   const [forgot, setForgot] = useState(false);
   const [remembered] = useState(readRemembered);
   const [remember, setRemember] = useState(Boolean(remembered));
+  const { loginNotice } = useBranding();
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { identifier: remembered, password: '' },
@@ -72,6 +74,12 @@ function LoginPage() {
 
   return (
     <AuthShell>
+      {loginNotice && (
+        <Alert>
+          <Info />
+          <AlertDescription>{LOGIN_NOTICE_TEXT}</AlertDescription>
+        </Alert>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Giriş yap</CardTitle>

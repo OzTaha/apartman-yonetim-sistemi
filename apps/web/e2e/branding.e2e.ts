@@ -41,3 +41,22 @@ test('site yöneticisi marka ayarlarına giremez', async ({ page }) => {
   await page.goto('/marka');
   await expect(page.getByRole('heading', { name: 'Marka ayarları' })).toHaveCount(0);
 });
+
+test('sistem yöneticisi tanıtım notunu açınca giriş ekranında görünür', async ({ page }) => {
+  const notice = /Bu site tanıtım amaçlıdır/;
+  await login(page, 'admin@ornek.com');
+  await expect(page).not.toHaveURL(/giris/);
+  await page.goto('/marka');
+  await page.getByLabel('Giriş ekranında tanıtım notunu göster').click();
+  await expect(page.getByText('Tanıtım notu açıldı')).toBeVisible();
+
+  await page.context().clearCookies();
+  await page.goto('/giris');
+  await expect(page.getByRole('alert').filter({ hasText: notice })).toBeVisible();
+
+  await login(page, 'admin@ornek.com');
+  await expect(page).not.toHaveURL(/giris/);
+  await page.goto('/marka');
+  await page.getByLabel('Giriş ekranında tanıtım notunu göster').click();
+  await expect(page.getByText('Tanıtım notu kapatıldı')).toBeVisible();
+});

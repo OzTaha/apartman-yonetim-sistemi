@@ -74,6 +74,7 @@ describe('marka', () => {
       appName: 'Apartman Yönetim Sistemi',
       logoUrl: null,
       themeColor: 'BLUE',
+      loginNotice: false,
     });
     const manifest = await http().get('/api/branding/manifest.webmanifest').expect(200);
     expect(manifest.headers['content-type']).toContain('application/manifest+json');
@@ -132,6 +133,27 @@ describe('marka', () => {
       .put('/api/branding/theme')
       .set(bearer(tokens.admin))
       .send({ themeColor: 'BLUE' })
+      .expect(200);
+  });
+
+  it('tanıtım notunu yalnızca sistem yöneticisi açar; varsayılan kapalıdır', async () => {
+    await http().put('/api/branding/login-notice').send({ loginNotice: true }).expect(401);
+    await http()
+      .put('/api/branding/login-notice')
+      .set(bearer(tokens.manager))
+      .send({ loginNotice: true })
+      .expect(403);
+    const res = await http()
+      .put('/api/branding/login-notice')
+      .set(bearer(tokens.admin))
+      .send({ loginNotice: true })
+      .expect(200);
+    expect(res.body.loginNotice).toBe(true);
+    expect((await http().get('/api/branding').expect(200)).body.loginNotice).toBe(true);
+    await http()
+      .put('/api/branding/login-notice')
+      .set(bearer(tokens.admin))
+      .send({ loginNotice: false })
       .expect(200);
   });
 

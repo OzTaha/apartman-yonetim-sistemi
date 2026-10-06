@@ -16,6 +16,11 @@ export function useBranding(): BrandingDto {
     staleTime: 5 * 60_000,
   });
   return (
-    branding.data ?? { appName: DEFAULT_APP_NAME, logoUrl: null, themeColor: storedThemeColor() }
+    branding.data ?? {
+      appName: DEFAULT_APP_NAME,
+      logoUrl: null,
+      themeColor: storedThemeColor(),
+      loginNotice: false,
+    }
   );
 }

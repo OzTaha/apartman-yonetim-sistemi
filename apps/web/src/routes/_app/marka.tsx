@@ -1,5 +1,6 @@
 import {
   brandingSchema,
+  LOGIN_NOTICE_TEXT,
   LOGO_MAX_BYTES,
   LOGO_MAX_SIZE,
   LOGO_MIN_SIZE,
@@ -23,6 +24,7 @@ import { Field } from '@/components/form-field';
 import { PageHeader } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { apiFetch, errorMessage, uploadFile } from '@/lib/api';
 import { brandingKey, useBranding } from '@/lib/branding';
@@ -203,6 +205,39 @@ function BrandingPage() {
               Logoyu kaldır
             </Button>
           )}
+        </CardContent>
+      </Card>
+      <Card className="max-w-2xl">
+        <CardHeader>
+          <CardTitle>Tanıtım notu</CardTitle>
+          <CardDescription>
+            Sistemi tanıtım veya deneme için kullanıyorsanız giriş ekranında herkesin göreceği bir
+            not çıkar. Gerçek kullanımda kapalı kalmalıdır.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <label htmlFor="login-notice" className="flex items-start gap-3 rounded-lg border p-3">
+            <Checkbox
+              id="login-notice"
+              checked={branding.loginNotice}
+              disabled={busy}
+              className="mt-0.5"
+              onCheckedChange={(v) =>
+                void run(
+                  () =>
+                    apiFetch<BrandingDto>('/branding/login-notice', {
+                      method: 'PUT',
+                      body: { loginNotice: v === true },
+                    }),
+                  v === true ? 'Tanıtım notu açıldı' : 'Tanıtım notu kapatıldı',
+                )
+              }
+            />
+            <span className="grid gap-0.5">
+              <span className="font-medium">Giriş ekranında tanıtım notunu göster</span>
+              <span className="text-sm text-muted-foreground">“{LOGIN_NOTICE_TEXT}”</span>
+            </span>
+          </label>
         </CardContent>
       </Card>
     </div>

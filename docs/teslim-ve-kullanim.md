@@ -110,6 +110,8 @@ adı gösterilir.
   mesaj gönderir (konu, kısa açıklama, isteğe bağlı fotoğraf ve "Acil" işareti). Mesaj site yöneticisinin ziline ve
   telefonuna düşer, "Arıza ve talepler" sayfasında "Görevliden" etiketiyle görünür. Yanıt yazıp durumunu
   güncelleyebilirsiniz; görevliye bildirim gider.
+- **Tanıtım notu:** Sistem tanıtım veya deneme için kullanılıyorsa sistem yöneticisi "Marka ayarları" sayfasından
+  giriş ekranına "Bu site tanıtım amaçlıdır" notunu ekleyebilir. Gerçek kullanımda kapalı kalmalıdır.
 - **Çalışanlar:** Vardiya planı, görevler ve tekrarlayan görevler "Çalışan ve görev" menüsündedir.
 - **İşletme projesi:** Yıllık bütçeyi "İşletme projesi" sayfasında hazırlayın: önümüzdeki 12 ayın tahmini giderlerini
   kalem kalem girin, sistem daire başına düşen aylık avans aidatı hesaplar. PDF'i genel kurula sunun; kabul edilince
