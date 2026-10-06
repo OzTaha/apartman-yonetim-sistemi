@@ -92,20 +92,27 @@ export function PhotoGallery({ photos }: { photos: AttachmentDto[] }) {
   );
 }
 
-function eventText(e: RequestEventDto): string {
+function eventText(e: RequestEventDto, fromStaff: boolean): string {
   switch (e.kind) {
     case 'CREATED':
-      return 'Talep açıldı';
+      return fromStaff ? 'Mesaj gönderildi' : 'Talep açıldı';
     case 'STATUS':
       return `Durum: ${requestStatusLabels[e.status!]}`;
     case 'COMMENT':
-      return e.byResident ? 'Sakin mesajı' : 'Yönetimin yanıtı';
+      if (!e.byResident) return 'Yönetimin yanıtı';
+      return fromStaff ? 'Görevli mesajı' : 'Sakin mesajı';
     case 'TASK':
       return 'Çalışana görev olarak verildi';
   }
 }
 
-export function RequestTimeline({ events }: { events: RequestEventDto[] }) {
+export function RequestTimeline({
+  events,
+  fromStaff = false,
+}: {
+  events: RequestEventDto[];
+  fromStaff?: boolean;
+}) {
   return (
     <ol className="grid gap-3 border-l pl-4">
       {events.map((e) => (
@@ -116,7 +123,7 @@ export function RequestTimeline({ events }: { events: RequestEventDto[] }) {
               e.byResident ? 'bg-muted-foreground' : 'bg-primary',
             )}
           />
-          <span className="font-medium">{eventText(e)}</span>
+          <span className="font-medium">{eventText(e, fromStaff)}</span>
           {e.note && (
             <span className="whitespace-pre-line break-words text-muted-foreground">{e.note}</span>
           )}

@@ -156,14 +156,18 @@ function RequestDetailPage() {
         </div>
         <Card className="min-w-0">
           <CardHeader>
-            <CardTitle>Talep geçmişi</CardTitle>
+            <CardTitle>{r.fromStaff ? 'Mesaj geçmişi' : 'Talep geçmişi'}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <RequestTimeline events={r.events} />
+            <RequestTimeline events={r.events} fromStaff={r.fromStaff} />
             <CommentForm
               path={`/requests/${r.id}/comments`}
-              label="Sakine yanıt"
-              placeholder="Sakine iletmek istediğiniz bilgi (ör. teknik servis yarın gelecek)"
+              label={r.fromStaff ? 'Görevliye yanıt' : 'Sakine yanıt'}
+              placeholder={
+                r.fromStaff
+                  ? 'Görevliye iletmek istediğiniz bilgi (ör. güvenliği aradım, kameraya bakıyorum)'
+                  : 'Sakine iletmek istediğiniz bilgi (ör. teknik servis yarın gelecek)'
+              }
               button="Yanıt gönder"
             />
           </CardContent>

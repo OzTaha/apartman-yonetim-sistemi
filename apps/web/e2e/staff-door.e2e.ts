@@ -81,5 +81,9 @@ test('yönetici görevliye hesap açar; görevli kargo kaydeder ve teslim eder',
   await expect(page.getByRole('heading', { name: note })).toBeVisible();
   await expect(page.getByText('Görevliden', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Acil', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Mesaj geçmişi', { exact: true })).toBeVisible();
+  await page.getByLabel('Görevliye yanıt').fill('Güvenliği aradım, takipteyim.');
+  await page.getByRole('button', { name: 'Yanıt gönder' }).click();
+  await expect(page.getByText('Güvenliği aradım, takipteyim.')).toBeVisible();
   await staffContext.close();
 });

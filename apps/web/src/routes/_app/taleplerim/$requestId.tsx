@@ -132,7 +132,7 @@ function MyRequestPage() {
             <CardTitle>{r.fromStaff ? 'Mesaj geçmişi' : 'Talep geçmişi'}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <RequestTimeline events={r.events} />
+            <RequestTimeline events={r.events} fromStaff={r.fromStaff} />
             {open ? (
               <CommentForm
                 path={`/requests/mine/${r.id}/comments`}

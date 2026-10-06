@@ -372,6 +372,8 @@ export function RequestStatusDialog({
   );
   if (!status) return null;
   const rejecting = status === 'REJECTED';
+  const who = request.fromStaff ? 'Görevli' : 'Sakin';
+  const toWho = request.fromStaff ? 'Görevliye not' : 'Sakine not';
 
   return (
     <Dialog
@@ -401,11 +403,15 @@ export function RequestStatusDialog({
           }}
         >
           <Field
-            label={rejecting ? 'Reddetme nedeni' : 'Sakine not'}
+            label={rejecting ? 'Reddetme nedeni' : toWho}
             htmlFor="request-status-note"
             required={rejecting}
             error={error ?? undefined}
-            hint={rejecting ? 'Sakin bu açıklamayı görür.' : 'İsteğe bağlı; sakin bu notu görür.'}
+            hint={
+              rejecting
+                ? `${who} bu açıklamayı görür.`
+                : `İsteğe bağlı; ${who.toLocaleLowerCase('tr')} bu notu görür.`
+            }
           >
             <Textarea
               id="request-status-note"
