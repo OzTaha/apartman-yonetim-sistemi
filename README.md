@@ -295,7 +295,8 @@ rehber [docs/teslim-ve-kullanim.md](docs/teslim-ve-kullanim.md) dosyasındadır.
 - `pnpm release` ile hazırlanan paket sunucuya kopyalanır ve `deploy/install.sh` çalıştırılır. Sunucu GitHub'a veya
   geliştiricinin hesaplarına bağlanmaz.
 - Servisler: PostgreSQL, Redis (şifreli), API ve Caddy. Dışarıya yalnızca 80/443 açılır; Caddy Let's Encrypt
-  sertifikasını kendisi alır ve yeniler, güvenlik başlıklarını (HSTS, CSP vb.) ekler.
+  sertifikasını kendisi alır ve yeniler, güvenlik başlıklarını (HSTS, CSP vb.) ekler. Tüm sayfalar arama motorlarına
+  kapalıdır (`X-Robots-Tag: noindex` ve sayfa içi `robots` etiketi); sistem Google sonuçlarında görünmez.
 - Veritabanı, Redis ve oturum anahtarları kurulumda sunucuda rastgele üretilir ve yalnızca sunucudaki `deploy/.env`
   dosyasında tutulur.
 - API her açılışta bekleyen veritabanı değişikliklerini uygular. Günlükler 10 MB × 5 dosya ile sınırlıdır.
